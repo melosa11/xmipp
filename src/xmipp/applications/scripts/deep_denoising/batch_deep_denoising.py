@@ -92,7 +92,6 @@ class ScriptDeepDenoising(xmipp_base.XmippScript):
 
     del args["builder"]["modelType"]
     model = ModelClass(**args["builder"])
-
     if mode in trainKeyWords:
       print("mode 1: training")
       assert dataPathProjections is not None, "Error, projections must be provided to train the network"
@@ -113,7 +112,7 @@ class ScriptDeepDenoising(xmipp_base.XmippScript):
     outputParticlesMdName = self.getParam('-o')
     outputParticlesStackName = re.sub(r"\.xmd$", ".stk", outputParticlesMdName)
 
-    useProjections = not dataPathProjections
+    useProjections =  dataPathProjections is not None
 
     if useProjections:
       inputProjectionsStackName = re.sub(r"\.xmd$", ".stk", dataPathProjections)
