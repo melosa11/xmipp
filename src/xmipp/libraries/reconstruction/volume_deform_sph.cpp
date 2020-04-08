@@ -230,7 +230,6 @@ void ProgVolDeformSph::run() {
 	FourierFilter filter;
     filter.FilterShape = REALGAUSSIAN;
     filter.FilterBand = LOWPASS;
-	filter.generateMask(VI());
 
 	// We need also to normalized the filtered volumes to compare them appropiately
 	MultidimArray<int> bg_mask;
@@ -253,12 +252,15 @@ void ProgVolDeformSph::run() {
 		filter.w1 = sigma[ids];
 
 		// Filer input vol
+		filter.generateMask(VI());
 		filter.do_generate_3dmask = true;
 		filter.applyMaskSpace(auxI());
 		normalize_Robust(auxI(), bg_mask, true);
 		volumesI.push_back(auxI);
 
 		// Filter ref vol
+		filter.generateMask(VR());
+		filter.do_generate_3dmask = true;
 		filter.applyMaskSpace(auxR());
 		normalize_Robust(auxR(), bg_mask, true);
 		volumesR.push_back(auxR);
