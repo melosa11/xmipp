@@ -864,10 +864,10 @@ void generate_metadata(MetaData SF, MetaData SFexp, FileName fnDir, FileName fn_
 				rowExp.setValue(MDL_SHIFT_Y, -shiftY);
 				//rowExp.setValue(MDL_SHIFT_Z, 0.0);
 				row.getValue(MDL_ANGLE_ROT, rot);
-				rowExp.setValue(MDL_ANGLE_ROT, rot);
+				//rowExp.setValue(MDL_ANGLE_ROT, rot);
 				row.getValue(MDL_ANGLE_TILT, tilt);
 				rowExp.setValue(MDL_ANGLE_TILT, tilt);
-				rowExp.setValue(MDL_ANGLE_PSI, psi);
+				//rowExp.setValue(MDL_ANGLE_PSI, psi);
 				//rowOut
 				if(row.containsLabel(MDL_ITEM_ID))
 					row.getValue(MDL_ITEM_ID, refNum);
@@ -1254,10 +1254,10 @@ void generate_output_classes(MetaData SF, MetaData SFexp, FileName fnDir, size_t
 					rowSFexp.setValue(MDL_SHIFT_Y, -shiftY);
 					//rowSFexp.setValue(MDL_SHIFT_Z, 0.0);
 					rowSF.getValue(MDL_ANGLE_ROT, rot);
-					rowSFexp.setValue(MDL_ANGLE_ROT, rot);
+					//rowSFexp.setValue(MDL_ANGLE_ROT, rot);
 					rowSF.getValue(MDL_ANGLE_TILT, tilt);
 					rowSFexp.setValue(MDL_ANGLE_TILT, tilt);
-					rowSFexp.setValue(MDL_ANGLE_PSI, psi);
+					//rowSFexp.setValue(MDL_ANGLE_PSI, psi);
 					rowSFexp.setValue(MDL_REF,(int)refNum);
 					SFq.addRow(rowSFexp);
 				}
@@ -1342,10 +1342,10 @@ void generate_output_classes(MetaData SF, MetaData SFexp, FileName fnDir, size_t
 					rowSFexp.setValue(MDL_SHIFT_Y, -shiftY);
 					//rowSFexp.setValue(MDL_SHIFT_Z, 0.0);
 					rowSF.getValue(MDL_ANGLE_ROT, rot);
-					rowSFexp.setValue(MDL_ANGLE_ROT, rot);
+					//rowSFexp.setValue(MDL_ANGLE_ROT, rot);
 					rowSF.getValue(MDL_ANGLE_TILT, tilt);
 					rowSFexp.setValue(MDL_ANGLE_TILT, tilt);
-					rowSFexp.setValue(MDL_ANGLE_PSI, psi);
+					//rowSFexp.setValue(MDL_ANGLE_PSI, psi);
 					rowSFexp.setValue(MDL_REF,(int)refNum);
 					SFq.addRow(rowSFexp);
 				}
