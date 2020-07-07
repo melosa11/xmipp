@@ -349,19 +349,14 @@ def getBranch(repo, repo_dir):
     # return current branch 
     r, branch = getCurrentBranch(repo_dir)
     if r:
-        print("current branch found: " + str(branch))
         return r, branch
     # return same branch as xmipp
     # we need to get current branch of the xmipp
     r1, branchHint = getCurrentTravisBranch() if 'TRAVIS' in os.environ else getCurrentBranch()
-    print("hint: " + str(branchHint))
     r2, branches = getAllBranches(repo)
-    print("all branches: " + str(branches))
     if r1 and r2 and branchHint in branches:
-        print("xmipp branch found: " + str(branchHint))
         return True, branchHint
     # default branch
-    print("default branch will be used")
     return getDefaultBranch(repo)
 
 def getDefaultBranch(repo):
