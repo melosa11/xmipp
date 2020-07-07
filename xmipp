@@ -325,33 +325,43 @@ def getCurrentBranch(cwd='./'):
     if not os.path.exists(cwd):
         return False, None
     runJob('git rev-parse HEAD', cwd=cwd, show_output=False, show_command=False, log=commit)
-    runJob('git name-rev ' + commit[0], cwd=cwd, show_output=False, show_command=False, log=log)
+    runJob('git name-rev --name-only ' + commit[0], cwd=cwd, show_output=False, show_command=False, log=log)
     if log:
-        return True, log[0].split()[1].strip()  # log contains commit_space_branchName
+        # log contains either 'branchName' or 'tags/tagName'
+        return True, log[0].replace('tags/', '', 1).strip()
     print(red('Cannot get current branch'))
     return False, None
 
 def getAllBranches(repo):
     log = []
-    prefix = 'refs/heads/'
-    result = runJob('git ls-remote -h %s' % REPOSITORIES[repo],
+    # get heads and tags
+    result = runJob('git ls-remote -ht %s' % REPOSITORIES[repo],
         show_output=False, log=log, show_command=False)
     if result:
-        branches = [l.split(prefix)[1] for l in log]
+        branches = [l.split('refs/')[1] for l in log] # remove hash
+        branches = [b.replace('heads/', '', 1) for b in branches] # remove 'heads/', if present
+        branches = [b.replace('tags/', '', 1) for b in branches] # remove 'tags/', if present
         return (True, branches)
     print(red('Cannot listl branches for ' + repo))
     return (False, None)
 
 def getBranch(repo, repo_dir):
-    if 'TRAVIS' in os.environ:
-        # we need to get current branch of the xmipp
-        r1, branchHint = getCurrentTravisBranch()
-        r2, branches = getAllBranches(repo)
-        if r1 and r2 and branchHint in branches:
-            return True, branchHint
+    # return current branch 
     r, branch = getCurrentBranch(repo_dir)
     if r:
+        print("current branch found: " + str(branch))
         return r, branch
+    # return same branch as xmipp
+    # we need to get current branch of the xmipp
+    r1, branchHint = getCurrentTravisBranch() if 'TRAVIS' in os.environ else getCurrentBranch()
+    print("hint: " + str(branchHint))
+    r2, branches = getAllBranches(repo)
+    print("all branches: " + str(branches))
+    if r1 and r2 and branchHint in branches:
+        print("xmipp branch found: " + str(branchHint))
+        return True, branchHint
+    # default branch
+    print("default branch will be used")
     return getDefaultBranch(repo)
 
 def getDefaultBranch(repo):
