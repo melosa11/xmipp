@@ -27,6 +27,7 @@
 #include "program_image_residuals.h"
 #include <data/mask.h>
 #include <data/numerical_tools.h>
+#include <data/normalize.h>
 #include <iostream>
 #include <fstream>
 
@@ -205,9 +206,17 @@ double ProgAngularSphAlignment::tranformImageSph(double *pclnm, double rot, doub
 	}
 
 	applyGeometry(LINEAR,Ifilteredp(),Ifiltered(),A,IS_NOT_INV,DONT_WRAP,0.);
-	const MultidimArray<double> &mP=P();
+	// const MultidimArray<double> &mP=P();
+	MultidimArray<double> mP=P();
 	const MultidimArray<int> &mMask2D=mask2D;
-	MultidimArray<double> &mIfilteredp=Ifilteredp();
+	// MultidimArray<double> &mIfilteredp=Ifilteredp();
+	MultidimArray<double> mIfilteredp=Ifilteredp();
+	MultidimArray<int> bg_mask;
+	bg_mask.resizeNoCopy(mP.ydim, mP.xdim);
+	bg_mask.setXmippOrigin();
+	normalize_Robust(mP, bg_mask, true);
+	bg_mask *= 0;
+	normalize_Robust(mIfilteredp, bg_mask, true);
 	double corr=correlationIndex(mIfilteredp,mP,&mMask2D);
 	cost=-corr;
 
@@ -243,8 +252,8 @@ double ProgAngularSphAlignment::tranformImageSph(double *pclnm, double rot, doub
 		char c; std::cin >> c;
     }
 
-    double massDiff=std::abs(sumV-sumVd)/sumV*100;
-    double retval=cost+lambda*(deformation+massDiff*massDiff);
+    double massDiff=std::abs(sumV-sumVd)/sumV;
+    double retval=cost+lambda*(deformation+massDiff);
 	if (showOptimization)
 		std::cout << cost << " " << deformation << " " << lambda*deformation << " " << sumV << " " << sumVd << " " << massDiff << " " << retval << std::endl;
 	return retval;
@@ -263,7 +272,7 @@ double continuousSphCost(double *x, void *_prm)
 	if (prm->maxAngularChange>0 && (fabs(deltaRot)>prm->maxAngularChange || fabs(deltaTilt)>prm->maxAngularChange || fabs(deltaPsi)>prm->maxAngularChange))
 		return 1e38;
 
-	MAT_ELEM(prm->A,0,2)=prm->old_shiftX+deltax;
+	MAT_ELEM(prm->A,0,2)=prm->old_shiftX+deltax;  // ? No estamos corrigiendo el angulo?
 	MAT_ELEM(prm->A,1,2)=prm->old_shiftY+deltay;
 	MAT_ELEM(prm->A,0,0)=1;
 	MAT_ELEM(prm->A,0,1)=0;
@@ -291,7 +300,9 @@ void ProgAngularSphAlignment::processImage(const FileName &fnImg, const FileName
 	L = nh(2);
 	prevL = nh(1);
 	pos = 4*L;
-	p.resize(pos+5);
+	p.resize(pos+5,false);  // ? Hace falta copiar los coeficientes antiguos a la nueva imagen o 
+							// ? empezamos en cero? (Si se copia hace falta un metodo nuevo para copiar 
+							// ? el orden correcto)
 	Matrix1D<double> steps(pos+5);
 	clnm.initZeros(pos+5);
 
@@ -578,20 +589,25 @@ void ProgAngularSphAlignment::deformVol(MultidimArray<double> &mVD, const Multid
 				}
 				mVD(k,i,j) = mV.interpolatedElement3D(j+gx,i+gy,k+gz);
 				double voxelR=A3D_ELEM(mV,k,i,j);
-				double absVoxelR=std::abs(voxelR);
-				voxModg += absVoxelR*(gx*gx+gy*gy+gz*gz);
-				totalVal += absVoxelR;
+				// double absVoxelR=std::abs(voxelR);
+				// voxModg += absVoxelR*(gx*gx+gy*gy+gz*gz);
+				voxModg+=(gx*gx+gy*gy+gz*gz);
+				// totalVal += absVoxelR;
+				Ncount++;
 
 				double voxelI=A3D_ELEM(mVD,k,i,j);
 				double diff=voxelR-voxelI;
-				diff2+=absVoxelR*diff*diff;
-				sumVd+=voxelI;
+				// diff2+=absVoxelR*diff*diff;
+				diff2+=diff*diff;
+				// sumVd+=voxelI;
 			}
 		}
 	}
 
 	// COSS def=5e-3*sqrt(diff2/totalVal)+sqrt(voxModg/totalVal);
-	def=sqrt(voxModg/totalVal);
-	totalDeformation = sqrt(voxModg/totalVal);
+	// def=sqrt(voxModg/totalVal);
+	def=sqrt(voxModg/(3*Ncount));
+	// totalDeformation = sqrt(voxModg/totalVal);
+	totalDeformation=sqrt(voxModg/(3*Ncount));
 }
 

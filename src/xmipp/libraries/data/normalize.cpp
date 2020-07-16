@@ -249,6 +249,18 @@ void normalize_Robust(MultidimArray<double> &I, const MultidimArray<int> &bg_mas
     std::vector<double> voxel_vector;
     double maxI, minI;
     SPEED_UP_temps;
+
+    if (bg_mask.computeMax() == 0)
+    {
+        Image<double> mask;
+        mask() = I;
+        double th = EntropySegmentation(mask());
+        FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(mask())
+        {
+            if (DIRECT_MULTIDIM_ELEM(mask(), n) == 0)
+                DIRECT_MULTIDIM_ELEM(bg_mask,n) = 1;
+        }
+    }
     
     FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(bg_mask)
     {
@@ -258,25 +270,25 @@ void normalize_Robust(MultidimArray<double> &I, const MultidimArray<int> &bg_mas
 
     std::sort(voxel_vector.begin(), voxel_vector.end());
 
-	double medianBg, p95, ip95;
+	double medianBg, p99, ip99;
     int idx;
 	I.computeMedian_within_binary_mask(bg_mask, medianBg);
-	idx = voxel_vector.size() * 0.95;
-    p95 = voxel_vector[idx];
-	ip95 = 1 / p95;
+	idx = voxel_vector.size() * 0.99;
+    p99 = voxel_vector[idx];
+	ip99 = 1 / p99;
     FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(I)
-        DIRECT_MULTIDIM_ELEM(I,n)=(DIRECT_MULTIDIM_ELEM(I,n) - medianBg) * ip95;
+        DIRECT_MULTIDIM_ELEM(I,n)=(DIRECT_MULTIDIM_ELEM(I,n) - medianBg) * ip99;
 
     if (clip)
     {
         FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(I)
-            if (DIRECT_MULTIDIM_ELEM(I,n) > 1.8787)
+            if (DIRECT_MULTIDIM_ELEM(I,n) > 1.3284)
             {
-                DIRECT_MULTIDIM_ELEM(I,n) = 1.8787;
+                DIRECT_MULTIDIM_ELEM(I,n) = 1.3284;
             }
-            else if (DIRECT_MULTIDIM_ELEM(I,n) < -1.8787)
+            else if (DIRECT_MULTIDIM_ELEM(I,n) < -1.3284)
             {
-                DIRECT_MULTIDIM_ELEM(I,n) = -1.8787;
+                DIRECT_MULTIDIM_ELEM(I,n) = -1.3284;
             }           
     }
 }
