@@ -272,7 +272,7 @@ double continuousSphCost(double *x, void *_prm)
 	if (prm->maxAngularChange>0 && (fabs(deltaRot)>prm->maxAngularChange || fabs(deltaTilt)>prm->maxAngularChange || fabs(deltaPsi)>prm->maxAngularChange))
 		return 1e38;
 
-	MAT_ELEM(prm->A,0,2)=prm->old_shiftX+deltax;  // ? No estamos corrigiendo el angulo?
+	MAT_ELEM(prm->A,0,2)=prm->old_shiftX+deltax;
 	MAT_ELEM(prm->A,1,2)=prm->old_shiftY+deltay;
 	MAT_ELEM(prm->A,0,0)=1;
 	MAT_ELEM(prm->A,0,1)=0;
@@ -300,9 +300,7 @@ void ProgAngularSphAlignment::processImage(const FileName &fnImg, const FileName
 	L = nh(2);
 	prevL = nh(1);
 	pos = 4*L;
-	p.resize(pos+5,false);  // ? Hace falta copiar los coeficientes antiguos a la nueva imagen o 
-							// ? empezamos en cero? (Si se copia hace falta un metodo nuevo para copiar 
-							// ? el orden correcto)
+	p.resize(pos+5,false);
 	Matrix1D<double> steps(pos+5);
 	clnm.initZeros(pos+5);
 
