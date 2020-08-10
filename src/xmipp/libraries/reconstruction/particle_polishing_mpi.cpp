@@ -43,10 +43,10 @@ void ProgParticlePolishingMpi::defineParams()
     addParamsLine(" --s <samplingRate=1>: Sampling rate");
     addParamsLine(" --nFrames <nFrames>: Number of frames");
     addParamsLine(" --nMics <nMics>: Number of micrographs");
-    addParamsLine(" --filter <nFilter=1>: The number of filters to apply");
+    //addParamsLine(" --filter <nFilter=1>: The number of filters to apply");
     addParamsLine(" --movxdim <xmov> : Movie size in x dimension");
     addParamsLine(" --movydim <ymov> : Movie size in y dimension");
-    addParamsLine(" [--fixedBW]      : Fixed bandwith for the filters. If this flag does not appear, the bandwith will be lower in low frequencies");
+    //addParamsLine(" [--fixedBW]      : Fixed bandwith for the filters. If this flag does not appear, the bandwith will be lower in low frequencies");
 
 }
 
@@ -57,11 +57,11 @@ void ProgParticlePolishingMpi::readParams()
 	fnVol = getParam("-vol");
 	nFrames=getIntParam("--nFrames");
 	nMics=getIntParam("--nMics");
-	nFilters=getIntParam("--filter");
+	//nFilters=getIntParam("--filter");
 	samplingRate=getDoubleParam("--s");
 	xmov = getIntParam("--movxdim");
 	ymov = getIntParam("--movydim");
-    fixedBW  = checkParam("--fixedBW");
+    //fixedBW  = checkParam("--fixedBW");
 
 }
 
@@ -192,12 +192,12 @@ void ProgParticlePolishingMpi::similarity (const MultidimArray<double> &I, const
 	sumWII*=iND;
 	sumWIexpIexp*=iND;
 
-	//corrN=sumIIexp/sqrt(sumII*sumIexpIexp);
-	//corrM=sumMIIexp/sqrt(sumMII*sumMIexpIexp);
-	//corrW=sumWIIexp/sqrt(sumWII*sumWIexpIexp);
-	corrN=sumIIexp;
-	corrM=sumMIIexp;
-	corrW=sumWIIexp;
+	corrN=sumIIexp/sqrt(sumII*sumIexpIexp);
+	corrM=sumMIIexp/sqrt(sumMII*sumMIexpIexp);
+	corrW=sumWIIexp/sqrt(sumWII*sumWIexpIexp);
+	//corrN=sumIIexp;
+	//corrM=sumMIIexp;
+	//corrW=sumWIIexp;
 	if(std::isnan(corrN))
 		corrN=-1.0;
 	if(std::isnan(corrM))
@@ -207,6 +207,64 @@ void ProgParticlePolishingMpi::similarity (const MultidimArray<double> &I, const
 	imed=imedDistance(I, Iexp);
 
 }
+
+
+
+void ProgParticlePolishingMpi::averagingWindow(MultidimArray<double> &Iout, const std::vector<double> stks, FileName myfn,
+		bool applyAlign, const std::vector<double> shiftX, const std::vector<double> shiftY, int Xdim, int Ydim, int window){
+
+
+	FileName fnPart;
+	Image<double> Ipart;
+	double count=0.0;
+	if(window%2==1)
+		window+=1;
+	int w=window/2;
+	int posi;
+
+	Iout.initZeros(Ydim, Xdim);
+	Iout.setXmippOrigin();
+	for (int a=0; a<nFrames; a++){
+		int id = (int)stks[a];
+		fnPart.compose(id, myfn.removePrefixNumber());
+		std::string fn1 = fnPart.getString().c_str();
+		std::string fn2 = myfn.getString().c_str();
+		if (fn1.compare(fn2)==0){
+			posi=a;
+			break;
+		}
+	}
+
+	int limI, limS;
+	limI=posi-w;
+	limS=posi+w;
+	//if(limI<0){
+	//	limS+=(-limI);
+	//	limI=0;
+	//}
+	//if(limS>nFrames-1){
+	//	limI-=(limS-(nFrames-1));
+	//	limS=nFrames-1;
+	//}
+	for (int b=limI; b<=limS; b++){
+		if(b>=0 && b<nFrames){
+			int id = (int)stks[b];
+			fnPart.compose(id, myfn.removePrefixNumber());
+			Ipart.read(fnPart);
+			Ipart().setXmippOrigin();
+			if(applyAlign){
+				selfTranslate(NEAREST, Ipart(), vectorR2(shiftX[b], shiftY[b]), DONT_WRAP, 0.0);
+			}
+			Iout+=Ipart();
+			count+=1.0;
+		}
+	}
+	Iout/=count;
+
+}
+
+
+
 
 
 void ProgParticlePolishingMpi::averagingAll(MultidimArray<double> &Iout, const std::vector<double> stks, FileName myfn,
@@ -664,6 +722,19 @@ void ProgParticlePolishingMpi::startProcessing()
 }
 
 
+double expAdjusted_L1(double *x, void *data)
+{
+	double a=x[1];
+	double b=x[2];
+	double c=x[3];
+
+	double retval=0;
+	MultidimArray<double> *auxp = (MultidimArray<double> *) data;
+	MultidimArray<double> myData=*(auxp);
+	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(myData)
+		retval+=fabs(DIRECT_MULTIDIM_ELEM(myData,n)-(a*exp(-b*(n+1))+c));
+	return retval;
+}
 
 
 
@@ -926,20 +997,21 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		FilterLP.FilterBand=LOWPASS;
 		FilterLP.FilterShape=RAISED_COSINE;
 		double cutfreq;
-		double bandSize=0.5/(double)nFilters;
-		double frC[nFilters];
+		//double bandSize=0.5/(double)nFilters;
+		nFilters=15;
+		double frC[nFilters]={0.0078, 0.01, 0.0156, 0.0313, 0.05, 0.0625, 0.10, 0.1250, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45};
 
-		if(fixedBW){
-			for (int n=0; n<nFilters; n++)
-				frC[n]=(n+1)*bandSize;
-		}else{
-			for (int n=nFilters; n>0; n--){
-				if(n==nFilters)
-					frC[n-1]=0.5;
-				else
-					frC[n-1]=frC[n]/2;
-			}
-		}
+		//if(fixedBW){
+		//	for (int n=0; n<nFilters; n++)
+		//		frC[n]=(n+1)*bandSize;
+		//}else{
+		//	for (int n=nFilters; n>0; n--){
+		//		if(n==nFilters)
+		//			frC[n-1]=0.5;
+		//		else
+		//			frC[n-1]=frC[n]/2;
+		//	}
+		//}
 
 		//printf("FREQ: \n");
 		//for (int n=0; n<nFilters; n++)
@@ -966,6 +1038,7 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		for(int a; a<nFrames; a++){
 
 			//Reading the frame
+			double aux=0.;
 			int id = (int)stks[a];
 			fnPart.compose(id, fnImg.removePrefixNumber());
 			//Ipartaux.read(fnPart);
@@ -984,9 +1057,12 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 				ctf.applyCTF(projV(), samplingRate, false);
 
 				//averaging movie particle image with the ones in all the frames but without the current one (the first true), and applying the align to all of them (last true)
-				bool noCurrent=true;
+				//bool noCurrent=true;
+				//bool applyAlign=true;
+				//averagingAll(Iavg(), stks, fnPart, noCurrent, applyAlign, vectorX, vectorY, Xdim, Ydim);
+
 				bool applyAlign=true;
-				averagingAll(Iavg(), stks, fnPart, noCurrent, applyAlign, vectorX, vectorY, Xdim, Ydim);
+				averagingWindow(Iavg(), stks, fnPart, applyAlign, vectorX, vectorY, Xdim, Ydim, 4);
 
 				//filtering the projected particles with the lowpass filter
 				FilterLP.w1=frC[n]; //(n+1)*bandSize;
@@ -1006,11 +1082,39 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 				double corrN, corrM, corrW, imed;
 				similarity(projV(), Iavg(), corrN, corrM, corrW, imed); //with or without meanD (as last parameter) ¿?
 				DIRECT_A2D_ELEM(matrixWeightsPart, a, n) = corrN;
+				//aux += DIRECT_A2D_ELEM(matrixWeightsPart, a, n);
 
 			} //end frequencies loop
 
+			//To normalize the weights
+			MultidimArray<double> data;
+			data.initZeros(nFilters);
+			printf("Data to fit \n");
+			for(int n=0; n<nFilters; n++){
+				//DIRECT_A2D_ELEM(matrixWeightsPart, a, n) = (2*(aux/nFilters) - DIRECT_A2D_ELEM(matrixWeightsPart, a, n)); //aux;
+				DIRECT_A1D_ELEM(data, n) = DIRECT_A2D_ELEM(matrixWeightsPart, a, n);
+				printf("%lf ", DIRECT_A1D_ELEM(data, n));
+			}
+			printf("\n");
+
+			//Adjust to a negative exponential function
+		    Matrix1D<double> p(3), steps(3);
+		    p(0)=1; // a in a*exp(-b*x)+c
+		    p(1)=1; // b in a*exp(-b*x)+c
+		    p(2)=0; // c in a*exp(-b*x)+c
+		    steps.initConstant(1);
+		    double cost;
+		    int iter;
+			powellOptimizer(p, 1, 3, &expAdjusted_L1, &data, 0.001, cost, iter, steps, false);
+			double aa=p(0);
+			double bb=p(1);
+			double cc=p(2);
+			printf("Obtained params %lf, %lf, %lf with cost %lf and iters %d \n", aa, bb, cc, cost, iter);
+
+
 		} //end loop stks
 
+		/*
 		std::vector<double> vectorAux;
 		FOR_ALL_ELEMENTS_IN_ARRAY2D(matrixWeightsPart)
 			vectorAux.push_back(A2D_ELEM(matrixWeightsPart,i,j));
@@ -1064,7 +1168,9 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 			for(int nn=0; nn<nFilters; nn++)
 				vectorAux3.push_back(resultWeights(a,nn));
 		rowOut.setValue(MDL_POLISHING_FREQ_COEFFS_AFTER_SVD, vectorAux3);
+		*/
 
+		/*
 		//Writing the ouput
 		FileName fnTest;
 		Ifinal().initZeros(projV());
@@ -1093,6 +1199,7 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		//printf("Writing output in %s, %s", fnImgOut.getString().c_str(), myFnOut.getString().c_str());
 		Ifinal.write(fnImgOut);
 		printf("Particle %s finished \n", fnImgOut.getString().c_str());
+		*/
 
 	} //end if enabled
 

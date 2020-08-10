@@ -32,6 +32,7 @@
 #include <data/fourier_projection.h>
 #include <data/fourier_filter.h>
 #include <data/filters.h>
+#include <data/numerical_tools.h>
 
 
 class ProgParticlePolishingMpi: public XmippMetadataProgram
@@ -78,6 +79,8 @@ protected:
     void calculateCurve_2(const MultidimArray<double> &Iproj, MultidimArray<double> &vectorAvg, int nStep, double &slope, double &intercept, double Dmin, double Dmax);
     void writingOutput(size_t xdim, size_t ydim);
     void calculateWeightedFrequency(MultidimArray<double> &Ipart, int Nsteps, const double *frC, const std::vector<double> weights);
+    void averagingWindow(MultidimArray<double> &Iout, const std::vector<double> stks, FileName myfn,
+    		bool applyAlign, const std::vector<double> shiftX, const std::vector<double> shiftY, int Xdim, int Ydim, int window);
 
 };
 
