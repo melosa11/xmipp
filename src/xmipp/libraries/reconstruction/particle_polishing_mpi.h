@@ -81,6 +81,7 @@ protected:
     void calculateWeightedFrequency(MultidimArray<double> &Ipart, int Nsteps, const double *frC, const std::vector<double> weights);
     void averagingWindow(MultidimArray<double> &Iout, const std::vector<double> stks, FileName myfn,
     		bool applyAlign, const std::vector<double> shiftX, const std::vector<double> shiftY, int Xdim, int Ydim, int window);
+    void calculateWeightedFrequency2(MultidimArray<double> &Ipart, const double aa, const double bb, const double cc);
 
 };
 

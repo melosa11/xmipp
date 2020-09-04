@@ -515,6 +515,47 @@ void ProgParticlePolishingMpi::calculateWeightedFrequency(MultidimArray<double> 
 
 
 
+void ProgParticlePolishingMpi::calculateWeightedFrequency2(MultidimArray<double> &Ipart, const double aa, const double bb, const double cc){
+
+	MultidimArray< std::complex<double> > fftIpart;
+	MultidimArray<double> wfftIpart;
+	FourierTransformer transformer;
+	// Auxiliary vector for representing frequency values
+	Matrix1D<double> fidx;
+
+	transformer.FourierTransform(Ipart, fftIpart, false);
+
+    //MultidimArray<double> vMag;
+    //FFT_magnitude(fftIpart, vMag);
+	//Image<double> imageA;
+	//imageA()=vMag;
+    //imageA.write(formatString("amplitude1.tif"));
+
+	//wfftIpart.initZeros(fftIpart);
+	fidx.resizeNoCopy(3);
+    for (size_t k=0; k<ZSIZE(fftIpart); k++)
+    {
+        FFT_IDX2DIGFREQ(k,ZSIZE(Ipart),ZZ(fidx));
+        for (size_t i=0; i<YSIZE(fftIpart); i++)
+        {
+            FFT_IDX2DIGFREQ(i,YSIZE(Ipart),YY(fidx));
+            for (size_t j=0; j<XSIZE(fftIpart); j++)
+            {
+                FFT_IDX2DIGFREQ(j,XSIZE(Ipart),XX(fidx));
+                double absw = fidx.module();
+                DIRECT_A3D_ELEM(fftIpart,k,i,j)*= aa*exp(-bb*absw)+cc;
+            }
+        }
+    }
+	//Image<double> imageW;
+	//imageW()=wfftIpart;
+    //imageW.write(formatString("pesos.tif"));
+
+    transformer.inverseFourierTransform();
+
+}
+
+
 void ProgParticlePolishingMpi::startProcessing()
 {
 
@@ -634,7 +675,7 @@ void ProgParticlePolishingMpi::startProcessing()
 			aux.write(fnAux);
 
 			//filtering the projections with the ctf
-			//ctf.applyCTF(projV(), samplingRate, false);
+			ctf.applyCTF(projV(), samplingRate, false);
 
 			//to obtain the points of the curve (intensity in the projection) vs (counted electrons)
 			//the movie particles are averaged (all frames) to compare every pixel value
@@ -690,12 +731,6 @@ void ProgParticlePolishingMpi::startProcessing()
     outdata.close();
 
 
-	/*MPI_Bcast(mvIdsAux.data(),mvIdsAux.size(),MPI_INT,1,MPI_COMM_WORLD);
-	MPI_Bcast(slopes.data(),slopes.size(),MPI_DOUBLE,1,MPI_COMM_WORLD);
-	MPI_Bcast(intercepts.data(),intercepts.size(),MPI_DOUBLE,1,MPI_COMM_WORLD);*/
-
-
-
 	/*iterPart->init(mdPart);
 	for(int i=0; i<mdPartSize; i++){
 
@@ -727,12 +762,16 @@ double expAdjusted_L1(double *x, void *data)
 	double a=x[1];
 	double b=x[2];
 	double c=x[3];
+	double frC[15]={0.0078, 0.01, 0.0156, 0.0313, 0.05, 0.0625, 0.10, 0.1250, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45};
 
 	double retval=0;
 	MultidimArray<double> *auxp = (MultidimArray<double> *) data;
 	MultidimArray<double> myData=*(auxp);
-	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(myData)
-		retval+=fabs(DIRECT_MULTIDIM_ELEM(myData,n)-(a*exp(-b*(n+1))+c));
+	int count=0;
+	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(myData){
+		retval+=fabs(DIRECT_MULTIDIM_ELEM(myData,n)-(a*exp(-b*(frC[n]))+c));
+		count++;
+	}
 	return retval;
 }
 
@@ -829,7 +868,7 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		projVaux().setXmippOrigin();
 
 		//apply ctf to projection
-		//ctf.applyCTF(projVaux(), samplingRate, false);
+		ctf.applyCTF(projVaux(), samplingRate, false);
 
 		//DEBUG
 		//projVaux.write(formatString("myProjFiltered.mrc"));
@@ -874,8 +913,13 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 					projV().initZeros(projVaux());
 					projV().setXmippOrigin();
 
-					if (shiftX[jj]!=0 || shiftY[hh]!=0)
+					if (shiftX[jj]!=0 || shiftY[hh]!=0){
 						translate(LINEAR, projV(), projVaux(), vectorR2((double)shiftX[jj], (double)shiftY[hh]), DONT_WRAP, 0.0); //translation of projV to avoid interpolation problem moving the frame particle
+					}else{
+						FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(projVaux()){
+							DIRECT_MULTIDIM_ELEM(projV(),n) = DIRECT_MULTIDIM_ELEM(projVaux(),n);
+						}
+					}
 					double likelihood=0.;
 					double lambda, fact;
 					for(int n=0; n<YSIZE(Ipart()); n++){
@@ -1038,7 +1082,7 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		for(int a; a<nFrames; a++){
 
 			//Reading the frame
-			double aux=0.;
+			//double aux=0.;
 			int id = (int)stks[a];
 			fnPart.compose(id, fnImg.removePrefixNumber());
 			//Ipartaux.read(fnPart);
@@ -1086,18 +1130,39 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 
 			} //end frequencies loop
 
-			//To normalize the weights
-			MultidimArray<double> data;
+		} //end loop frames
+
+
+		std::vector<double> vectorAux;
+		FOR_ALL_ELEMENTS_IN_ARRAY2D(matrixWeightsPart)
+			vectorAux.push_back(A2D_ELEM(matrixWeightsPart,i,j));
+		rowOut.setValue(MDL_POLISHING_FREQ_COEFFS_BEFORE, vectorAux);
+
+		//To normalize the weights
+		//for(int nn=0; nn<nFilters; nn++){
+		//	double aux=0;
+		//	for(int mm=0; mm<nFrames; mm++)
+		//		aux += DIRECT_A2D_ELEM(matrixWeightsPart, mm, nn);
+		//	for(int mm=0; mm<nFrames; mm++)
+		//		DIRECT_A2D_ELEM(matrixWeightsPart, mm, nn) /= aux;
+		//}
+
+		std::vector<double> vectorAux2;
+		FOR_ALL_ELEMENTS_IN_ARRAY2D(matrixWeightsPart)
+			vectorAux2.push_back(A2D_ELEM(matrixWeightsPart,i,j));
+		rowOut.setValue(MDL_POLISHING_FREQ_COEFFS_AFTER_NORM, vectorAux2);
+
+		//Adjust to a negative exponential function
+		MultidimArray<double> data;
+		std::vector <double> aa,bb,cc;
+		printf("Data to fit \n");
+		for(int mm=0; mm<nFrames; mm++){
 			data.initZeros(nFilters);
-			printf("Data to fit \n");
-			for(int n=0; n<nFilters; n++){
-				//DIRECT_A2D_ELEM(matrixWeightsPart, a, n) = (2*(aux/nFilters) - DIRECT_A2D_ELEM(matrixWeightsPart, a, n)); //aux;
-				DIRECT_A1D_ELEM(data, n) = DIRECT_A2D_ELEM(matrixWeightsPart, a, n);
-				printf("%lf ", DIRECT_A1D_ELEM(data, n));
+			for(int nn=0; nn<nFilters; nn++){
+				DIRECT_A1D_ELEM(data, nn) = DIRECT_A2D_ELEM(matrixWeightsPart, mm, nn);
+				printf("%lf ", DIRECT_A1D_ELEM(data, nn));
 			}
 			printf("\n");
-
-			//Adjust to a negative exponential function
 		    Matrix1D<double> p(3), steps(3);
 		    p(0)=1; // a in a*exp(-b*x)+c
 		    p(1)=1; // b in a*exp(-b*x)+c
@@ -1106,13 +1171,41 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		    double cost;
 		    int iter;
 			powellOptimizer(p, 1, 3, &expAdjusted_L1, &data, 0.001, cost, iter, steps, false);
-			double aa=p(0);
-			double bb=p(1);
-			double cc=p(2);
-			printf("Obtained params %lf, %lf, %lf with cost %lf and iters %d \n", aa, bb, cc, cost, iter);
+			aa.push_back(p(0));
+			bb.push_back(p(1));
+			cc.push_back(p(2));
+			printf("Obtained params for frame %d: %lf, %lf, %lf with cost %lf and iters %d \n", mm, p(0), p(1), p(2), cost, iter);
+		}
 
+		std::vector<double> vectorAux3;
+		for(int a=0; a<nFrames; a++){
+			vectorAux3.push_back(aa[a]);
+			vectorAux3.push_back(bb[a]);
+			vectorAux3.push_back(cc[a]);
+		}
+		rowOut.setValue(MDL_POLISHING_FREQ_COEFFS_AFTER_SVD, vectorAux3);
 
-		} //end loop stks
+		//Writing the ouput
+		FileName fnTest;
+		Ifinal().initZeros(projV());
+		Ifinal().setXmippOrigin();
+		for(int a=0; a<nFrames; a++){
+
+			std::vector<double> myweights;
+			int id = (int)stks[a];
+			fnPart.compose(id, fnImg.removePrefixNumber());
+			Ipartaux.read(fnPart);
+			Ipartaux().setXmippOrigin();
+
+			selfTranslate(NEAREST, Ipartaux(), vectorR2(vectorX[a], vectorY[a]), DONT_WRAP, 0.0);
+
+			calculateWeightedFrequency2(Ipartaux(), aa[a], bb[a], cc[a]);
+			Ifinal()+=Ipartaux();
+
+		}
+
+		Ifinal.write(fnImgOut);
+		printf("Particle %s finished \n", fnImgOut.getString().c_str());
 
 		/*
 		std::vector<double> vectorAux;
