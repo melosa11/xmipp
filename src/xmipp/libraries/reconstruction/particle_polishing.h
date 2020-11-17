@@ -29,6 +29,8 @@
 #include <core/xmipp_program.h>
 #include <core/xmipp_image.h>
 #include <core/metadata.h>
+#include <core/transformations.h>
+#include <core/linear_system_helper.h>
 #include <data/fourier_projection.h>
 #include <data/fourier_filter.h>
 #include <data/filters.h>

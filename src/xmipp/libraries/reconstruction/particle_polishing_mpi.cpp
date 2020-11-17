@@ -28,7 +28,7 @@
 #include <iostream>
 #include <random>
 #include <iterator>
-#include <core/xmipp_fft.h>
+#include <fstream>
 
 
 void ProgParticlePolishingMpi::defineParams()
@@ -669,13 +669,13 @@ void ProgParticlePolishingMpi::startProcessing()
 			applyGeometry(LINEAR,projV(),PV(),A,IS_INV,DONT_WRAP,0.);
 			projV().setXmippOrigin();
 
-			FileName fnAux;
-			fnAux = fnPart.insertBeforeExtension("proj");
-			Image<double> aux=PV();
-			aux.write(fnAux);
-
 			//filtering the projections with the ctf
 			ctf.applyCTF(projV(), samplingRate, false);
+
+			FileName fnAux;
+			fnAux = fnPart.insertBeforeExtension("proj");
+			Image<double> aux=projV(); //AJ antes era PV()
+			aux.write(fnAux);
 
 			//to obtain the points of the curve (intensity in the projection) vs (counted electrons)
 			//the movie particles are averaged (all frames) to compare every pixel value
@@ -861,14 +861,19 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		//applyGeometry(LINEAR,projVaux(),PV(),A,IS_INV,DONT_WRAP,0.);
 		Image<double> projVread;
 		FileName fnAux2=fnAux.insertBeforeExtension("proj");
-		projVread.read(fnAux2);
+		projVaux.read(fnAux2);
+		projVaux().setXmippOrigin();
+
+		//AJ puede que esto ya no lo necesite si guardo en proj la proyeccion con el applyGeometry y ctf hechos
+		/*projVread.read(fnAux2);
 		projVread().setXmippOrigin();
 		projVaux().initZeros(Xdim, Ydim);
 		applyGeometry(LINEAR,projVaux(),projVread(),A,IS_INV,DONT_WRAP,0.);
 		projVaux().setXmippOrigin();
-
 		//apply ctf to projection
 		ctf.applyCTF(projVaux(), samplingRate, false);
+		*/
+
 
 		//DEBUG
 		//projVaux.write(formatString("myProjFiltered.mrc"));
@@ -1097,8 +1102,9 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 					val=DIRECT_MULTIDIM_ELEM(projVaux(),n);
 					DIRECT_MULTIDIM_ELEM(projV(),n) = (Dmax - val) * irange;
 				}
+				//AJ creo que no hace falta porque ya se la aplique antes
 				//filtering the projections with the ctf
-				ctf.applyCTF(projV(), samplingRate, false);
+				//ctf.applyCTF(projV(), samplingRate, false);
 
 				//averaging movie particle image with the ones in all the frames but without the current one (the first true), and applying the align to all of them (last true)
 				//bool noCurrent=true;
