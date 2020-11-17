@@ -26,15 +26,14 @@
 
 #include "ctf_estimate_from_micrograph.h"
 #include "ctf_enhance_psd.h"
-
-#include <core/args.h>
-#include <data/micrograph.h>
-#include <core/metadata.h>
-#include <core/xmipp_image.h>
-#include <core/xmipp_fft.h>
-#include <core/xmipp_threads.h>
-#include <data/basic_pca.h>
-#include <data/normalize.h>
+#include "core/xmipp_fftw.h"
+#include "core/metadata_extension.h"
+#include "core/transformations.h"
+#include "core/xmipp_threads.h"
+#include "core/xmipp_image_generic.h"
+#include "data/basic_pca.h"
+#include "data/normalize.h"
+#include "data/numerical_tools.h"
 
 /* Read parameters ========================================================= */
 ProgCTFEstimateFromMicrograph::ProgCTFEstimateFromMicrograph()
@@ -128,6 +127,7 @@ void ProgCTFEstimateFromMicrograph::defineParams()
     addParamsLine("  [--acceleration1D]          : Accelerate PSD estimation");
     ARMA_parameters::defineParams(this);
     ProgCTFEstimateFromPSD::defineBasicParams(this);
+    ProgCTFBasicParams::defineBasicParams(this);
     addExampleLine("Estimate PSD", false);
     addExampleLine("xmipp_ctf_estimate_from_micrograph --micrograph micrograph.mrc --dont_estimate_ctf");
     addExampleLine("Estimate a single CTF for the whole micrograph", false);
