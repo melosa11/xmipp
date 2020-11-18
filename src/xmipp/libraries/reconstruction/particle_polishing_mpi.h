@@ -76,6 +76,7 @@ protected:
     void startProcessing();
     //void preProcess();
     void processImage(const FileName &fnImg, const FileName &fnImgOut, const MDRow &rowIn, MDRow &rowOut);
+    void finishProcessing();
 
     void similarity (const MultidimArray<double> &I1, const MultidimArray<double> &I2, double &corrN, double &corrM, double &corrW, double &imed, const double &meanF);
     void averagingAll(MultidimArray<double> &Iout, const std::vector<double> stks, FileName myfn, bool noCurrent, bool applyAlign, const std::vector<double> shiftX, const std::vector<double> shiftY, int Xdim, int Ydim);

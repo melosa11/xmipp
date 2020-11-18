@@ -757,6 +757,35 @@ void ProgParticlePolishingMpi::startProcessing()
 }
 
 
+
+
+void ProgParticlePolishingMpi::finishProcessing()
+{
+
+	//TO ESTIMATE THE CURVE FOR EVERY MIC
+	MetaData mdPart;
+	MDRow currentRow;
+	mdPart.read(fn_in,NULL);
+	mdPartSize = mdPart.size();
+	MDIterator *iterPart = new MDIterator();
+	FileName fnPart, fnAux;
+
+	for(int i=0; i<mdPartSize; i++){
+
+		mdPart.getRow(currentRow, iterPart->objId);
+		currentRow.getValue(MDL_IMAGE,fnPart);
+		fnAux = fnPart.insertBeforeExtension("proj");
+		fnAux.deleteFile();
+
+		if(iterPart->hasNext())
+			iterPart->moveNext();
+
+	}
+
+}
+
+
+
 double expAdjusted_L1(double *x, void *data)
 {
 	double a=x[1];
@@ -1048,7 +1077,7 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		double cutfreq;
 		//double bandSize=0.5/(double)nFilters;
 		nFilters=15;
-		double frC[nFilters]={0.0078, 0.01, 0.0156, 0.0313, 0.05, 0.0625, 0.10, 0.1250, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45};
+		double frC[15]={0.0078, 0.01, 0.0156, 0.0313, 0.05, 0.0625, 0.10, 0.1250, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45};
 
 		//if(fixedBW){
 		//	for (int n=0; n<nFilters; n++)
