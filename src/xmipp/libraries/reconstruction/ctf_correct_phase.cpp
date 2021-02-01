@@ -47,8 +47,10 @@ void ProgCorrectPhaseFlip2D::processImage(const FileName &fnImg, const FileName 
 	rowOut = rowIn;
 	img.read(fnImg);
 	ctf.readFromMdRow(rowIn);
+        ctf.produceSideInfo();
 	img().setXmippOrigin();
 	ctf.correctPhase(img(),sampling_rate);
+        //std::cout << "CTF: " << ctf.DeltafU << " " << ctf.sigmaU << std::endl;
     img.write(fnImgOut);
     rowOut.setValue(MDL_IMAGE, fnImgOut);
 }

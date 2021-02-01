@@ -1554,6 +1554,7 @@ void CTFDescription::correctPhase(MultidimArray < std::complex<double> > &FFTI, 
         FFT_idx2digfreq(I, idx, freq);
         precomputeValues(XX(freq)*iTs, YY(freq)*iTs);
         double ctf = getValuePureAt();
+        //std::cout << "CTF: " << ctf << std::endl;
         if (ctf<0)
             A2D_ELEM(FFTI, i, j) *= -1;
     }

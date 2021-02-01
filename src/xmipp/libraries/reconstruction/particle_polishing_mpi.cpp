@@ -559,6 +559,12 @@ void ProgParticlePolishingMpi::calculateWeightedFrequency2(MultidimArray<double>
 void ProgParticlePolishingMpi::startProcessing()
 {
 
+	FileName fnMovieData("moviedata.txt");
+        if (fnMovieData.exists())
+            std::cout<< "Detected a previous estimation of movie params"<<std::endl;
+
+        //if (fnMovieData.exists()==false){
+
 	//TO ESTIMATE THE CURVE FOR EVERY MIC
 	MetaData mdPartPrev, mdPart, mdOut;
 	MDRow currentRow, outRow;
@@ -679,6 +685,9 @@ void ProgParticlePolishingMpi::startProcessing()
 
 			//to obtain the points of the curve (intensity in the projection) vs (counted electrons)
 			//the movie particles are averaged (all frames) to compare every pixel value
+
+                        //if (fnMovieData.exists()==false){
+
 			bool noCurrent=false;
 			bool applyAlign=false;
 			std::vector<double> vectorX, vectorY;
@@ -704,8 +713,11 @@ void ProgParticlePolishingMpi::startProcessing()
 			if(iterPart->hasNext())
 				iterPart->moveNext();
 
+                        //} //fin fnMovieData.exists()==false
+
 		}//end particles loop
 
+                //if (fnMovieData.exists()==false){
 
 		if(dataInMovie>0){
 			calculateCurve_2(projV(), vectorAvg, nStep, slope, intercept, Dmin, Dmax);
@@ -717,8 +729,12 @@ void ProgParticlePolishingMpi::startProcessing()
 
 		}
 
+                //}// end if (fnMovieData.exists()==false){
+
 
 	}//end loop mics
+
+        //if (fnMovieData.exists()==false){
 
 	std::ofstream outdata;
 	outdata.open("moviedata.txt"); // opens the file
@@ -729,6 +745,9 @@ void ProgParticlePolishingMpi::startProcessing()
     for (int a=0; a<mvIdsAux.size(); a++)
     	outdata << mvIdsAux[a] << " " << slopes[a] << " " << intercepts[a] << std::endl;
     outdata.close();
+
+        //} //end if (fnMovieData.exists()==false){
+
 
 
 	/*iterPart->init(mdPart);
@@ -762,7 +781,10 @@ void ProgParticlePolishingMpi::startProcessing()
 void ProgParticlePolishingMpi::finishProcessing()
 {
 
-	//TO ESTIMATE THE CURVE FOR EVERY MIC
+        std::cout << "Finish processing" << std::endl;
+        XmippMetadataProgram::finishProcessing();
+
+/*
 	MetaData mdPart;
 	MDRow currentRow;
 	mdPart.read(fn_in,NULL);
@@ -770,17 +792,18 @@ void ProgParticlePolishingMpi::finishProcessing()
 	MDIterator *iterPart = new MDIterator();
 	FileName fnPart, fnAux;
 
-	for(int i=0; i<mdPartSize; i++){
 
+        iterPart->init(mdPart);
+	for(int i=0; i<mdPartSize; i++){
 		mdPart.getRow(currentRow, iterPart->objId);
 		currentRow.getValue(MDL_IMAGE,fnPart);
 		fnAux = fnPart.insertBeforeExtension("proj");
 		fnAux.deleteFile();
-
 		if(iterPart->hasNext())
 			iterPart->moveNext();
 
 	}
+*/
 
 }
 
@@ -852,6 +875,8 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 	int estX;
 	int estY;
 
+	rowOut = rowIn;
+
 	rowIn.getValue(MDL_PARTICLE_ID,partId);
 	rowIn.getValue(MDL_MICROGRAPH_ID,mvId);
 	rowIn.getValue(MDL_FRAME_ID,frId);
@@ -865,7 +890,7 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 	if(enabled==1){
 
 		rowIn.getValue(MDL_IMAGE,fnAux);
-		rowIn.getValue(MDL_ANGLE_ROT,rot);
+         	rowIn.getValue(MDL_ANGLE_ROT,rot);
 		rowIn.getValue(MDL_ANGLE_TILT,tilt);
 		rowIn.getValue(MDL_ANGLE_PSI,psi);
 		rowIn.getValue(MDL_SHIFT_X,xValue);
@@ -890,6 +915,7 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		//applyGeometry(LINEAR,projVaux(),PV(),A,IS_INV,DONT_WRAP,0.);
 		Image<double> projVread;
 		FileName fnAux2=fnAux.insertBeforeExtension("proj");
+
 		projVaux.read(fnAux2);
 		projVaux().setXmippOrigin();
 
@@ -908,13 +934,6 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		//projVaux.write(formatString("myProjFiltered.mrc"));
 		//END DEBUG
 
-		//for (int hh=0; hh<mvIdsAux.size(); hh++){
-		//	if(mvIdsAux[hh]==mvId){
-		//		slope=slopes[hh];
-		//		intercept=intercepts[hh];
-		//		break;
-		//	}
-		//}
 
 		std::ifstream infile("moviedata.txt");
 		int m;
@@ -928,6 +947,7 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		infile.close();
 
 		//std::cerr << " FOR Movie ID: " << mvId << ". Working with Slope: " << slope << ". Intercept: " << intercept << std::endl;
+
 
 		for (int a=0; a<nFrames; a++){
 
@@ -993,7 +1013,8 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 
 			//printf(". BEST POS for particle %d. Shift %lf, %lf \n", a, finalPosX[a], finalPosY[a]);
 
-		} // end loop stks
+		} // end loop frames
+
 
 
 		PseudoInverseHelper pseudoInverter;
@@ -1042,10 +1063,12 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		rowOut.setValue(MDL_POLISHING_X, vectorX);
 		rowOut.setValue(MDL_POLISHING_Y, vectorY);
 
+
+
 		//Writing intermediate output - remove in some moment
 		//writingOutput(XSIZE(Ipart()), YSIZE(Ipart()));
 		//Writing the ouput
-		Ifinal().initZeros(projV());
+		Ifinal().initZeros(projVaux());
 		Ifinal().setXmippOrigin();
 		for(int a=0; a<nFrames; a++){
 
@@ -1112,6 +1135,7 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		double Dmin, Dmax, irange, val;
 		projVaux().computeDoubleMinMax(Dmin, Dmax);
 		irange=1.0/(Dmax - Dmin);
+
 
 		for(int a; a<nFrames; a++){
 
@@ -1187,17 +1211,19 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 			vectorAux2.push_back(A2D_ELEM(matrixWeightsPart,i,j));
 		rowOut.setValue(MDL_POLISHING_FREQ_COEFFS_AFTER_NORM, vectorAux2);
 
+
 		//Adjust to a negative exponential function
 		MultidimArray<double> data;
 		std::vector <double> aa,bb,cc;
-		printf("Data to fit \n");
+
+		//printf("Data to fit \n");
 		for(int mm=0; mm<nFrames; mm++){
 			data.initZeros(nFilters);
 			for(int nn=0; nn<nFilters; nn++){
 				DIRECT_A1D_ELEM(data, nn) = DIRECT_A2D_ELEM(matrixWeightsPart, mm, nn);
-				printf("%lf ", DIRECT_A1D_ELEM(data, nn));
+				//printf("%lf ", DIRECT_A1D_ELEM(data, nn));
 			}
-			printf("\n");
+			//printf("\n");
 		    Matrix1D<double> p(3), steps(3);
 		    p(0)=1; // a in a*exp(-b*x)+c
 		    p(1)=1; // b in a*exp(-b*x)+c
@@ -1209,7 +1235,7 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 			aa.push_back(p(0));
 			bb.push_back(p(1));
 			cc.push_back(p(2));
-			printf("Obtained params for frame %d: %lf, %lf, %lf with cost %lf and iters %d \n", mm, p(0), p(1), p(2), cost, iter);
+			//printf("Obtained params for frame %d: %lf, %lf, %lf with cost %lf and iters %d \n", mm, p(0), p(1), p(2), cost, iter);
 		}
 
 		std::vector<double> vectorAux3;
@@ -1220,13 +1246,13 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		}
 		rowOut.setValue(MDL_POLISHING_FREQ_COEFFS_AFTER_SVD, vectorAux3);
 
+
+
 		//Writing the ouput
-		FileName fnTest;
-		Ifinal().initZeros(projV());
+		Ifinal().initZeros(projVaux());
 		Ifinal().setXmippOrigin();
 		for(int a=0; a<nFrames; a++){
 
-			std::vector<double> myweights;
 			int id = (int)stks[a];
 			fnPart.compose(id, fnImg.removePrefixNumber());
 			Ipartaux.read(fnPart);
@@ -1239,95 +1265,10 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 
 		}
 
+                rowOut.setValue(MDL_IMAGE, fnImgOut);
 		Ifinal.write(fnImgOut);
 		printf("Particle %s finished \n", fnImgOut.getString().c_str());
 
-		/*
-		std::vector<double> vectorAux;
-		FOR_ALL_ELEMENTS_IN_ARRAY2D(matrixWeightsPart)
-			vectorAux.push_back(A2D_ELEM(matrixWeightsPart,i,j));
-		rowOut.setValue(MDL_POLISHING_FREQ_COEFFS_BEFORE, vectorAux);
-
-		//to normalize the weights
-		for(int n=0; n<nFilters; n++){
-			double aux=0, aux2=0;
-			for(int mm=0; mm<nFrames; mm++){
-				aux += DIRECT_A2D_ELEM(matrixWeightsPart, mm, n);
-			}
-			for(int mm=0; mm<nFrames; mm++){
-				DIRECT_A2D_ELEM(matrixWeightsPart, mm, n) = (2*(aux/nFrames) - DIRECT_A2D_ELEM(matrixWeightsPart, mm, n)); //aux;
-				if (DIRECT_A2D_ELEM(matrixWeightsPart, mm, n)<0)
-					DIRECT_A2D_ELEM(matrixWeightsPart, mm, n)=0.;
-				aux2 += DIRECT_A2D_ELEM(matrixWeightsPart, mm, n);
-			}
-			for(int mm=0; mm<nFrames; mm++){
-				if (aux2!=0)
-					DIRECT_A2D_ELEM(matrixWeightsPart, mm, n) /= aux2;
-				else
-					DIRECT_A2D_ELEM(matrixWeightsPart, mm, n) = 0.;
-			}
-		}
-
-		std::vector<double> vectorAux2;
-		FOR_ALL_ELEMENTS_IN_ARRAY2D(matrixWeightsPart)
-			vectorAux2.push_back(A2D_ELEM(matrixWeightsPart,i,j));
-		rowOut.setValue(MDL_POLISHING_FREQ_COEFFS_AFTER_NORM, vectorAux2);
-
-		Matrix2D<double> matrixWeightsMat;
-		matrixWeightsPart.copy(matrixWeightsMat);
-		Matrix2D<double> U,V;
-		Matrix1D<double> S;
-		svdcmp(matrixWeightsMat,U,S,V);
-		Matrix2D<double> Smat;
-		Smat.initZeros(S.size(),S.size());
-		for (int h=0; h<S.size(); h++){
-			if (h<2)
-				Smat(h,h)=S(h);
-		}
-		Matrix2D<double> result1;
-		Matrix2D<double> resultWeights;
-		matrixOperation_AB(U, Smat, result1);
-		matrixOperation_ABt(result1, V, resultWeights);
-		//std::cerr << "For particle " << fnImg << std::endl;
-		//std::cerr << "- SVD recons: " << resultWeights << std::endl;
-
-		std::vector<double> vectorAux3;
-		for(int a=0; a<nFrames; a++)
-			for(int nn=0; nn<nFilters; nn++)
-				vectorAux3.push_back(resultWeights(a,nn));
-		rowOut.setValue(MDL_POLISHING_FREQ_COEFFS_AFTER_SVD, vectorAux3);
-		*/
-
-		/*
-		//Writing the ouput
-		FileName fnTest;
-		Ifinal().initZeros(projV());
-		Ifinal().setXmippOrigin();
-		for(int a=0; a<nFrames; a++){
-
-			std::vector<double> myweights;
-			int id = (int)stks[a];
-			fnPart.compose(id, fnImg.removePrefixNumber());
-			Ipartaux.read(fnPart);
-			Ipartaux().setXmippOrigin();
-
-			selfTranslate(NEAREST, Ipartaux(), vectorR2(vectorX[a], vectorY[a]), DONT_WRAP, 0.0);
-
-			for(int nn=0; nn<nFilters; nn++)
-				myweights.push_back(resultWeights(a, nn));
-
-			calculateWeightedFrequency(Ipartaux(), nFilters, frC, myweights);
-			Ifinal()+=Ipartaux();
-
-		}
-
-		//FileName myFnOut = (String)fnImgOut.getString();
-		//myFnOut = myFnOut.removeAllExtensions();
-		//myFnOut = myFnOut.addExtension("stk");
-		//printf("Writing output in %s, %s", fnImgOut.getString().c_str(), myFnOut.getString().c_str());
-		Ifinal.write(fnImgOut);
-		printf("Particle %s finished \n", fnImgOut.getString().c_str());
-		*/
 
 	} //end if enabled
 
