@@ -543,7 +543,7 @@ void ProgParticlePolishingMpi::calculateWeightedFrequency2(MultidimArray<double>
             {
                 FFT_IDX2DIGFREQ(j,XSIZE(Ipart),XX(fidx));
                 double absw = fidx.module();
-                DIRECT_A3D_ELEM(fftIpart,k,i,j)*= aa*exp(-bb*absw)+cc;
+                DIRECT_A3D_ELEM(fftIpart,k,i,j)*=(aa*exp(-bb*absw)+cc);
             }
         }
     }
@@ -554,6 +554,56 @@ void ProgParticlePolishingMpi::calculateWeightedFrequency2(MultidimArray<double>
     transformer.inverseFourierTransform();
 
 }
+
+
+
+
+void ProgParticlePolishingMpi::calculateWeightedFrequency3(MultidimArray<double> &Ipart, const std::vector<double> aa,
+		const std::vector<double> bb, const std::vector<double> cc, const int nFrames, const int posi){
+
+	MultidimArray< std::complex<double> > fftIpart;
+	MultidimArray<double> wfftIpart;
+	FourierTransformer transformer;
+	// Auxiliary vector for representing frequency values
+	Matrix1D<double> fidx;
+
+	transformer.FourierTransform(Ipart, fftIpart, false);
+
+    //MultidimArray<double> vMag;
+    //FFT_magnitude(fftIpart, vMag);
+	//Image<double> imageA;
+	//imageA()=vMag;
+    //imageA.write(formatString("amplitude1.tif"));
+
+	//wfftIpart.initZeros(fftIpart);
+	fidx.resizeNoCopy(3);
+    for (size_t k=0; k<ZSIZE(fftIpart); k++)
+    {
+        FFT_IDX2DIGFREQ(k,ZSIZE(Ipart),ZZ(fidx));
+        for (size_t i=0; i<YSIZE(fftIpart); i++)
+        {
+            FFT_IDX2DIGFREQ(i,YSIZE(Ipart),YY(fidx));
+            for (size_t j=0; j<XSIZE(fftIpart); j++)
+            {
+                FFT_IDX2DIGFREQ(j,XSIZE(Ipart),XX(fidx));
+                double absw = fidx.module();
+                double myw=0;
+                for (int nn=0; nn<nFrames; nn++){
+                	myw+=aa[nn]*exp(-bb[nn]*absw)+cc[nn];
+                }
+                DIRECT_A3D_ELEM(fftIpart,k,i,j)=DIRECT_A3D_ELEM(fftIpart,k,i,j)*(aa[posi]*exp(-bb[posi]*absw)+cc[posi])/myw;
+                std::cout << "My w: " << (aa[posi]*exp(-bb[posi]*absw)+cc[posi])/myw << std::endl;
+            }
+        }
+    }
+	//Image<double> imageW;
+	//imageW()=wfftIpart;
+    //imageW.write(formatString("pesos.tif"));
+
+    transformer.inverseFourierTransform();
+
+}
+
 
 
 void ProgParticlePolishingMpi::startProcessing()
@@ -603,6 +653,7 @@ void ProgParticlePolishingMpi::startProcessing()
 	CTFDescription ctf;
 	size_t objId;
 	int Xdim, Ydim;
+	size_t newId=0;
 
 
 	//PROJECT THE INPUT VOLUME
@@ -611,6 +662,7 @@ void ProgParticlePolishingMpi::startProcessing()
 	int xdimVol = (int)XSIZE(V());
 	int ydimVol = (int)YSIZE(V());
 	projectorV = new FourierProjector(V(),2,0.5,BSPLINE3);
+
 
 	for(int m=1; m<=nMics; m++){
 
@@ -679,9 +731,19 @@ void ProgParticlePolishingMpi::startProcessing()
 			ctf.applyCTF(projV(), samplingRate, false);
 
 			FileName fnAux;
-			fnAux = fnPart.insertBeforeExtension("proj");
+			newId++;
+			fnAux.compose(newId, fnPart.removePrefixNumber());
+			//fnAux = fnPart.insertBeforeExtension("proj"); ANTES
 			Image<double> aux=projV(); //AJ antes era PV()
 			aux.write(fnAux);
+		    std::ofstream outproj;
+		    outproj.open(fnPart.getString().c_str()); // opens the file
+		    if( !outproj ) { // file couldn't be opened
+		 	   std::cerr << "Error: file could not be opened" << std::endl;
+		 	   exit(1);
+		    }
+			outproj << fnAux.getString().c_str() << std::endl;
+			outproj.close();
 
 			//to obtain the points of the curve (intensity in the projection) vs (counted electrons)
 			//the movie particles are averaged (all frames) to compare every pixel value
@@ -719,15 +781,17 @@ void ProgParticlePolishingMpi::startProcessing()
 
                 //if (fnMovieData.exists()==false){
 
-		if(dataInMovie>0){
-			calculateCurve_2(projV(), vectorAvg, nStep, slope, intercept, Dmin, Dmax);
-			//Vectors to store some results
-			slopes.push_back(slope);
-			intercepts.push_back(intercept);
-			mvIdsAux.push_back(m);
-			std::cerr << "Estimated curve for movie " << m << ". Slope: " << slope << ". Intercept: " << intercept << std::endl;
+			if(dataInMovie>0){
+				calculateCurve_2(projV(), vectorAvg, nStep, slope, intercept, Dmin, Dmax);
+				//Vectors to store some results
+				slopes.push_back(slope);
+				intercepts.push_back(intercept);
+				mvIdsAux.push_back(m);
+				std::cerr << "Estimated curve for movie " << m << ". Slope: " << slope << ". Intercept: " << intercept << std::endl;
 
-		}
+			}
+
+        //}// end if (fnMovieData.exists()==false){
 
                 //}// end if (fnMovieData.exists()==false){
 
@@ -777,7 +841,7 @@ void ProgParticlePolishingMpi::startProcessing()
 
 
 
-
+/*
 void ProgParticlePolishingMpi::finishProcessing()
 {
 
@@ -792,7 +856,6 @@ void ProgParticlePolishingMpi::finishProcessing()
 	MDIterator *iterPart = new MDIterator();
 	FileName fnPart, fnAux;
 
-
         iterPart->init(mdPart);
 	for(int i=0; i<mdPartSize; i++){
 		mdPart.getRow(currentRow, iterPart->objId);
@@ -805,7 +868,9 @@ void ProgParticlePolishingMpi::finishProcessing()
 	}
 */
 
+
 }
+*/
 
 
 
@@ -897,8 +962,8 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		rowIn.getValue(MDL_SHIFT_Y,yValue);
 		rowIn.getValue(MDL_FLIP,flip);
 		rowIn.getValue(MDL_DM3_VALUE,stks);
-		ctf.readFromMdRow(rowIn);
-		ctf.produceSideInfo();
+		//ctf.readFromMdRow(rowIn);
+		//ctf.produceSideInfo();
 
 		A.initIdentity(3);
 		MAT_ELEM(A,0,2)=xValue;
@@ -915,7 +980,6 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		//applyGeometry(LINEAR,projVaux(),PV(),A,IS_INV,DONT_WRAP,0.);
 		Image<double> projVread;
 		FileName fnAux2=fnAux.insertBeforeExtension("proj");
-
 		projVaux.read(fnAux2);
 		projVaux().setXmippOrigin();
 
@@ -1246,10 +1310,8 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		}
 		rowOut.setValue(MDL_POLISHING_FREQ_COEFFS_AFTER_SVD, vectorAux3);
 
-
-
 		//Writing the ouput
-		Ifinal().initZeros(projVaux());
+		Ifinal().initZeros(projV());
 		Ifinal().setXmippOrigin();
 		for(int a=0; a<nFrames; a++){
 
@@ -1260,17 +1322,16 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 
 			selfTranslate(NEAREST, Ipartaux(), vectorR2(vectorX[a], vectorY[a]), DONT_WRAP, 0.0);
 
-			calculateWeightedFrequency2(Ipartaux(), aa[a], bb[a], cc[a]);
+			//calculateWeightedFrequency2(Ipartaux(), aa[a], bb[a], cc[a]);
+			calculateWeightedFrequency3(Ipartaux(), aa, bb, cc, nFrames, a);
 			Ifinal()+=Ipartaux();
 
 		}
 
-                rowOut.setValue(MDL_IMAGE, fnImgOut);
+		rowOut.setValue(MDL_IMAGE, fnImgOut);
 		Ifinal.write(fnImgOut);
 		printf("Particle %s finished \n", fnImgOut.getString().c_str());
 
-
-	} //end if enabled
 
 }
 
