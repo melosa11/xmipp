@@ -848,7 +848,6 @@ void ProgParticlePolishingMpi::finishProcessing()
         std::cout << "Finish processing" << std::endl;
         XmippMetadataProgram::finishProcessing();
 
-/*
 	MetaData mdPart;
 	MDRow currentRow;
 	mdPart.read(fn_in,NULL);
@@ -866,8 +865,6 @@ void ProgParticlePolishingMpi::finishProcessing()
 			iterPart->moveNext();
 
 	}
-*/
-
 
 }
 */
@@ -1331,6 +1328,8 @@ void ProgParticlePolishingMpi::processImage(const FileName &fnImg, const FileNam
 		rowOut.setValue(MDL_IMAGE, fnImgOut);
 		Ifinal.write(fnImgOut);
 		printf("Particle %s finished \n", fnImgOut.getString().c_str());
+
+	} //end if enabled
 
 
 }
