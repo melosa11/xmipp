@@ -30,6 +30,7 @@
 void ProgResTomoRad::readParams()
 {
 	fnVol = getParam("--vol");
+	fnMask = getParam("-mask");
 	fnOut = getParam("-o");
 	aroundcenter = checkParam("--aroundCenter");
 	thr = getDoubleParam("--thr");
@@ -41,7 +42,8 @@ void ProgResTomoRad::defineParams()
 	addUsageLine("This function determines the local resolution of a map");
 	addParamsLine("  --vol <vol_file=\"\">                   : Input volume");
 	addParamsLine("  -o <output=\"MGresolution.vol\">        : Local resolution volume (in Angstroms)");
-	addParamsLine("  [--aroundCenter] 					     : Radial average around the center, if this flag is not set, then the radial average is computer around the axis");
+	addParamsLine("	 -mask <mask = ''>					 	 : Mask of regions of interest where resolution values must be considered");
+	addParamsLine("  [--aroundCenter] 					     : Radial average around the center. If this flag is not set, then the radial average is computer around the axis");
 	addParamsLine("  [--thr <thr=0.75>]                		 : Threshold (A/px)");
 }
 
@@ -79,6 +81,16 @@ void ProgResTomoRad::produceSideInfo()
 	radAvg.initZeros();
 	counter.initZeros();
 
+
+	Image<int> I;
+	MultidimArray<int> maskMap;
+
+	if(!fnMask.isEmpty())
+	{
+		I.read(fnMask);
+		MultidimArray<int> &maskMap=I();
+	}
+
 	if (aroundcenter)
 	{
 		FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
@@ -88,9 +100,22 @@ void ProgResTomoRad::produceSideInfo()
 
 			if ((res<=thresholdResolution) && (radius<xdim))
 			{
-				//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
-				DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
-				DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
+				if(fnMask.isEmpty())
+				{
+					//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
+					DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
+					DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
+				}
+				else
+				{
+					if(A3D_ELEM(maskMap, k, i, j) != 0)
+					{
+						//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
+						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
+						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
+					}
+
+				}
 			}
 		}
 
@@ -104,9 +129,22 @@ void ProgResTomoRad::produceSideInfo()
 
 			if ((res<=thresholdResolution) && (radius<xdim))
 			{
-				//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
-				DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
-				DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
+				if(fnMask.isEmpty())
+				{
+					//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
+					DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
+					DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
+				}
+				else
+				{
+					if(A3D_ELEM(maskMap, k, i, j) != 0)
+					{
+						//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
+						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
+						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
+					}
+
+				}
 			}
 		}
 	}

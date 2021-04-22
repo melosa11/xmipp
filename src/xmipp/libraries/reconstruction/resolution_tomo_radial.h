@@ -53,7 +53,7 @@ class ProgResTomoRad : public XmippProgram
 {
 public:
 	 /** Filenames */
-	FileName fnOut, fnVol;
+	FileName fnOut, fnVol, fnMask;
 
 	/** sampling rate, minimum resolution, and maximum resolution */
 	double thr;
