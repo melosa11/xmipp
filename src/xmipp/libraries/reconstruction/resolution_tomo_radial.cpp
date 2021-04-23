@@ -42,7 +42,7 @@ void ProgResTomoRad::defineParams()
 	addUsageLine("This function determines the local resolution of a map");
 	addParamsLine("  --vol <vol_file=\"\">                   : Input volume");
 	addParamsLine("  -o <output=\"MGresolution.vol\">        : Local resolution volume (in Angstroms)");
-	addParamsLine("	 -mask <mask = ''>					 	 : Mask of regions of interest where resolution values must be considered");
+	addParamsLine("	 [-mask] 				 				 : Mask of regions of interest where resolution values must be considered");
 	addParamsLine("  [--aroundCenter] 					     : Radial average around the center. If this flag is not set, then the radial average is computer around the axis");
 	addParamsLine("  [--thr <thr=0.75>]                		 : Threshold (A/px)");
 }
