@@ -90,6 +90,14 @@ void ProgResTomoRad::produceSideInfo()
 		MultidimArray<float> &maskMap=I();
 	}
 
+	size_t xdimM, ydimM, zdimM, ndimM;
+	locresmap.getDimensions(xdimM, ydimM, zdimM, ndimM);
+
+	std::count << xdimM << std::endl;
+	std::count << ydimM << std::endl;
+	std::count << zdimM << std::endl;
+	std::count << ndimM << std::endl;
+
 	if (aroundcenter)
 	{
 		FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
