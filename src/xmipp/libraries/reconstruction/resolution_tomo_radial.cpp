@@ -93,10 +93,10 @@ void ProgResTomoRad::produceSideInfo()
 	size_t xdimM, ydimM, zdimM, ndimM;
 	locresmap.getDimensions(xdimM, ydimM, zdimM, ndimM);
 
-	std::count << xdimM << std::endl;
-	std::count << ydimM << std::endl;
-	std::count << zdimM << std::endl;
-	std::count << ndimM << std::endl;
+	std::cout << xdimM << std::endl;
+	std::cout << ydimM << std::endl;
+	std::cout << zdimM << std::endl;
+	std::cout << ndimM << std::endl;
 
 	if (aroundcenter)
 	{
