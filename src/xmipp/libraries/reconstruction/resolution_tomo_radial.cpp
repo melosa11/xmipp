@@ -35,11 +35,6 @@ void ProgResTomoRad::readParams()
 	thr = getDoubleParam("--thr");
 
 	mask = checkParam("-mask");
-
-	if(mask)
-	{
-		fnMask = getParam("-mask");
-	}
 }
 
 
@@ -93,9 +88,11 @@ void ProgResTomoRad::produceSideInfo()
 	radAvg.initZeros();
 	counter.initZeros();
 
-	MultidimArray<int> maskMap
+	MultidimArray<int> maskMap;
 
 	if(mask){
+		fnMask = getParam("-mask");
+
 		Image<int> I;
 		I.read(fnMask);
 		MultidimArray<int> &maskMap=I();
