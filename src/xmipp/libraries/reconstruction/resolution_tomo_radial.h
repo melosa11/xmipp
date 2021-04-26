@@ -58,7 +58,7 @@ public:
 	/** sampling rate, minimum resolution, and maximum resolution */
 	double thr;
 
-	bool aroundcenter;
+	bool aroundcenter, mask;
 
 public:
 
