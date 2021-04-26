@@ -93,6 +93,8 @@ void ProgResTomoRad::produceSideInfo()
 	radAvg.initZeros();
 	counter.initZeros();
 
+	MultidimArray<int> maskMap
+
 	if(mask){
 		Image<int> I;
 		I.read(fnMask);
@@ -129,7 +131,7 @@ void ProgResTomoRad::produceSideInfo()
 			int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
 
 			// std::cout << "This is millestone 3" << std::endl;
-						
+
 			// std::cout << "This is millestone 4" << std::endl;
 			// std::cout << maskValue << std::endl;
 
