@@ -73,6 +73,12 @@ void ProgResTomoRad::produceSideInfo()
 	size_t xdim, ydim, zdim, ndim;
 	locresmap.getDimensions(xdim, ydim, zdim, ndim);
 
+	std::cout << "Resmap dimensions:" << std::endl;
+	std::cout << xdim << std::endl;
+	std::cout << ydim << std::endl;
+	std::cout << zdim << std::endl;
+	std::cout << ndim << std::endl;
+
 	xdim = xdim/2;	
 	ydim = ydim/2;
 	zdim = zdim/2;
@@ -93,6 +99,13 @@ void ProgResTomoRad::produceSideInfo()
 	size_t xdimM, ydimM, zdimM, ndimM;
 	locresmap.getDimensions(xdimM, ydimM, zdimM, ndimM);
 
+	std::cout << "Resmap dimensions:" << std::endl;
+	std::cout << xdimM << std::endl;
+	std::cout << ydimM << std::endl;
+	std::cout << zdimM << std::endl;
+	std::cout << ndimM << std::endl;
+
+	std::cout << "Mask dimensions:" << std::endl;
 	std::cout << xdimM << std::endl;
 	std::cout << ydimM << std::endl;
 	std::cout << zdimM << std::endl;
@@ -100,13 +113,17 @@ void ProgResTomoRad::produceSideInfo()
 
 	if (aroundcenter)
 	{
+		std::cout << "This is millestone 1" << std::endl;
+
 		FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
 		{
+			std::cout << "This is millestone 2" << std::endl;
+
 			double res = A3D_ELEM(locresmap, k, i, j);
 			int maskValue = A3D_ELEM(maskMap, k, i, j); 
 			int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
 
-			std::cout << "This is millestone 1" << std::endl;
+			std::cout << "This is millestone 3" << std::endl;
 			std::cout << maskValue << std::endl;
 
 
