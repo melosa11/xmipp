@@ -87,7 +87,7 @@ void ProgResTomoRad::produceSideInfo()
 	if(!fnMask.isEmpty())
 	{
 		I.read(fnMask);
-		&maskMap=I();
+		MultidimArray<float> &maskMap=I();
 	}
 
 	if (aroundcenter)
