@@ -88,22 +88,20 @@ void ProgResTomoRad::produceSideInfo()
 	counter.initZeros();
 
 	Image<int> I;
-	MultidimArray<int> maskMap;
+	I.read(fnMask);
+	MultidimArray<int> &maskMap=I();
+	// MultidimArray<int> maskMap;
 
-	if(!fnMask.isEmpty())
-	{
-		I.read(fnMask);
-		MultidimArray<int> &maskMap=I();
-	}
+	
+
+	// if(!fnMask.isEmpty())
+	// {
+	// 	I.read(fnMask);
+	// 	MultidimArray<int> &maskMap=I();
+	// }
 
 	size_t xdimM, ydimM, zdimM, ndimM;
 	locresmap.getDimensions(xdimM, ydimM, zdimM, ndimM);
-
-	std::cout << "Resmap dimensions:" << std::endl;
-	std::cout << xdimM << std::endl;
-	std::cout << ydimM << std::endl;
-	std::cout << zdimM << std::endl;
-	std::cout << ndimM << std::endl;
 
 	std::cout << "Mask dimensions:" << std::endl;
 	std::cout << xdimM << std::endl;
@@ -120,10 +118,14 @@ void ProgResTomoRad::produceSideInfo()
 			std::cout << "This is millestone 2" << std::endl;
 
 			double res = A3D_ELEM(locresmap, k, i, j);
-			int maskValue = A3D_ELEM(maskMap, k, i, j); 
 			int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
 
 			std::cout << "This is millestone 3" << std::endl;
+			
+			int maskValue = A3D_ELEM(maskMap, k, i, j); 
+			
+			std::cout << "This is millestone 4" << std::endl;
+
 			std::cout << maskValue << std::endl;
 
 
