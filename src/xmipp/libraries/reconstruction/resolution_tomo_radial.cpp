@@ -81,13 +81,13 @@ void ProgResTomoRad::produceSideInfo()
 	radAvg.initZeros();
 	counter.initZeros();
 
-	Image<float> I;
-	MultidimArray<float> maskMap;
+	Image<int> I;
+	MultidimArray<int> maskMap;
 
 	if(!fnMask.isEmpty())
 	{
 		I.read(fnMask);
-		MultidimArray<float> &maskMap=I();
+		MultidimArray<int> &maskMap=I();
 	}
 
 	size_t xdimM, ydimM, zdimM, ndimM;
@@ -103,7 +103,11 @@ void ProgResTomoRad::produceSideInfo()
 		FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
 		{
 			double res = A3D_ELEM(locresmap, k, i, j);
+			int maskValue = A3D_ELEM(maskMap, k, i, j); 
 			int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
+
+			std::cout << maskValue << std::endl;
+
 
 			if ((res<=thresholdResolution) && (radius<xdim))
 			{
