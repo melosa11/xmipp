@@ -42,7 +42,7 @@ void ProgResTomoRad::defineParams()
 	addUsageLine("This function determines the local resolution of a map");
 	addParamsLine("  --vol <vol_file=\"\">                   : Input volume");
 	addParamsLine("  -o <output=\"MGresolution.vol\">        : Local resolution volume (in Angstroms)");
-	addParamsLine("	 [-mask <vol_mask=\"\"> ] 				 : Mask of regions of interest where resolution values must be considered");
+	addParamsLine("	 [-mask <vol_mask=\"\"> ] 				 : Mask of regions of interest where resolution values must be considered in the radial profile average");
 	addParamsLine("  [--aroundCenter] 					     : Radial average around the center. If this flag is not set, then the radial average is computer around the axis");
 	addParamsLine("  [--thr <thr=0.75>]                		 : Threshold (A/px)");
 }
@@ -81,7 +81,6 @@ void ProgResTomoRad::produceSideInfo()
 	radAvg.initZeros();
 	counter.initZeros();
 
-
 	Image<int> I;
 	MultidimArray<int> maskMap;
 
@@ -110,6 +109,9 @@ void ProgResTomoRad::produceSideInfo()
 				{
 					if(A3D_ELEM(maskMap, k, i, j) != 0)
 					{
+						std::cout << k << std::endl;
+						std::cout << i << std::endl;
+						std::cout << j << std::endl;
 						//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
 						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
 						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
