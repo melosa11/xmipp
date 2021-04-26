@@ -106,6 +106,7 @@ void ProgResTomoRad::produceSideInfo()
 			int maskValue = A3D_ELEM(maskMap, k, i, j); 
 			int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
 
+			std::cout << "This is millestone 1" << std::endl;
 			std::cout << maskValue << std::endl;
 
 
