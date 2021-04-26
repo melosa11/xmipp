@@ -81,13 +81,13 @@ void ProgResTomoRad::produceSideInfo()
 	radAvg.initZeros();
 	counter.initZeros();
 
-	Image<int> I;
-	MultidimArray<int> maskMap;
+	Image<float> I;
+	MultidimArray<float> maskMap;
 
 	if(!fnMask.isEmpty())
 	{
 		I.read(fnMask);
-		MultidimArray<int> &maskMap=I();
+		&maskMap=I();
 	}
 
 	if (aroundcenter)
@@ -107,6 +107,8 @@ void ProgResTomoRad::produceSideInfo()
 				}
 				else
 				{
+					std::cout << A3D_ELEM(maskMap, k, i, j) << std::endl;
+				
 					if(A3D_ELEM(maskMap, k, i, j) != 0)
 					{
 						std::cout << k << std::endl;
@@ -116,11 +118,9 @@ void ProgResTomoRad::produceSideInfo()
 						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
 						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
 					}
-
 				}
 			}
 		}
-
 	}
 	else
 	{
@@ -145,7 +145,6 @@ void ProgResTomoRad::produceSideInfo()
 						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
 						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
 					}
-
 				}
 			}
 		}
