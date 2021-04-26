@@ -116,6 +116,15 @@ void ProgResTomoRad::produceSideInfo()
 	// 	MultidimArray<int> &maskMap=I();
 	// }
 
+	FOR_ALL_ELEMENTS_IN_ARRAY3D(maskMap)
+		{
+			std::cout << "i " << i << ", j " << j << ", k " << k << " " << std::endl;
+			std::cout << "ELEM VALUE " << A3D_ELEM(maskMap, k, i, j) << std::endl;
+			int maskValue = A3D_ELEM(maskMap, k, i, j);
+			std::cout << "ELEM VALUE " << maskValue << std::endl;
+			std::cout << "-------------------------" <<std::endl;
+		}
+
 
 
 	if (aroundcenter)
@@ -125,7 +134,7 @@ void ProgResTomoRad::produceSideInfo()
 		FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
 		{
 			std::cout << "This is millestone 2" << std::endl;
-			std::cout << "i " << i << ", j " << j << ", k" << k << " " << std::endl;
+			std::cout << "i " << i << ", j " << j << ", k " << k << " " << std::endl;
 
 
 			double res = A3D_ELEM(locresmap, k, i, j);
@@ -135,7 +144,7 @@ void ProgResTomoRad::produceSideInfo()
 
 			std::cout << "This is millestone 3" << std::endl;
 			
-			std::cout << "i " << i << ", j " << j << ", k" << k << " " << std::endl;
+			std::cout << "i " << i << ", j " << j << ", k " << k << " " << std::endl;
 			std::cout << "-------------------------" <<std::endl;
 
 			int maskValue = A3D_ELEM(maskMap, k, i, j);
