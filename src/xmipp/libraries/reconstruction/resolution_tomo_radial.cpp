@@ -129,9 +129,7 @@ void ProgResTomoRad::produceSideInfo()
 			int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
 
 			// std::cout << "This is millestone 3" << std::endl;
-			
-			int maskValue = A3D_ELEM(maskMap, k, i, j); 
-			
+						
 			// std::cout << "This is millestone 4" << std::endl;
 			// std::cout << maskValue << std::endl;
 
@@ -140,7 +138,7 @@ void ProgResTomoRad::produceSideInfo()
 			{
 				if(mask)
 				{
-					if(maskValue != 0)
+					if(A3D_ELEM(maskMap, k, i, j) != 0)
 					{
 						std::cout << k << std::endl;
 						std::cout << i << std::endl;
