@@ -154,7 +154,7 @@ void ProgResTomoRad::produceSideInfo()
 			std::cout << "i " << i << ", j " << j << ", k " << k << " " << std::endl;
 			std::cout << "-------------------------" <<std::endl;
 
-			int maskValue = A3D_ELEM(maskMap, k, i, j);
+			int maskValue = DIRECT_A3D_ELEM(maskMap, k, i, j);
 			
 			std::cout << "This is millestone 4" << std::endl;
 			std::cout << maskValue << std::endl;
