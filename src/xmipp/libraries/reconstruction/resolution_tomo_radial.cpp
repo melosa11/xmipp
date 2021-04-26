@@ -34,7 +34,7 @@ void ProgResTomoRad::readParams()
 	aroundcenter = checkParam("--aroundCenter");
 	thr = getDoubleParam("--thr");
 
-	mask = checkParam("-mask")
+	mask = checkParam("-mask");
 
 	if(mask)
 	{
