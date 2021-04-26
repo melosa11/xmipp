@@ -91,12 +91,13 @@ void ProgResTomoRad::produceSideInfo()
 	MultidimArray<int> maskMap;
 
 	if(mask){
-		std::cout << "Input mask detected. Working in marked mode." << std::endl;
 		fnMask = getParam("-mask");
 
 		Image<int> I;
 		I.read(fnMask);
 		MultidimArray<int> &maskMap=I();
+
+		std::cout << "Input mask detected. Working in masked mode." << std::endl;
 
 		size_t xdimM, ydimM, zdimM, ndimM;
 		maskMap.getDimensions(xdimM, ydimM, zdimM, ndimM);
@@ -124,11 +125,19 @@ void ProgResTomoRad::produceSideInfo()
 		FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
 		{
 			std::cout << "This is millestone 2" << std::endl;
+			std::cout << "i " << i << ", j " << j << ", k" << k << " " << std::endl;
+
 
 			double res = A3D_ELEM(locresmap, k, i, j);
 			int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
 
+
+
 			std::cout << "This is millestone 3" << std::endl;
+			
+			std::cout << "i " << i << ", j " << j << ", k" << k << " " << std::endl;
+			std::cout << "-------------------------" <<std::endl;
+
 			int maskValue = A3D_ELEM(maskMap, k, i, j);
 			
 			std::cout << "This is millestone 4" << std::endl;
@@ -147,7 +156,6 @@ void ProgResTomoRad::produceSideInfo()
 						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
 						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
 					}
-
 				}
 				else
 				{	
