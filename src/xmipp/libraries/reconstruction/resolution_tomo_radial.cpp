@@ -1,7 +1,7 @@
 /***************************************************************************
  *
- * Authors:    Jose Luis Vilas, 					  jlvilas@cnb.csic.es
- * 			   Carlos Oscar S. Sorzano            coss@cnb.csic.es (2018)
+ * Authors:    FFederico P. de Isidro Gómez		  fp.deisidro@cnb.csic.es
+ * 			   Jose Luis Vilas, 				  jlvilas@cnb.csic.es (2021)
  *
  * Unidad de  Bioinformatica of Centro Nacional de Biotecnologia , CSIC
  *
@@ -30,10 +30,16 @@
 void ProgResTomoRad::readParams()
 {
 	fnVol = getParam("--vol");
-	fnMask = getParam("-mask");
 	fnOut = getParam("-o");
 	aroundcenter = checkParam("--aroundCenter");
 	thr = getDoubleParam("--thr");
+
+	mask = checkParam("-mask")
+
+	if(mask)
+	{
+		fnMask = getParam("-mask");
+	}
 }
 
 
@@ -87,61 +93,54 @@ void ProgResTomoRad::produceSideInfo()
 	radAvg.initZeros();
 	counter.initZeros();
 
-	Image<int> I;
-	I.read(fnMask);
-	MultidimArray<int> &maskMap=I();
+	if(mask){
+		Image<int> I;
+		I.read(fnMask);
+		MultidimArray<int> &maskMap=I();
+
+		size_t xdimM, ydimM, zdimM, ndimM;
+		maskMap.getDimensions(xdimM, ydimM, zdimM, ndimM);
+
+		std::cout << "Mask dimensions:" << std::endl;
+		std::cout << xdimM << std::endl;
+		std::cout << ydimM << std::endl;
+		std::cout << zdimM << std::endl;
+		std::cout << ndimM << std::endl;
+	}
+
 	// MultidimArray<int> maskMap;
-
-	
-
 	// if(!fnMask.isEmpty())
 	// {
 	// 	I.read(fnMask);
 	// 	MultidimArray<int> &maskMap=I();
 	// }
 
-	size_t xdimM, ydimM, zdimM, ndimM;
-	locresmap.getDimensions(xdimM, ydimM, zdimM, ndimM);
 
-	std::cout << "Mask dimensions:" << std::endl;
-	std::cout << xdimM << std::endl;
-	std::cout << ydimM << std::endl;
-	std::cout << zdimM << std::endl;
-	std::cout << ndimM << std::endl;
 
 	if (aroundcenter)
 	{
-		std::cout << "This is millestone 1" << std::endl;
+		// std::cout << "This is millestone 1" << std::endl;
 
 		FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
 		{
-			std::cout << "This is millestone 2" << std::endl;
+			// std::cout << "This is millestone 2" << std::endl;
 
 			double res = A3D_ELEM(locresmap, k, i, j);
 			int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
 
-			std::cout << "This is millestone 3" << std::endl;
+			// std::cout << "This is millestone 3" << std::endl;
 			
 			int maskValue = A3D_ELEM(maskMap, k, i, j); 
 			
-			std::cout << "This is millestone 4" << std::endl;
-
-			std::cout << maskValue << std::endl;
+			// std::cout << "This is millestone 4" << std::endl;
+			// std::cout << maskValue << std::endl;
 
 
 			if ((res<=thresholdResolution) && (radius<xdim))
 			{
-				if(fnMask.isEmpty())
+				if(mask)
 				{
-					//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
-					DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
-					DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
-				}
-				else
-				{
-					std::cout << A3D_ELEM(maskMap, k, i, j) << std::endl;
-				
-					if(A3D_ELEM(maskMap, k, i, j) != 0)
+					if(maskValue != 0)
 					{
 						std::cout << k << std::endl;
 						std::cout << i << std::endl;
@@ -150,6 +149,14 @@ void ProgResTomoRad::produceSideInfo()
 						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
 						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
 					}
+
+				}
+				else
+				{	
+					//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
+					DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
+					DIRECT_MULTIDIM_ELEM(counter, radius) +=1;			
+
 				}
 			}
 		}
@@ -163,7 +170,7 @@ void ProgResTomoRad::produceSideInfo()
 
 			if ((res<=thresholdResolution) && (radius<xdim))
 			{
-				if(fnMask.isEmpty())
+				if(mask)
 				{
 					//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
 					DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
