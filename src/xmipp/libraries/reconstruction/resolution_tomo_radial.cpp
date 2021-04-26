@@ -116,6 +116,15 @@ void ProgResTomoRad::produceSideInfo()
 	// 	MultidimArray<int> &maskMap=I();
 	// }
 
+	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(maskMap)
+		{
+			std::cout << "n " << n << std::endl;
+			std::cout << "ELEM VALUE " << DIRECT_MULTIDIM_ELEM(maskMap, n) << std::endl;
+			int maskValue = DIRECT_MULTIDIM_ELEM(maskMap, n);
+			std::cout << "ELEM VALUE " << maskValue << std::endl;
+			std::cout << "-------------------------" <<std::endl;
+		}
+
 	FOR_ALL_ELEMENTS_IN_ARRAY3D(maskMap)
 		{
 			std::cout << "i " << i << ", j " << j << ", k " << k << " " << std::endl;
@@ -124,8 +133,6 @@ void ProgResTomoRad::produceSideInfo()
 			std::cout << "ELEM VALUE " << maskValue << std::endl;
 			std::cout << "-------------------------" <<std::endl;
 		}
-
-
 
 	if (aroundcenter)
 	{
