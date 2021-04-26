@@ -118,20 +118,20 @@ void ProgResTomoRad::produceSideInfo()
 
 	if (aroundcenter)
 	{
-		// std::cout << "This is millestone 1" << std::endl;
+		std::cout << "This is millestone 1" << std::endl;
 
 		FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
 		{
-			// std::cout << "This is millestone 2" << std::endl;
+			std::cout << "This is millestone 2" << std::endl;
 
 			double res = A3D_ELEM(locresmap, k, i, j);
 			int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
 
-			// std::cout << "This is millestone 3" << std::endl;
-
-			// std::cout << "This is millestone 4" << std::endl;
-			// std::cout << maskValue << std::endl;
-
+			std::cout << "This is millestone 3" << std::endl;
+			int maskMap = A3D_ELEM(maskMap, k, i, j);
+			
+			std::cout << "This is millestone 4" << std::endl;
+			std::cout << maskValue << std::endl;
 
 			if ((res<=thresholdResolution) && (radius<xdim))
 			{
