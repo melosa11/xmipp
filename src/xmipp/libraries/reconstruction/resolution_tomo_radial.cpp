@@ -74,11 +74,15 @@ void ProgResTomoRad::produceSideInfo()
 	size_t xdim, ydim, zdim, ndim;
 	locresmap.getDimensions(xdim, ydim, zdim, ndim);
 
+	#ifdef DEBUG_DIMENSIONS
+
 	std::cout << "Resmap dimensions:" << std::endl;
 	std::cout << xdim << std::endl;
 	std::cout << ydim << std::endl;
 	std::cout << zdim << std::endl;
 	std::cout << ndim << std::endl;
+
+	#endif
 
 	xdim = xdim/2;	
 	ydim = ydim/2;
@@ -100,11 +104,15 @@ void ProgResTomoRad::produceSideInfo()
 		size_t xdimM, ydimM, zdimM, ndimM;
 		maskMap.getDimensions(xdimM, ydimM, zdimM, ndimM);
 
+		#ifdef DEBUG_DIMENSIONS
+
 		std::cout << "Mask dimensions:" << std::endl;
 		std::cout << xdimM << std::endl;
 		std::cout << ydimM << std::endl;
 		std::cout << zdimM << std::endl;
 		std::cout << ndimM << std::endl;
+
+		#endif
 
 		if (aroundcenter)
 		{
@@ -177,35 +185,6 @@ void ProgResTomoRad::produceSideInfo()
 			}
 		}
 	}
-
-	
-
-	// MultidimArray<int> maskMap;
-	// if(!fnMask.isEmpty())
-	// {
-	// 	I.read(fnMask);
-	// 	MultidimArray<int> &maskMap=I();
-	// }
-
-	// FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(maskMap)
-	// 	{
-	// 		std::cout << "n " << n << std::endl;
-	// 		std::cout << "ELEM VALUE " << DIRECT_MULTIDIM_ELEM(maskMap, n) << std::endl;
-	// 		int maskValue = DIRECT_MULTIDIM_ELEM(maskMap, n);
-	// 		std::cout << "ELEM VALUE " << maskValue << std::endl;
-	// 		std::cout << "-------------------------" <<std::endl;
-	// 	}
-
-	// FOR_ALL_ELEMENTS_IN_ARRAY3D(maskMap)
-	// 	{
-	// 		std::cout << "i " << i << ", j " << j << ", k " << k << " " << std::endl;
-	// 		std::cout << "ELEM VALUE " << A3D_ELEM(maskMap, k, i, j) << std::endl;
-	// 		int maskValue = A3D_ELEM(maskMap, k, i, j);
-	// 		std::cout << "ELEM VALUE " << maskValue << std::endl;
-	// 		std::cout << "-------------------------" <<std::endl;
-	// 	}
-
-
 
 	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(radAvg)
 		DIRECT_MULTIDIM_ELEM(radAvg, n) /= DIRECT_MULTIDIM_ELEM(counter, n);
