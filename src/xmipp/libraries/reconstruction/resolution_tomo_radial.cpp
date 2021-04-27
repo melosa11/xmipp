@@ -88,14 +88,12 @@ void ProgResTomoRad::produceSideInfo()
 	radAvg.initZeros();
 	counter.initZeros();
 
-	MultidimArray<int> maskMap;
-
 	if(mask){
 		fnMask = getParam("-mask");
 
 		Image<int> I;
 		I.read(fnMask);
-		MultidimArray<int> &maskMap=I();
+			MultidimArray<int> &maskMap=I();
 
 		std::cout << "Input mask detected. Working in masked mode." << std::endl;
 
@@ -107,7 +105,80 @@ void ProgResTomoRad::produceSideInfo()
 		std::cout << ydimM << std::endl;
 		std::cout << zdimM << std::endl;
 		std::cout << ndimM << std::endl;
+
+		if (aroundcenter)
+		{
+			FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
+			{
+				double res = A3D_ELEM(locresmap, k, i, j);
+				int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
+				int maskValue = DIRECT_A3D_ELEM(maskMap, k, i, j);
+
+				if ((res<=thresholdResolution) && (radius<xdim))
+				{
+					if(A3D_ELEM(maskMap, k, i, j) != 0)
+					{
+						//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
+						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
+						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
+					}
+				}
+			}
+		}
+		else
+		{
+			FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
+			{
+				double res = A3D_ELEM(locresmap, k, i, j);
+				int radius = floor(sqrt((j-xdim)*(j-xdim)));
+				int maskValue = DIRECT_A3D_ELEM(maskMap, k, i, j);
+
+				if ((res<=thresholdResolution) && (radius<xdim))
+				{
+					if(A3D_ELEM(maskMap, k, i, j) != 0)
+					{
+						//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
+						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
+						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
+					}
+				}
+			}
+		}
 	}
+	else{
+		if (aroundcenter)
+		{
+			FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
+			{
+				double res = A3D_ELEM(locresmap, k, i, j);
+				int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
+				
+				if ((res<=thresholdResolution) && (radius<xdim))
+				{
+					//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
+					DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
+					DIRECT_MULTIDIM_ELEM(counter, radius) +=1;			
+				}
+			}
+		}
+		else
+		{
+			FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
+			{
+				double res = A3D_ELEM(locresmap, k, i, j);
+				int radius = floor(sqrt((j-xdim)*(j-xdim)));
+
+				if ((res<=thresholdResolution) && (radius<xdim))
+				{
+					//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
+					DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
+					DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
+				}
+			}
+		}
+	}
+
+	
 
 	// MultidimArray<int> maskMap;
 	// if(!fnMask.isEmpty())
@@ -116,100 +187,24 @@ void ProgResTomoRad::produceSideInfo()
 	// 	MultidimArray<int> &maskMap=I();
 	// }
 
-	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(maskMap)
-		{
-			std::cout << "n " << n << std::endl;
-			std::cout << "ELEM VALUE " << DIRECT_MULTIDIM_ELEM(maskMap, n) << std::endl;
-			int maskValue = DIRECT_MULTIDIM_ELEM(maskMap, n);
-			std::cout << "ELEM VALUE " << maskValue << std::endl;
-			std::cout << "-------------------------" <<std::endl;
-		}
+	// FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(maskMap)
+	// 	{
+	// 		std::cout << "n " << n << std::endl;
+	// 		std::cout << "ELEM VALUE " << DIRECT_MULTIDIM_ELEM(maskMap, n) << std::endl;
+	// 		int maskValue = DIRECT_MULTIDIM_ELEM(maskMap, n);
+	// 		std::cout << "ELEM VALUE " << maskValue << std::endl;
+	// 		std::cout << "-------------------------" <<std::endl;
+	// 	}
 
-	FOR_ALL_ELEMENTS_IN_ARRAY3D(maskMap)
-		{
-			std::cout << "i " << i << ", j " << j << ", k " << k << " " << std::endl;
-			std::cout << "ELEM VALUE " << A3D_ELEM(maskMap, k, i, j) << std::endl;
-			int maskValue = A3D_ELEM(maskMap, k, i, j);
-			std::cout << "ELEM VALUE " << maskValue << std::endl;
-			std::cout << "-------------------------" <<std::endl;
-		}
+	// FOR_ALL_ELEMENTS_IN_ARRAY3D(maskMap)
+	// 	{
+	// 		std::cout << "i " << i << ", j " << j << ", k " << k << " " << std::endl;
+	// 		std::cout << "ELEM VALUE " << A3D_ELEM(maskMap, k, i, j) << std::endl;
+	// 		int maskValue = A3D_ELEM(maskMap, k, i, j);
+	// 		std::cout << "ELEM VALUE " << maskValue << std::endl;
+	// 		std::cout << "-------------------------" <<std::endl;
+	// 	}
 
-	if (aroundcenter)
-	{
-		std::cout << "This is millestone 1" << std::endl;
-
-		FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
-		{
-			std::cout << "This is millestone 2" << std::endl;
-			std::cout << "i " << i << ", j " << j << ", k " << k << " " << std::endl;
-
-
-			double res = A3D_ELEM(locresmap, k, i, j);
-			int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
-
-
-
-			std::cout << "This is millestone 3" << std::endl;
-			
-			std::cout << "i " << i << ", j " << j << ", k " << k << " " << std::endl;
-			std::cout << "-------------------------" <<std::endl;
-
-			int maskValue = DIRECT_A3D_ELEM(maskMap, k, i, j);
-			
-			std::cout << "This is millestone 4" << std::endl;
-			std::cout << maskValue << std::endl;
-
-			if ((res<=thresholdResolution) && (radius<xdim))
-			{
-				if(mask)
-				{
-					if(A3D_ELEM(maskMap, k, i, j) != 0)
-					{
-						std::cout << k << std::endl;
-						std::cout << i << std::endl;
-						std::cout << j << std::endl;
-						//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
-						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
-						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
-					}
-				}
-				else
-				{	
-					//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
-					DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
-					DIRECT_MULTIDIM_ELEM(counter, radius) +=1;			
-
-				}
-			}
-		}
-	}
-	else
-	{
-		FOR_ALL_ELEMENTS_IN_ARRAY3D(locresmap)
-		{
-			double res = A3D_ELEM(locresmap, k, i, j);
-			int radius = floor(sqrt((j-xdim)*(j-xdim)));
-
-			if ((res<=thresholdResolution) && (radius<xdim))
-			{
-				if(mask)
-				{
-					//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
-					DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
-					DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
-				}
-				else
-				{
-					if(A3D_ELEM(maskMap, k, i, j) != 0)
-					{
-						//std::cout << "i " << i << " j " << j << " k" << k << " " << radius << std::endl;
-						DIRECT_MULTIDIM_ELEM(radAvg, radius) +=res;
-						DIRECT_MULTIDIM_ELEM(counter, radius) +=1;
-					}
-				}
-			}
-		}
-	}
 
 
 	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(radAvg)
@@ -223,18 +218,18 @@ void ProgResTomoRad::produceSideInfo()
 void ProgResTomoRad ::testradialAvg()
 {
 	MultidimArray<double> ball;
-	size_t xdim = 1024, ydim= 1440, zdim= 300;
-	ball.initZeros(xdim, ydim,zdim);
+	size_t xdim = 1024, ydim= 512, zdim= 512;
+	ball.initZeros(xdim, ydim, zdim);
 
 	xdim = xdim/2;
 	ydim = ydim/2;
 	zdim = zdim/2;
 
-	FOR_ALL_ELEMENTS_IN_ARRAY3D(ball)
+	FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY3D(ball)
 	{
-		int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
+		int radius = floor(sqrt((j-ydim)*(j-ydim) + (i-xdim)*(i-xdim) + (k-zdim)*(k-zdim)));
 
-		A3D_ELEM(ball, k, i, j) = radius;
+		DIRECT_A3D_ELEM(ball, k, i, j) = radius;
 	}
 
 	FileName fn_ball;
