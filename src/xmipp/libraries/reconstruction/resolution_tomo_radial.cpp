@@ -219,15 +219,23 @@ void ProgResTomoRad ::testradialAvg()
 {
 	MultidimArray<double> ball;
 	size_t xdim = 1024, ydim= 512, zdim= 512;
-	ball.initZeros(xdim, ydim, zdim);
+	ball.initZeros(zdim, ydim, xdim);
 
 	xdim = xdim/2;
 	ydim = ydim/2;
 	zdim = zdim/2;
 
+	std::cout << XSIZE(ball) << std::endl;
+	std::cout << YSIZE(ball) << std::endl;
+	std::cout << ZSIZE(ball) << std::endl;
+
+	std::cout << xdim << std::endl;
+	std::cout << ydim << std::endl;
+	std::cout << zdim << std::endl;
+
 	FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY3D(ball)
 	{
-		int radius = floor(sqrt((j-ydim)*(j-ydim) + (i-xdim)*(i-xdim) + (k-zdim)*(k-zdim)));
+		int radius = floor(sqrt((i-ydim)*(i-ydim) + (j-xdim)*(j-xdim) + (k-zdim)*(k-zdim)));
 
 		DIRECT_A3D_ELEM(ball, k, i, j) = radius;
 	}
