@@ -322,12 +322,13 @@ void ProgFSO::arrangeFSC_and_fscGlobal(double sampling_rate,
 		// The global FSC is stored as a metadata
 		size_t id;
 		MetaData mdRes;
-		MultidimArray< double > frc;
+//		MultidimArray< double > frc;
 		freq.initZeros(freqElems);
-		frc.initZeros(freqElems);
+//		frc.initZeros(freqElems);
+		globalfsc.initZeros(freqElems);
 		FOR_ALL_ELEMENTS_IN_ARRAY1D(freq)
 		{
-			dAi(frc,i) = dAi(num,i)/sqrt( (dAi(den1,i)) * (dAi(den2,i)) );
+			dAi(globalfsc,i) = dAi(num,i)/sqrt( (dAi(den1,i)) * (dAi(den2,i)) );
 			dAi(freq,i) = (float) i / (xvoldim * sampling_rate);
 
 			if (i>0)
@@ -335,14 +336,14 @@ void ProgFSO::arrangeFSC_and_fscGlobal(double sampling_rate,
 				id=mdRes.addObject();
 
 				mdRes.setValue(MDL_RESOLUTION_FREQ,dAi(freq, i),id);
-				mdRes.setValue(MDL_RESOLUTION_FRC,dAi(frc, i),id);
+				mdRes.setValue(MDL_RESOLUTION_FRC,dAi(globalfsc, i),id);
 				mdRes.setValue(MDL_RESOLUTION_FREQREAL, 1./dAi(freq, i), id);
 			}
 		}
 		mdRes.write(fnOut+"/GlobalFSC.xmd");
 
 		// Here the FSC at 0.143 is obtained by interpolating
-		fscInterpolation(freq, frc);
+		fscInterpolation(freq, globalfsc);
 
 		aniFilter.initZeros(freqidx);
 	}
@@ -387,10 +388,17 @@ void ProgFSO::fscDir_fast(MultidimArray<double> &fsc, double rot, double tilt,
 	size_t dim = NZYXSIZE(freqElems);
 	
 	// numerator and denominator of the fsc
-	MultidimArray<float> num, den1, den2;	
+	MultidimArray<float> num, den1, den2;
 	num.initZeros(dim);
 	den1.initZeros(dim);
 	den2.initZeros(dim);
+
+	if (dirnumber == 100)
+	{
+		wfso.initZeros(dim);
+		wfso2.initZeros(dim);
+	}
+
 
 	// in vecidx the position n of the vector real_z1z2 is stored.
 	// this allow to have a quick access to the frequencies and the
@@ -434,12 +442,20 @@ void ProgFSO::fscDir_fast(MultidimArray<double> &fsc, double rot, double tilt,
 			// For sake of performance The sqrt is avoided dividing the by 2 in aux
 			cosine = expf( -((cosine -1)*(cosine -1))*aux); 
 
+
+
 			vecidx.push_back(n);
 			// cosine *= cosine; Commented because is equivalent to remove the root square in aux
 			weightFSC3D.push_back(cosine);
 
 			// selecting the frequency of the shell
 			size_t idxf = DIRECT_MULTIDIM_ELEM(freqidx, n);
+
+			if (dirnumber ==100)
+			{
+				dAi(wfso, idxf) += sqrtf(cosine);
+				dAi(wfso2, idxf) += cosine;
+			}
 
 			// computing the numerator and denominator
 			dAi(num, idxf) += DIRECT_MULTIDIM_ELEM(real_z1z2, n)  * cosine;
@@ -460,14 +476,20 @@ void ProgFSO::fscDir_fast(MultidimArray<double> &fsc, double rot, double tilt,
 	FOR_ALL_ELEMENTS_IN_ARRAY1D(num)
 	{
 		double auxfsc = (dAi(num,i))/(sqrt(dAi(den1,i)*dAi(den2,i))+1e-38);
-		dAi(fsc,i) = std::max(0.0, auxfsc);
-
+		//dAi(fsc,i) = std::max(0.0, auxfsc);
+		dAi(fsc,i) = auxfsc;
 		if (i>0)
 		{
 			#ifdef SAVE_DIR_FSC
 			double ff = (float) i / (xvoldim * sampling); // frequency
 			row.setValue(MDL_RESOLUTION_FREQ, ff);
 			row.setValue(MDL_RESOLUTION_FRC, dAi(fsc, i));
+//			if (dirnumber ==100)
+//			{
+//				row.setValue(MDL_VOLUME_SCORE1, (double) dAi(wfso, i));
+//				row.setValue(MDL_VOLUME_SCORE2, (double) dAi(wfso2, i));
+//			}
+
 			row.setValue(MDL_RESOLUTION_FREQREAL, 1./ff);
 			mdRes.addRow(row);
 			#endif
@@ -928,13 +950,15 @@ void ProgFSO::anistropyParameter(const MultidimArray<double> &FSC,
 	double N = 0;
 	for (size_t k = 0; k<aniParam.nzyxdim; k++)
 	{
-		if (DIRECT_MULTIDIM_ELEM(FSC, k) >= thrs)
+		if (DIRECT_MULTIDIM_ELEM(FSC, k) >= thrs) //dAi(globalfsc, k))
 		{
 			DIRECT_MULTIDIM_ELEM(aniParam, k) += 1.0;
 			N++;
 		}
 	}
 	DIRECT_MULTIDIM_ELEM(directionAnisotropy, dirnumber) = N;
+
+
 }
 
 
@@ -1193,6 +1217,36 @@ void ProgFSO::run()
 			// Updating the FSO curve
 			anistropyParameter(fsc, directionAnisotropy, k, aniParam, thrs);
 		}
+
+    	MetaData mdFSOth;
+		MDRow row;
+		FOR_ALL_ELEMENTS_IN_ARRAY1D(globalfsc)
+		{
+			double FSCvalue = dAi(globalfsc, i);
+			double sumW2;
+			double w = dAi(wfso, i);
+			double w2 = dAi(wfso2, i);
+
+			sumW2 = w2/(w*w);
+
+			double x = (thrs - FSCvalue)/( 0.5*sumW2*(1. - FSCvalue*FSCvalue));
+			double cdfunc = 0.5 * (1. + erf(x/sqrt(2.)));
+
+			double fso = 1.0 - cdfunc;
+
+			double ff = (float) i / (xvoldim * sampling); // frequency
+			row.setValue(MDL_RESOLUTION_FREQ, ff);
+			row.setValue(MDL_RESOLUTION_FSO, fso);
+			row.setValue(MDL_RESOLUTION_FREQREAL, 1./ff);
+			mdFSOth.addRow(row);
+
+		}
+
+		FileName fnmd;
+		fnmd = fnOut + "/fso_theoretical.xmd";
+		mdFSOth.write(fnmd);
+
+
 
 		std::cout << "----- Directional resolution estimated -----" <<  std::endl <<  std::endl;
     	std::cout << "Preparing results ..." <<  std::endl;

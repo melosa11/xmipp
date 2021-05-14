@@ -63,6 +63,8 @@ private:
 	MultidimArray<float> fx, fy, fz;
 	MultidimArray<float> threeD_FSC, normalizationMap, aniFilter;
     MultidimArray< double > freqMap;
+    MultidimArray< double > globalfsc;
+    MultidimArray<float> wfso, wfso2;
 
 	// Half maps
 	MultidimArray< std::complex< double > > FT1, FT2;
