@@ -60,6 +60,7 @@ private:
 	Matrix1D<double> freq_fourier_x;
 	Matrix1D<double> freq_fourier_y;
 	Matrix1D<double> freq_fourier_z;
+	MultidimArray<double> isotropyMatrix;
 	MultidimArray<float> fx, fy, fz;
 	MultidimArray<float> threeD_FSC, normalizationMap, aniFilter;
     MultidimArray< double > freqMap;
@@ -67,6 +68,7 @@ private:
 	// Half maps
 	MultidimArray< std::complex< double > > FT1, FT2;
 	MultidimArray<float> real_z1z2, absz1_vec, absz2_vec;
+	std::vector< Matrix2D<double>> freqMat;
 
 	//Access indices
 	MultidimArray<long> freqElems, cumpos, freqidx, arr2indx;

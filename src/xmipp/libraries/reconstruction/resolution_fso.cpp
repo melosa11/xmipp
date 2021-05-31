@@ -406,6 +406,12 @@ void ProgFSO::fscDir_fast(MultidimArray<double> &fsc, double rot, double tilt,
 	y_dir = sinf(tilt)*sinf(rot);
 	z_dir = cosf(tilt);
 
+	Matrix2D<double> T, T2;
+	T.initZeros(3,3);
+	MAT_ELEM(T, 0, 0) = x_dir*x_dir;	MAT_ELEM(T, 0, 1) = x_dir*y_dir;	MAT_ELEM(T, 0, 2) = x_dir*z_dir;
+	MAT_ELEM(T, 1, 0) = y_dir*x_dir;	MAT_ELEM(T, 1, 1) = y_dir*y_dir;	MAT_ELEM(T, 1, 2) = y_dir*z_dir;
+	MAT_ELEM(T, 2, 0) = z_dir*x_dir;	MAT_ELEM(T, 2, 1) = z_dir*y_dir;	MAT_ELEM(T, 2, 2) = z_dir*z_dir;
+
 	cosAngle = (float) cos(ang_con);
 
 	// It is multiply by 0.5 because later the weight is
@@ -460,6 +466,12 @@ void ProgFSO::fscDir_fast(MultidimArray<double> &fsc, double rot, double tilt,
 		double auxfsc = (dAi(num,i))/(sqrt(dAi(den1,i)*dAi(den2,i))+1e-38);
 		dAi(fsc,i) = std::max(0.0, auxfsc);
 
+		if (dAi(fsc,i)>=thrs){
+			freqMat[i] = freqMat[i] + T;
+//			isotropyMatrix[i] += (x_dir*x_dir + y_dir*y_dir + z_dir*z_dir);
+		}
+
+
 		if (i>0)
 		{
 			#ifdef SAVE_DIR_FSC
@@ -469,7 +481,7 @@ void ProgFSO::fscDir_fast(MultidimArray<double> &fsc, double rot, double tilt,
 			row.setValue(MDL_RESOLUTION_FREQREAL, 1./ff);
 			mdRes.addRow(row);
 			#endif
-			if ((i>2) && (dAi(fsc,i)<=thrs) && (flagRes))
+			if ( (flagRes) && (i>2) && (dAi(fsc,i)<=thrs) )
 			{
 				flagRes = false;
 				resol = 1./ff;
@@ -982,6 +994,7 @@ void ProgFSO::saveAnisotropyToMetadata(MetaData &mdAnisotropy,
 		row.setValue(MDL_RESOLUTION_FREQ, dAi(freq, i));
 		row.setValue(MDL_RESOLUTION_FSO, dAi(anisotropy, i));
 		row.setValue(MDL_RESOLUTION_FREQREAL, 1.0/dAi(freq, i));
+		row.setValue(MDL_RESOLUTION_FRC, dAi(isotropyMatrix, i));
 		mdAnisotropy.addRow(row);
 		}
 	}
@@ -1176,6 +1189,19 @@ void ProgFSO::run()
 		normalizationMap.resizeNoCopy(real_z1z2);
 		normalizationMap.initZeros();
 		
+		isotropyMatrix.initZeros(freq.nzyxdim);
+		size_t ttt;
+		ttt = freq.nzyxdim;
+		freqMat.resize(ttt);
+
+
+		for (size_t i = 0; i<freqMat.size(); i++)
+		{
+			Matrix2D<double> aux;
+			aux.initZeros(3,3);
+			freqMat[i] = aux;
+		}
+
     	for (size_t k = 0; k<angles.mdimx; k++)
 		{
 			float rot  = MAT_ELEM(angles, 0, k);
@@ -1192,11 +1218,30 @@ void ProgFSO::run()
 			anistropyParameter(fsc, directionAnisotropy, k, aniParam, thrs);
 		}
 
+    	for (size_t i = 0; i<freqMat.size(); i++){
+    		// Let us define T = 1/n*Sum(wi*xi*xi) => Tr(T^2) = x*x + y*y + z*z;
+    		//This is the Bingham Test (1/2)(p-1)*(p-2)*n*Sum(Tr(T^2) - 1/p)
+    		double trT2;
+    		Matrix2D<double> T2;
+    		Matrix2D<double> T;
+    		T = freqMat[i]/DIRECT_MULTIDIM_ELEM(aniParam, i);
+    		T2 = T*T;
+    		std::cout << freqMat[i] << std::endl;
+    		trT2 = T2.trace();
+//    		std::cout << trT2 << std::endl;
+    		dAi(isotropyMatrix, i) = 0.5*5.0*(DIRECT_MULTIDIM_ELEM(aniParam, i))*(trT2 - 1./3.0);
+    		// The hypohtesis test considersp = 0.05.
+    		// p=0.05; nu = 5; x = chi2inv(p,nu);
+    	}
+
+
 		std::cout << "----- Directional resolution estimated -----" <<  std::endl <<  std::endl;
     	std::cout << "Preparing results ..." <<  std::endl;
 
     	// ANISOTROPY CURVE
     	aniParam /= (double) angles.mdimx;
+    	for (size_t k = 0; k<5; k++)
+    		DIRECT_MULTIDIM_ELEM(aniParam, k) = 1;
     	MetaData mdani;
 		saveAnisotropyToMetadata(mdani, freq, aniParam);
 		FileName fn;
