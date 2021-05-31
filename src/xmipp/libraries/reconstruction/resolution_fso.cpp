@@ -405,6 +405,12 @@ void ProgFSO::fscDir_fast(MultidimArray<float> &fsc, double rot, double tilt,
 	y_dir = sinf(tilt)*sinf(rot);
 	z_dir = cosf(tilt);
 
+	Matrix2D<double> T, T2;
+	T.initZeros(3,3);
+	MAT_ELEM(T, 0, 0) = x_dir*x_dir;	MAT_ELEM(T, 0, 1) = x_dir*y_dir;	MAT_ELEM(T, 0, 2) = x_dir*z_dir;
+	MAT_ELEM(T, 1, 0) = y_dir*x_dir;	MAT_ELEM(T, 1, 1) = y_dir*y_dir;	MAT_ELEM(T, 1, 2) = y_dir*z_dir;
+	MAT_ELEM(T, 2, 0) = z_dir*x_dir;	MAT_ELEM(T, 2, 1) = z_dir*y_dir;	MAT_ELEM(T, 2, 2) = z_dir*z_dir;
+
 	cosAngle = (float) cos(ang_con);
 
 	// It is multiply by 0.5 because later the weight is
@@ -455,6 +461,10 @@ void ProgFSO::fscDir_fast(MultidimArray<float> &fsc, double rot, double tilt,
 		double auxfsc = (dAi(num,i))/(sqrt(dAi(den1,i)*dAi(den2,i))+1e-38);
 		dAi(fsc,i) = std::max(0.0, auxfsc);
 
+		if (dAi(fsc,i)>=thrs){
+			freqMat[i] = freqMat[i] + T;
+//			isotropyMatrix[i] += (x_dir*x_dir + y_dir*y_dir + z_dir*z_dir);
+		}
 		if (flagRes && (i>2) && (dAi(fsc,i)<=thrs))
 		{
 			flagRes = false;
@@ -901,6 +911,7 @@ void ProgFSO::generateDirections(Matrix2D<float> &angles, bool alot)
 
 
 void ProgFSO::anistropyParameter(const MultidimArray<float> &FSC,
+		MultidimArray<float> &directionAnisotropy, size_t dirnumber,
 		MultidimArray<float> &	aniParam, double thrs)
 {
 	for (size_t k = 0; k<aniParam.nzyxdim; k++)
@@ -957,8 +968,9 @@ void ProgFSO::saveAnisotropyToMetadata(MetaData &mdAnisotropy,
 		if (i>0)
 		{
 		row.setValue(MDL_RESOLUTION_FREQ, dAi(freq, i));
-		row.setValue(MDL_RESOLUTION_FSO, static_cast<double>(dAi(anisotropy, i)));
+		row.setValue(MDL_RESOLUTION_FSO, dAi(anisotropy, i));
 		row.setValue(MDL_RESOLUTION_FREQREAL, 1.0/dAi(freq, i));
+		row.setValue(MDL_RESOLUTION_FRC, dAi(isotropyMatrix, i));
 		mdAnisotropy.addRow(row);
 		}
 	}
@@ -1203,6 +1215,8 @@ void ProgFSO::run()
 		}
     	// ANISOTROPY CURVE
     	aniParams.at(0) /= (double) angles.mdimx;
+    	for (size_t k = 0; k<5; k++)
+    		DIRECT_MULTIDIM_ELEM(aniParam, k) = 1;
     	MetaData mdani;
 		saveAnisotropyToMetadata(mdani, freq, aniParams.at(0));
 		FileName fn;
