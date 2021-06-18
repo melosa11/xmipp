@@ -57,7 +57,7 @@ void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
 
     //TODO: check the limits
     size_t semiboxsize = xdim/2;
-    size_t lambdalimit = floor(xdim*sqrt(2)/2);
+    size_t lambdalimit = xdim/2;//floor(xdim*sqrt(2)/2);
 
     std::cout << "boxsize= " << boxsize << "  " << "xdim = " << xdim << "  " << "ydim = " << ydim << std::endl;
 
@@ -67,34 +67,40 @@ void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
 
     //projImg is the radon Tranform. The first row is the projection at 
     // 0 degrees, the second row is the projection at 1 degree and so on
-    projImg.initZeros(Nprojections, xdim);
+    projImg.initZeros(xdim);
 
-    //TODO: check if the numer of pixels is odd or even
+    //TODO: check if the number of pixels is odd or even
 
     // for (int angle = 0; angle<180; angle++)
     int angle = 0.0;
     double ang= angle*PI/180.0;
 
+    std::vector<double> galleryProjections[Nprojections];
+
     for (int n = -semiboxsize; n<semiboxsize; n++)
     {
         for (int lambda = -lambdalimit; lambda<lambdalimit; lambda++)
         {
-            size_t j = round(lambda*cos(ang)) + semiboxsize;
-            size_t i = round(lambda*sin(ang)) + semiboxsize + n*s/cos(ang);
+            double c = cos(ang);
+            size_t j = round(lambda*c) + semiboxsize;
+            size_t i = round(lambda*sin(ang)) + semiboxsize + ((double) n )/c;
             
+            std::cout << "i = " << i << "   j = " << j << std::endl;
+
             if ((j<=xdim) && (i<=ydim))
             {
-                A2D_ELEM(projImg, Nprojections, n) += A2D_ELEM(img, i, j);
+                A2D_ELEM(projImg, n) += A2D_ELEM(img, i, j);
             }
 
         }
     }
 
+    galleryProjections[projIdx] = A2D_ELEM(projImg, Nprojections, n);
+
+
     Image<double> saveImg;
     saveImg() = projImg;
     saveImg.write("kkk.mrc");
-
-
 }
 
 
