@@ -1,6 +1,6 @@
 /***************************************************************************
  *
- * Authors:    Federico de Isidro Gomez          fdeisidro@cnb.csic.es (2021)
+ * Authors:    Federico P. de Isidro Gomez       fdeisidro@cnb.csic.es (2021)
  * Authors:    Jose Luis Vilas                   jlvilas@cnb.csic.es (2021)
  *
  * Unidad de  Bioinformatica of Centro Nacional de Biotecnologia , CSIC
@@ -95,6 +95,71 @@ void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
     saveImg.write("kkk.mrc");
 
 
+}
+
+
+void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProjection,
+                                                    MultidimArray<double> &yProjection,
+                                                    std::vector<MultidimArray<double>> &referenceProjections)
+{
+    size_t vectorSize = xProjection.size();
+    size_t numberReferenceProjections = referenceProjections.size();
+    size_t stepReferenceProjections = numberReferenceProjections / 2;
+
+    float angleStepRefenceProjections = 180 / numberReferenceProjections;
+
+    std::vector<double> correlationVectorX, correlationVectorY;
+    std::vector<double> maximumCorrVector(numberReferenceProjections);
+    std::vector<std::vector> shiftMaximumCorrVector(numberReferenceProjections);
+
+    for(int n = 0; n < numberReferenceProjections; n++)
+    {   
+        correlation_vector(xProjection, referenceProjections[n], correlationVectorX);
+        correlation_vector(yProjection, referenceProjections[(stepReferenceProjections + n) % numberReferenceProjections], correlationVectorY);
+
+        double maximumCorrX = MINDOUBLE;
+        double maximumCorrY = MINDOUBLE;
+
+        size_t shiftX, shiftY;
+
+        for(size_t i = 0; i < correlationVectorX.size(); i++)
+        {
+            if(correlationVectorX[i] > maximumCorrX)
+            {
+                maximumCorrX = correlationVectorX[i]
+                shiftX = i;
+            }
+
+            if(correlationVectorY[i] > maximumCorrY)
+            {
+                maximumCorrY = correlationVectorY[i]
+                shiftY = i;
+            }
+        }
+
+        // TODO: check for negative values
+        maximumCorrVector[n] = maximumCorrX + maximumCorrY;
+        shiftMaximumCorrVector[n] = [shiftX, shiftY];
+    }
+    
+    double maxCorr = MINDOUBLE;
+    std::vector<size_t> maxShift;
+    float angle;
+
+    for(size_t n = 0; n < maximumCorrVector.size(); n++) 
+    {
+        if(maximumCorrVector[n] > maxCorr)
+        {
+            maxCorr = averageCorr;
+            maxShift = maximumShiftVector[n];
+            angle = n * angleStepRefenceProjections;
+        }
+    }
+
+    size_t shiftX = (maximumShiftVector[0] - vectorSize / 2) / 2;
+    size_t shiftY = (maximumShiftVector[1] - vectorSize / 2) / 2;
+
+    // return angle, shX, shY;
 }
 
 
