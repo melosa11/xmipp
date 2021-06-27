@@ -59,7 +59,7 @@ void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
     size_t semiboxsize = xdim/2;
     size_t lambdalimit = xdim/2;//floor(xdim*sqrt(2)/2);
 
-    std::cout << "boxsize= " << boxsize << "  " << "xdim = " << xdim << "  " << "ydim = " << ydim << std::endl;
+    std::cout << "boxsize= " << semiboxsize << "  " << "xdim = " << xdim << "  " << "ydim = " << ydim << std::endl;
 
     MultidimArray<T> projImg;
 
@@ -73,37 +73,45 @@ void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
 
     // for (int angle = 0; angle<180; angle++)
     int angle = 0.0;
-    double ang= angle*PI/180.0;
-
+    
     std::vector<double> galleryProjections[Nprojections];
 
-    for (int n = -semiboxsize; n<semiboxsize; n++)
+    int angStep = 1;
+    int Nprojections = 180/angStep;
+
+    for (int angle =0; angle<180; angle+=angStep)
     {
-        for (int lambda = -lambdalimit; lambda<lambdalimit; lambda++)
+       double ang= angle*PI/180.0;
+
+        for (int lambda = -semiboxsize; lambda<semiboxsize; lambda++)
         {
-            double c = cos(ang);
-            size_t j = round(lambda*c) + semiboxsize;
-            size_t i = round(lambda*sin(ang)) + semiboxsize + ((double) n )/c;
-            
-            std::cout << "i = " << i << "   j = " << j << std::endl;
-
-            if ((j<=xdim) && (i<=ydim))
+            for (int mu = -semiboxsize; mu<semiboxsize; mu++)
             {
-                A2D_ELEM(projImg, n) += A2D_ELEM(img, i, j);
+                double c = cos(ang);
+                double s = sin(ang);
+                int j = round(lambda*c-mu*s)+semiboxsize;
+                int i = round(lambda*s+mu*c)+semiboxsize;
+                
+                std::cout << "i = " << i << "   j = " << j << std::endl;
+
+                if ((j<=xdim) && (i<=ydim))
+                {
+                    A1D_ELEM(projImg, lambda+semiboxsize) += A2D_ELEM(img, i, j);
+                }
+
             }
-
         }
+
+    galleryProjections[angle] = A1D_ELEM(projImg, Nprojections, n);
+    
     }
-
-    galleryProjections[projIdx] = A2D_ELEM(projImg, Nprojections, n);
-
 
     Image<double> saveImg;
     saveImg() = projImg;
     saveImg.write("kkk.mrc");
 }
 
-
+/*
 void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProjection,
                                                     MultidimArray<double> &yProjection,
                                                     std::vector<MultidimArray<double>> &referenceProjections)
@@ -132,13 +140,13 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
         {
             if(correlationVectorX[i] > maximumCorrX)
             {
-                maximumCorrX = correlationVectorX[i]
+                maximumCorrX = correlationVectorX[i];
                 shiftX = i;
             }
 
             if(correlationVectorY[i] > maximumCorrY)
             {
-                maximumCorrY = correlationVectorY[i]
+                maximumCorrY = correlationVectorY[i];
                 shiftY = i;
             }
         }
@@ -167,7 +175,7 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
 
     // return angle, shX, shY;
 }
-
+*/
 
 void ProgClassifyProjection2D::run()
 {

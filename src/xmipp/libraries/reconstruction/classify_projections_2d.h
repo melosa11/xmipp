@@ -61,6 +61,9 @@ public:
     
     template<typename T>
     void projectImage2D(MultidimArray<T> &img);
+    void correlateProjections(MultidimArray<double> &xProjection,
+                              MultidimArray<double> &yProjection,
+                              std::vector<MultidimArray<double>> &referenceProjections);
     void run();
 
 };
