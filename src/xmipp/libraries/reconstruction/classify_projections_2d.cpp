@@ -111,20 +111,20 @@ void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
     saveImg.write("kkk.mrc");
 }
 
-/*
+
 void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProjection,
                                                     MultidimArray<double> &yProjection,
                                                     std::vector<MultidimArray<double>> &referenceProjections)
 {
-    size_t vectorSize = xProjection.size();
+    size_t vectorSize = XSIZE(xProjection);
     size_t numberReferenceProjections = referenceProjections.size();
     size_t stepReferenceProjections = numberReferenceProjections / 2;
 
     float angleStepRefenceProjections = 180 / numberReferenceProjections;
 
-    std::vector<double> correlationVectorX, correlationVectorY;
+    MultidimArray<double> correlationVectorX, correlationVectorY;
     std::vector<double> maximumCorrVector(numberReferenceProjections);
-    std::vector<std::vector> shiftMaximumCorrVector(numberReferenceProjections);
+    std::vector<std::vector<size_t>> shiftMaximumCorrVector(numberReferenceProjections);
 
     for(int n = 0; n < numberReferenceProjections; n++)
     {   
@@ -136,7 +136,7 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
 
         size_t shiftX, shiftY;
 
-        for(size_t i = 0; i < correlationVectorX.size(); i++)
+        for(size_t i = 0; i < XSIZE(correlationVectorX); i++)
         {
             if(correlationVectorX[i] > maximumCorrX)
             {
@@ -152,8 +152,9 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
         }
 
         // TODO: check for negative values
-        maximumCorrVector[n] = maximumCorrX + maximumCorrY;
-        shiftMaximumCorrVector[n] = [shiftX, shiftY];
+        maximumCorrVector[n] = (maximumCorrX + maximumCorrY);
+        std::vector<size_t> shiftsVector {shiftX, shiftY};
+        shiftMaximumCorrVector[n] = shiftsVector;
     }
     
     double maxCorr = MINDOUBLE;
@@ -164,18 +165,18 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
     {
         if(maximumCorrVector[n] > maxCorr)
         {
-            maxCorr = averageCorr;
-            maxShift = maximumShiftVector[n];
+            maxCorr = maximumCorrVector[n];
+            maxShift = shiftMaximumCorrVector[n];
             angle = n * angleStepRefenceProjections;
         }
     }
 
-    size_t shiftX = (maximumShiftVector[0] - vectorSize / 2) / 2;
-    size_t shiftY = (maximumShiftVector[1] - vectorSize / 2) / 2;
+    size_t shiftX = (maxShift[0] - vectorSize / 2) / 2;
+    size_t shiftY = (maxShift[1] - vectorSize / 2) / 2;
 
     // return angle, shX, shY;
 }
-*/
+
 
 void ProgClassifyProjection2D::run()
 {
@@ -188,9 +189,6 @@ void ProgClassifyProjection2D::run()
     std::cout << "continue" << std::endl;
 
     projectImage2D(img);
-
-
-
 	
 }
 
