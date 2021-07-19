@@ -1,7 +1,7 @@
 /***************************************************************************
  *
- * Authors:    Jose Luis Vilas, 					  jlvilas@cnb.csic.es
- * 			   Carlos Oscar S. Sorzano            coss@cnb.csic.es (2016)
+ * Authors:    Federico P. de Isidro Gomez       fdeisidro@cnb.csic.es (2021)
+ * Authors:    Jose Luis Vilas                   jlvilas@cnb.csic.es (2021)
  *
  * Unidad de  Bioinformatica of Centro Nacional de Biotecnologia , CSIC
  *
