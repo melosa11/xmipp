@@ -60,7 +60,7 @@ public:
     void produceSideInfo();
     
     template<typename T>
-    void projectImage2D(MultidimArray<T> &img);
+    std::vector<MultidimArray<double>> projectImage2D(MultidimArray<T> &img, double angularStep, int angularOffset);
     MultidimArray<double> evenCase(double a, double c, double s, int semiboxsize, 
                                         size_t xdim, size_t ydim, MultidimArray<double> &img);
 

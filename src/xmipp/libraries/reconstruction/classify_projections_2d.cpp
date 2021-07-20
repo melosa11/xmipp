@@ -30,7 +30,7 @@
 void ProgClassifyProjection2D::readParams()
 {
 	fnImg = getParam("--img");
-    sampling = getDoubleParam("--sampling");
+    // sampling = getDoubleParam("--sampling");
     angStep = getDoubleParam("--angularStep");
 	fnOut = getParam("-o");
 }
@@ -40,7 +40,7 @@ void ProgClassifyProjection2D::defineParams()
 {
 	addUsageLine("Projections ...");
 	addParamsLine("  --img <img_file=\"\">   			: Input Image");
-    addParamsLine("  --sampling <sampling=1.0>   			: Sampling rate (A)");
+    // addParamsLine("  --sampling <sampling=1.0>   			: Sampling rate (A)");
     addParamsLine("  --angularStep <angStep=1.0>   			: Angular step for projecting (in degrees)");
 	addParamsLine("  -o <output=\"projection.mrc\">	    : Projections");
 }
@@ -53,7 +53,7 @@ void ProgClassifyProjection2D::produceSideInfo()
 }
 
 template<typename T>
-void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
+std::vector<MultidimArray<double>> ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img, double angularStep, int angularOffset)
 {
     size_t xdim, ydim;
 
@@ -68,11 +68,17 @@ void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
     // Nangles = length(angle_proj);
     // projImg = zeros(Nangles, xdim);
 
-    MultidimArray<double> uniDimProj;
+    size_t n = (size_t)180/angularStep;
 
-    for (int a = 0; a<180; a+=angStep)
+    MultidimArray<double> uniDimProj;
+    std::vector<MultidimArray<double>> imgProjSet(n);
+
+    // Recycle variable as coounter
+    n = 0;
+
+    for (int a = angularOffset; a < 180 + angularOffset; a += angularStep)
     {
-        double ang = a*PI/180.0;
+        double ang = a * PI / 180.0;
         // std::cout << "angle in rad = " << ang << std::endl;
         double c = cos(ang);
         double s = sin(ang);
@@ -81,6 +87,8 @@ void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
         {
             uniDimProj = evenCase(a, c, s, semiboxsize, xdim, ydim, img);
             std::cout << ";" << std::endl;
+
+            imgProjSet[n] = uniDimProj;
             // projImg(a,:) = uniDimProj;
         }
         // else
@@ -89,7 +97,10 @@ void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
         //     projImg(a,:) = uniDimProj;
         // }
 
+        n++;
     }
+
+    return imgProjSet;
 }
 
 
@@ -106,7 +117,7 @@ MultidimArray<double> ProgClassifyProjection2D::evenCase(double a, double c, dou
         for (size_t col = 0; col<ydim; col++)
         {
             double p;
-            p = sqrt( (row-semiboxsize-0.5)*(row-semiboxsize-0.5) + (col-semiboxsize-0.5)*(col-semiboxsize-0.5) );
+            p = sqrt( (row-semiboxsize-0.5)*(row-semiboxsize-0.5) + (col-semiboxsize-0.5)*(col-semiboxsize-0.5));
             
             double cosAngle;
             cosAngle = ( (row-0.5-semiboxsize)*c + (col-0.5-semiboxsize)*s )/p;
@@ -133,8 +144,8 @@ MultidimArray<double> ProgClassifyProjection2D::evenCase(double a, double c, dou
                 {
                     pxidx += 1;
                 }
-                DIRECT_MULTIDIM_ELEM(projProfile, pxidx-1) += DIRECT_A2D_ELEM(img, row, col);
 
+                DIRECT_MULTIDIM_ELEM(projProfile, pxidx-1) += DIRECT_A2D_ELEM(img, row, col);
             }
             
         }
@@ -143,10 +154,7 @@ MultidimArray<double> ProgClassifyProjection2D::evenCase(double a, double c, dou
     for (size_t i = 0; i<xdim; i++ )
         std::cout << DIRECT_MULTIDIM_ELEM(projProfile, i) << " ";
 
-
     return projProfile;
-
-
 }
 
 
@@ -155,7 +163,6 @@ MultidimArray<double> ProgClassifyProjection2D::evenCase(double a, double c, dou
 // {
     
 // }
-
 
 void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProjection,
                                                     MultidimArray<double> &yProjection,
@@ -233,8 +240,18 @@ void ProgClassifyProjection2D::run()
 
     std::cout << "continue" << std::endl;
 
-    projectImage2D(img);
-	
+    std::vector<MultidimArray<double>> normalProjections, imgProjSet;
+
+    imgProjSet = projectImage2D(img, angStep, 0);
+
+    normalProjections = projectImage2D(img, 90, 45);
+
+    MultidimArray<double> xProjection, yProjection;
+
+    xProjection = normalProjections[0];
+    yProjection = normalProjections[1];
+
+    correlateProjections(xProjection, yProjection, imgProjSet);
 }
 
 
