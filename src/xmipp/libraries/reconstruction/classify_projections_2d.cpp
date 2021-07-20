@@ -31,6 +31,7 @@ void ProgClassifyProjection2D::readParams()
 {
 	fnImg = getParam("--img");
     sampling = getDoubleParam("--sampling");
+    angStep = getDoubleParam("--angularStep");
 	fnOut = getParam("-o");
 }
 
@@ -40,6 +41,7 @@ void ProgClassifyProjection2D::defineParams()
 	addUsageLine("Projections ...");
 	addParamsLine("  --img <img_file=\"\">   			: Input Image");
     addParamsLine("  --sampling <sampling=1.0>   			: Sampling rate (A)");
+    addParamsLine("  --angularStep <angStep=1.0>   			: Angular step for projecting (in degrees)");
 	addParamsLine("  -o <output=\"projection.mrc\">	    : Projections");
 }
 
@@ -53,63 +55,106 @@ void ProgClassifyProjection2D::produceSideInfo()
 template<typename T>
 void ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img)
 {
-    size_t xdim = XSIZE(img), ydim = YSIZE(img);
+    size_t xdim, ydim;
 
-    //TODO: check the limits
-    size_t semiboxsize = xdim/2;
-    size_t lambdalimit = xdim/2;//floor(xdim*sqrt(2)/2);
+    xdim = XSIZE(img);
+    ydim = YSIZE(img);
 
-    std::cout << "boxsize= " << semiboxsize << "  " << "xdim = " << xdim << "  " << "ydim = " << ydim << std::endl;
+    size_t boxsize = xdim;
 
-    MultidimArray<T> projImg;
+    size_t semiboxsize = boxsize/2;
 
-    size_t Nprojections = 1;
+    // angle_proj = 90:1:269;
+    // Nangles = length(angle_proj);
+    // projImg = zeros(Nangles, xdim);
 
-    //projImg is the radon Tranform. The first row is the projection at 
-    // 0 degrees, the second row is the projection at 1 degree and so on
-    projImg.initZeros(xdim);
+    MultidimArray<double> uniDimProj;
 
-    //TODO: check if the number of pixels is odd or even
-
-    // for (int angle = 0; angle<180; angle++)
-    int angle = 0.0;
-    
-    std::vector<double> galleryProjections[Nprojections];
-
-    int angStep = 1;
-    int Nprojections = 180/angStep;
-
-    for (int angle =0; angle<180; angle+=angStep)
+    for (int a = 0; a<180; a+=angStep)
     {
-       double ang= angle*PI/180.0;
+        double ang = a*PI/180.0;
+        // std::cout << "angle in rad = " << ang << std::endl;
+        double c = cos(ang);
+        double s = sin(ang);
 
-        for (int lambda = -semiboxsize; lambda<semiboxsize; lambda++)
+        if (xdim % 2 == 0)
         {
-            for (int mu = -semiboxsize; mu<semiboxsize; mu++)
-            {
-                double c = cos(ang);
-                double s = sin(ang);
-                int j = round(lambda*c-mu*s)+semiboxsize;
-                int i = round(lambda*s+mu*c)+semiboxsize;
-                
-                std::cout << "i = " << i << "   j = " << j << std::endl;
+            uniDimProj = evenCase(a, c, s, semiboxsize, xdim, ydim, img);
+            std::cout << ";" << std::endl;
+            // projImg(a,:) = uniDimProj;
+        }
+        // else
+        // {
+        //     uniDimProj = oddCase(a, c, s, semiboxsize, xdim, ydim, img);
+        //     projImg(a,:) = uniDimProj;
+        // }
 
-                if ((j<=xdim) && (i<=ydim))
+    }
+}
+
+
+MultidimArray<double> ProgClassifyProjection2D::evenCase(double a, double c, double s, int semiboxsize, 
+                                        size_t xdim, size_t ydim, MultidimArray<double> &img)
+{
+    MultidimArray<double> projProfile;
+    projProfile.initZeros(xdim);
+
+    int pxidx;
+
+    for (size_t row = 0; row<xdim; row++)
+    {
+        for (size_t col = 0; col<ydim; col++)
+        {
+            double p;
+            p = sqrt( (row-semiboxsize-0.5)*(row-semiboxsize-0.5) + (col-semiboxsize-0.5)*(col-semiboxsize-0.5) );
+            
+            double cosAngle;
+            cosAngle = ( (row-0.5-semiboxsize)*c + (col-0.5-semiboxsize)*s )/p;
+
+            double px = p*cosAngle;
+
+            if (abs(px)<=semiboxsize)
+            {
+                int signOfpx;
+                signOfpx = (-px);
+
+                if (px >= 0)
                 {
-                    A1D_ELEM(projImg, lambda+semiboxsize) += A2D_ELEM(img, i, j);
+                    signOfpx = 1;
+                }
+                else
+                {
+                    signOfpx = -1;
                 }
 
-            }
-        }
+                pxidx = signOfpx * ceil(abs(px)) + semiboxsize;
 
-    galleryProjections[angle] = A1D_ELEM(projImg, Nprojections, n);
-    
+                if (signOfpx <=0)
+                {
+                    pxidx += 1;
+                }
+                DIRECT_MULTIDIM_ELEM(projProfile, pxidx-1) += DIRECT_A2D_ELEM(img, row, col);
+
+            }
+            
+        }
     }
 
-    Image<double> saveImg;
-    saveImg() = projImg;
-    saveImg.write("kkk.mrc");
+    for (size_t i = 0; i<xdim; i++ )
+        std::cout << DIRECT_MULTIDIM_ELEM(projProfile, i) << " ";
+
+
+    return projProfile;
+
+
 }
+
+
+// void ProgClassifyProjection2D::oddCase(double a, double c, double s, 
+                                        // int semiboxsize, size_t xdim, size_t ydim, size_t zdim)
+// {
+    
+// }
 
 
 void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProjection,

@@ -51,7 +51,7 @@ public:
 	FileName fnOut, fnImg;
 
 	/** sampling rate */
-	double sampling, minRes, maxRes, R;
+	double sampling, angStep;
 
 public:
 
@@ -61,6 +61,9 @@ public:
     
     template<typename T>
     void projectImage2D(MultidimArray<T> &img);
+    MultidimArray<double> evenCase(double a, double c, double s, int semiboxsize, 
+                                        size_t xdim, size_t ydim, MultidimArray<double> &img);
+
     void correlateProjections(MultidimArray<double> &xProjection,
                               MultidimArray<double> &yProjection,
                               std::vector<MultidimArray<double>> &referenceProjections);
