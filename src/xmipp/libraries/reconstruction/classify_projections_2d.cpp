@@ -170,14 +170,11 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
 {
     std::cout << "Correlatng projections" << std::endl;
 
-    size_t vectorSize = XSIZE(xProjection);
     size_t numberReferenceProjections = referenceProjections.size();
     // *** pensar sobre /2
     size_t stepReferenceProjections = numberReferenceProjections / 2;
     
     std::cout << "numberReferenceProjections " << numberReferenceProjections<< std::endl;
-
-    float angleStepRefenceProjections = 180.0 / numberReferenceProjections;
 
     MultidimArray<double> correlationVectorX, correlationVectorY;
     std::vector<double> maximumCorrVector(numberReferenceProjections);
@@ -209,15 +206,19 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
         std::cout << "nSize referenceProj " << referenceProjections.size() << std::endl;
         #endif
         
-        correlateProjectionsVectors(xProjection, referenceProjections[n], correlationVectorX);        
-        correlateProjectionsVectors(yProjection, referenceProjections[(stepReferenceProjections + n) % numberReferenceProjections], correlationVectorY);
+        correlateProjectionsVectors(xProjection, referenceProjections[n], correlationVectorX);   
+        size_t n90 = (stepReferenceProjections + n) % numberReferenceProjections;
+        correlateProjectionsVectors(yProjection, referenceProjections[n], correlationVectorY);
+
+        // double correlationIndex(xProjection, referenceProjections[n]);     
+        // double correlationIndex(yProjection, referenceProjections[n]);
 
         #ifdef DEBUG
         std::cout << "ANGLES------------------>" << std::endl;
-        std::cout << "xProj angle " << n*angleStepRefenceProjections << std::endl;
+        std::cout << "xProj angle " << n * angStep << std::endl;
         std::cout << "xProj n " << n << std::endl;
-        std::cout << "yProj angle " << ((stepReferenceProjections + n) % numberReferenceProjections) * angleStepRefenceProjections << std::endl;
-        std::cout << "yProj n " << (stepReferenceProjections + n) % numberReferenceProjections << std::endl;
+        std::cout << "yProj angle " << n90 * angStep << std::endl;
+        std::cout << "yProj n " << n90 << std::endl;
         std::cout << "---------------------------------------------------------------------------" << std::endl;
         #endif
 
@@ -308,10 +309,11 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
         {
             maxCorr = maximumCorrVector[n];
             maxShift = shiftMaximumCorrVector[n];
-            angle = n * angleStepRefenceProjections;
+            angle = n * angStep;
         }
     }
 
+    size_t vectorSize = XSIZE(xProjection);
     int shiftX = (maxShift[0] - vectorSize / 2) / 2;
     int shiftY = (maxShift[1] - vectorSize / 2) / 2;
 
@@ -332,6 +334,29 @@ void ProgClassifyProjection2D::correlateProjectionsVectors(const MultidimArray< 
 {
     // m1.checkDimension(2);
     // m2.checkDimension(2);
+
+    double m1Norm = 0, m2Norm = 0;
+
+    FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m1)
+    {
+        m1Norm += m1(i);
+    }
+    
+    FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m2)
+    {
+        m2Norm += m2(i);
+    }
+
+    FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m1)
+    {
+        m1(i) /= m1Norm;
+    }
+    
+    FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m2)
+    {
+        m2(i) /= m2Norm;
+    }
+
 
     // Compute the Fourier Transforms
     MultidimArray< std::complex< double > > FFT1, FFT2;
@@ -372,7 +397,7 @@ void ProgClassifyProjection2D::run()
 
     imgProjSet = projectImage2D(img, angStep, 0);
 
-    normalProjections = projectImage2D(testImage, 90, 0);
+    normalProjections = projectImage2D(testImage, 90, 45);
 
     MultidimArray<double> xProjection, yProjection;
 
