@@ -67,6 +67,10 @@ public:
     void correlateProjections(MultidimArray<double> &xProjection,
                               MultidimArray<double> &yProjection,
                               std::vector<MultidimArray<double>> &referenceProjections);
+    template<typename T>
+    void correlateProjectionsVectors(const MultidimArray< T > & m1,
+                        const MultidimArray< T > & m2,
+                        MultidimArray< double >& R);
     void run();
 
 };
