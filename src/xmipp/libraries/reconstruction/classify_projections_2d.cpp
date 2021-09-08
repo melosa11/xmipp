@@ -213,6 +213,24 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
         size_t n90 = (stepReferenceProjections + n) % numberReferenceProjections;
         correlateProjectionsVectors(yProjection, referenceProjections[n90], correlationVectorY);
 
+        if (n==20)
+        {
+            std::cout << "correlationVectorX = [" << std::endl;
+            for(size_t i = 0; i < XSIZE(correlationVectorX); i++)
+            {
+                std::cout << correlationVectorX[i] << " ";
+            }
+            std::cout << "];" << std::endl;
+
+
+            std::cout << "correlationVectorY = [" << std::endl;
+            for(size_t i = 0; i < XSIZE(correlationVectorY); i++)
+            {
+                std::cout << correlationVectorY[i] << " ";
+            }
+            std::cout << "];" << std::endl;
+        }
+
         // double correlationIndex(xProjection, referenceProjections[n]);     
         // double correlationIndex(yProjection, referenceProjections[n]);
 
@@ -377,9 +395,6 @@ void ProgClassifyProjection2D::correlateProjectionsVectors(const MultidimArray< 
     // MultidimArray< std::complex< double > > demNormFFT1;
     // demNormFFT1.initZeros(FFT1)
 
-    std::cout << "-----------------------------------------------------------------" << std::endl;
-    std::cout << XSIZE(FFT1) << std::endl;
-
     // Multiply FFT1 * FFT2'
     std::complex<double> sumFFT(0,0);
 
@@ -426,7 +441,7 @@ void ProgClassifyProjection2D::run()
 
     imgProjSet = projectImage2D(img, angStep, 0);
 
-    normalProjections = projectImage2D(testImage, 90, 20);
+    normalProjections = projectImage2D(testImage, 90, 0);
 
     MultidimArray<double> xProjection, yProjection;
 
@@ -450,19 +465,15 @@ void ProgClassifyProjection2D::run()
     std::cout << "];" << std::endl;
 
 
-    std::cout << "reference0 = [" << std::endl;
-    for(size_t i = 0; i < XSIZE(imgProjSet[0]); i++)
+    for (size_t n = 0; n < imgProjSet.size(); n++)
     {
-        std::cout << imgProjSet[0][i] << " ";
+        std::cout << "reference" << n << " = [" << std::endl;
+        for(size_t i = 0; i < XSIZE(imgProjSet[n]); i++)
+        {
+            std::cout << imgProjSet[n][i] << " ";
+        }
+        std::cout << "];" << std::endl;   
     }
-    std::cout << "];" << std::endl;   
-    
-    std::cout << "reference90 = [" << std::endl;
-    for(size_t i = 0; i < XSIZE(imgProjSet[90]); i++)
-    {
-        std::cout << imgProjSet[90][i] << " ";
-    }
-    std::cout << "];" << std::endl;
 
     correlateProjections(xProjection, yProjection, imgProjSet);
 }
