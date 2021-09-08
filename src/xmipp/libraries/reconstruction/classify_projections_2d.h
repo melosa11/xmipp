@@ -48,7 +48,7 @@ class ProgClassifyProjection2D : public XmippProgram
 {
 public:
 	 /** Filenames */
-	FileName fnOut, fnImg;
+	FileName fnOut, fnImg, fnImgTest;
 
 	/** sampling rate */
 	double sampling, angStep;

@@ -33,6 +33,7 @@ void ProgClassifyProjection2D::readParams()
     // sampling = getDoubleParam("--sampling");
     angStep = getDoubleParam("--angularStep");
 	fnOut = getParam("-o");
+    fnImgTest = getParam("--imgTest");
 }
 
 
@@ -41,8 +42,9 @@ void ProgClassifyProjection2D::defineParams()
 	addUsageLine("Projections ...");
 	addParamsLine("  --img <img_file=\"\">   			: Input Image");
     // addParamsLine("  --sampling <sampling=1.0>   			: Sampling rate (A)");
-    addParamsLine("  --angularStep <angStep=1.0>   			: Angular step for projecting (in degrees)");
+    addParamsLine("  --angularStep <angStep=1.0>     	: Angular step for projecting (in degrees)");
 	addParamsLine("  -o <output=\"projection.mrc\">	    : Projections");
+    addParamsLine(" --imgTest <img_file=\"\">           : Input image test, it will be correlated with the reference (--img)");
 }
 
 
@@ -171,7 +173,8 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
     std::cout << "Correlatng projections" << std::endl;
 
     size_t numberReferenceProjections = referenceProjections.size();
-    // *** pensar sobre /2
+    
+    // We divide by two since in the the number of images that separates every pair of reference images that will be correlation with x and y projection
     size_t stepReferenceProjections = numberReferenceProjections / 2;
     
     std::cout << "numberReferenceProjections " << numberReferenceProjections<< std::endl;
@@ -208,7 +211,7 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
         
         correlateProjectionsVectors(xProjection, referenceProjections[n], correlationVectorX);   
         size_t n90 = (stepReferenceProjections + n) % numberReferenceProjections;
-        correlateProjectionsVectors(yProjection, referenceProjections[n], correlationVectorY);
+        correlateProjectionsVectors(yProjection, referenceProjections[n90], correlationVectorY);
 
         // double correlationIndex(xProjection, referenceProjections[n]);     
         // double correlationIndex(yProjection, referenceProjections[n]);
@@ -300,6 +303,8 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
 
     
     double maxCorr = MINDOUBLE;
+    double maxCorrX = MINDOUBLE;
+    double maxCorrY = MINDOUBLE;
     std::vector<int> maxShift;
     float angle;
 
@@ -308,6 +313,8 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
         if(maximumCorrVector[n] > maxCorr)
         {
             maxCorr = maximumCorrVector[n];
+            maxCorrX = maximumCorrVectorX[n];
+            maxCorrY = maximumCorrVectorY[n];
             maxShift = shiftMaximumCorrVector[n];
             angle = n * angStep;
         }
@@ -320,6 +327,8 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
 
     std::cout << MINDOUBLE << std::endl;
     std::cout << "maxCorr " << maxCorr << std::endl;
+    std::cout << "maxCorrX " << maxCorrX << std::endl;
+    std::cout << "maxCorrY " << maxCorrY << std::endl;
     std::cout << "angle " << angle << std::endl;
     std::cout << "shiftX " << shiftX << std::endl;
     std::cout << "shiftY " << shiftY << std::endl;
@@ -329,33 +338,33 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
 
 template <typename T>
 void ProgClassifyProjection2D::correlateProjectionsVectors(const MultidimArray< T > & m1,
-                        const MultidimArray< T > & m2,
-                        MultidimArray< double >& R)
+                                                           const MultidimArray< T > & m2,
+                                                           MultidimArray< double >& R)
 {
     // m1.checkDimension(2);
     // m2.checkDimension(2);
 
-    double m1Norm = 0, m2Norm = 0;
+    // double m1Norm = 0, m2Norm = 0;
 
-    FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m1)
-    {
-        m1Norm += m1(i);
-    }
+    // FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m1)
+    // {
+    //     m1Norm += m1(i);
+    // }
     
-    FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m2)
-    {
-        m2Norm += m2(i);
-    }
+    // FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m2)
+    // {
+    //     m2Norm += m2(i);
+    // }
 
-    FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m1)
-    {
-        m1(i) /= m1Norm;
-    }
+    // FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m1)
+    // {
+    //     m1(i) /= m1Norm;
+    // }
     
-    FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m2)
-    {
-        m2(i) /= m2Norm;
-    }
+    // FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(m2)
+    // {
+    //     m2(i) /= m2Norm;
+    // }
 
 
     // Compute the Fourier Transforms
@@ -365,10 +374,30 @@ void ProgClassifyProjection2D::correlateProjectionsVectors(const MultidimArray< 
     transformer1.FourierTransform(R, FFT1, false);
     transformer2.FourierTransform((MultidimArray<T> &)m2, FFT2, false);
 
+    // MultidimArray< std::complex< double > > demNormFFT1;
+    // demNormFFT1.initZeros(FFT1)
+
+    std::cout << "-----------------------------------------------------------------" << std::endl;
+    std::cout << XSIZE(FFT1) << std::endl;
+
     // Multiply FFT1 * FFT2'
+    std::complex<double> sumFFT(0,0);
+
     double dSize=XSIZE(m1);
     FOR_ALL_ELEMENTS_IN_ARRAY1D(FFT1)
-    FFT1(i) *= dSize * conj(FFT2(i));
+    {
+        // FFT1(i) *= dSize * conj(FFT2(i));
+        FFT1(i) *= conj(FFT2(i));
+
+        sumFFT += abs(FFT1(i)); // real(FFT1(i)*conj(FFT1(i)));
+
+        // demNormFFT1(i) = abs(FFT1(i));
+
+        FFT1(i) /= (dSize * abs(FFT1(i)));
+    }
+
+    // FOR_ALL_DIRECT_ELEMENTS_IN_ARRAY1D(FFT1)
+    // FFT1(i) /= sumFFT;
 
     // Invert the product, in order to obtain the correlation image
     transformer1.inverseFourierTransform();
@@ -388,7 +417,7 @@ void ProgClassifyProjection2D::run()
     auto img= inputImg();
 
     Image<double> inputTestImage;
-    inputTestImage.read("/home/fede/AA_2dClassProy/elipse2d_rot90.mrc");
+    inputTestImage.read(fnImgTest);
     auto testImage = inputTestImage();
 
     std::cout << "continue" << std::endl;
@@ -397,7 +426,7 @@ void ProgClassifyProjection2D::run()
 
     imgProjSet = projectImage2D(img, angStep, 0);
 
-    normalProjections = projectImage2D(testImage, 90, 45);
+    normalProjections = projectImage2D(testImage, 90, 20);
 
     MultidimArray<double> xProjection, yProjection;
 
