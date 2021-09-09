@@ -243,7 +243,7 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
         std::cout << "---------------------------------------------------------------------------" << std::endl;
         #endif
 
-        #ifdef DEBUG
+        //#ifdef DEBUG
         if(n==90)
         {
             std::cout << "correlationVectorX = [" << std::endl;
@@ -260,7 +260,7 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
             }
             std::cout << "];" << std::endl;
         }
-        #endif
+       // #endif
 
 
         double maximumCorrX = -1e304;
@@ -268,7 +268,13 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
 
         int shiftX, shiftY;
 
-        for(size_t i = 0; i < XSIZE(correlationVectorX); i++)
+        // TODO *** limitar el rango de busqueda del maximos en el shift
+
+        float percentageShiftSearchRange = 0.1;
+        size_t shiftSearchRange = round(percentageShiftSearchRange * XSIZE(correlationVectorX));
+
+
+        for(size_t i = XSIZE(correlationVectorX)/2 - shiftSearchRange; i < XSIZE(correlationVectorX)/2 + shiftSearchRange; i++)
         {
             if(correlationVectorX[i] > maximumCorrX)
             {
@@ -336,7 +342,7 @@ void ProgClassifyProjection2D::correlateProjections(MultidimArray<double> &xProj
             maxShift = shiftMaximumCorrVector[n];
             angle = n * angStep;
         }
-    }
+    }       
 
     size_t vectorSize = XSIZE(xProjection);
     int shiftX = (maxShift[0] - vectorSize / 2) / 2;
