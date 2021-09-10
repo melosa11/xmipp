@@ -47,14 +47,7 @@ void ProgClassifyProjection2D::defineParams()
     addParamsLine(" --imgTest <img_file=\"\">           : Input image test, it will be correlated with the reference (--img)");
 }
 
-
-void ProgClassifyProjection2D::produceSideInfo()
-{
-	std::cout << "Starting..." << std::endl;
-
-}
-
-    template<typename T>
+template<typename T>
 std::vector<MultidimArray<double>> ProgClassifyProjection2D::projectImage2D(MultidimArray<T> &img, double angularStep, int angularOffset)
 {
     size_t xdim, ydim;
@@ -87,7 +80,8 @@ std::vector<MultidimArray<double>> ProgClassifyProjection2D::projectImage2D(Mult
 
         if (xdim % 2 == 0)
         {
-            uniDimProj = evenCase(a, c, s, semiboxsize, xdim, ydim, img);
+            //uniDimProj = evenCase(a, c, s, semiboxsize, xdim, ydim, img);
+            uniDimProj = evenCaseFine(a, c, s, semiboxsize, xdim, ydim, img);
             // std::cout << ";" << std::endl;
 
             imgProjSet[n] = uniDimProj;
@@ -153,13 +147,80 @@ MultidimArray<double> ProgClassifyProjection2D::evenCase(double a, double c, dou
         }
     }
 
-    for (size_t i = 0; i<xdim; i++ )
+    //for (size_t i = 0; i<xdim; i++ )
         // std::cout << DIRECT_MULTIDIM_ELEM(projProfile, i) << " ";
 
     return projProfile;
 }
 
 
+MultidimArray<double> ProgClassifyProjection2D::evenCaseFine(double a, double c, double s, int semiboxsize, 
+                                        size_t xdim, size_t ydim, MultidimArray<double> &img)
+{
+    MultidimArray<double> projProfile;
+    projProfile.initZeros(xdim);
+
+    for (size_t row = 0; row<xdim; row++)
+    {
+        for (size_t col = 0; col<ydim; col++)
+        {
+            double s_minus, s_plus;
+            s_minus = -0.5 - 0.25*semiboxsize;
+            s_plus  = -0.5 + 0.25*semiboxsize;
+            
+            double p11 = sqrt((row+s_minus)*(row+s_minus) + (col+s_plus) *(col+s_plus));
+            double p12 = sqrt((row+s_plus) *(row+s_plus)  + (col+s_plus) *(col+s_plus));
+            double p21 = sqrt((row+s_minus)*(row+s_minus) + (col+s_minus)*(col+s_minus));
+            double p22 = sqrt((row+s_plus) *(row+s_plus)  + (col+s_minus)*(col+s_minus));
+            double cosAngle11 =  ((row+s_minus)*c + (col+s_plus) *s)/p11;
+            double cosAngle12 =  ((row+s_plus)*c  + (col+s_plus) *s)/p12;
+            double cosAngle21 =  ((row+s_minus)*c + (col+s_minus)*s)/p21;
+            double cosAngle22 =  ((row+s_plus)*c  + (col+s_minus)*s)/p22;
+            double px11 = (p11*cosAngle11);
+            double px12 = (p12*cosAngle12);
+            double px21 = (p21*cosAngle21);
+            double px22 = (p22*cosAngle22);
+
+            checkEvenPixel(px11, semiboxsize, projProfile, img, row, col);
+            checkEvenPixel(px12, semiboxsize, projProfile, img, row, col);
+            checkEvenPixel(px21, semiboxsize, projProfile, img, row, col);
+            checkEvenPixel(px22, semiboxsize, projProfile, img, row, col);
+           
+        }
+    }
+
+    //for (size_t i = 0; i<xdim; i++ )
+        // std::cout << DIRECT_MULTIDIM_ELEM(projProfile, i) << " ";
+
+    return projProfile;
+}
+
+
+void ProgClassifyProjection2D::checkEvenPixel(double px, size_t semiboxsize, MultidimArray<double> &projProfile, MultidimArray<double> &img, size_t row, size_t col)
+{
+    if (abs(px)<=semiboxsize)
+    {
+        
+        int signOfpx;
+        if (px >= 0)
+        {
+            signOfpx = 1;
+        }
+        else
+        {
+            signOfpx = -1;
+        }
+        int pxidx = signOfpx*ceil(abs(px))+semiboxsize;
+
+        if (px<=0)
+        {
+            pxidx = pxidx + 1;
+        }
+        
+        DIRECT_MULTIDIM_ELEM(projProfile, pxidx-1) += DIRECT_A2D_ELEM(img, row, col);
+    }
+
+}
 // void ProgClassifyProjection2D::oddCase(double a, double c, double s, 
                                         // int semiboxsize, size_t xdim, size_t ydim, size_t zdim)
 // {
