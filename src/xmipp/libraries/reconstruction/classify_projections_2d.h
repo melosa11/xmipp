@@ -61,10 +61,10 @@ public:
     template<typename T>
     std::vector<MultidimArray<double>> projectImage2D(MultidimArray<T> &img, double angularStep, int angularOffset);
     
-    MultidimArray<double> evenCase(double a, double c, double s, 
+    MultidimArray<double> evenCase(double c, double s, 
                                         size_t xdim, size_t ydim, MultidimArray<double> &img);
 
-    MultidimArray<double> evenCaseFine(double a, double c, double s, int semiboxsize, 
+    MultidimArray<double> evenCaseFine(double a, double c, double s, 
                                         size_t xdim, size_t ydim, MultidimArray<double> &img);
 
     void checkEvenPixel(double px, size_t semiboxsize, MultidimArray<double> &projProfile, MultidimArray<double> &img, size_t row, size_t col);
