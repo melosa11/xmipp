@@ -61,7 +61,7 @@ public:
     template<typename T>
     std::vector<MultidimArray<double>> projectImage2D(MultidimArray<T> &img, double angularStep, int angularOffset);
     
-    MultidimArray<double> evenCase(double a, double c, double s, int semiboxsize, 
+    MultidimArray<double> evenCase(double a, double c, double s, 
                                         size_t xdim, size_t ydim, MultidimArray<double> &img);
 
     MultidimArray<double> evenCaseFine(double a, double c, double s, int semiboxsize, 
