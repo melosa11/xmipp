@@ -85,7 +85,7 @@ void ProgResBFactor::sweepByResidue(std::vector<double> &residuesToChimera)
 	resvol = imgResVol();
 
 	// The mask is initialized with the same dimentions of the local resolution map
-        MultidimArray<int> mask;
+    MultidimArray<int> mask;
 	mask.resizeNoCopy(resvol);
 	mask.initZeros();
 
@@ -168,7 +168,7 @@ void ProgResBFactor::sweepByResidue(std::vector<double> &residuesToChimera)
                         // If the fsc is provided, then, the local resolution is normalized
 			if (fscResolution>0)
 			{
-				res_resi -= fscResolution;
+				//res_resi -= fscResolution;
 				res_resi /= fscResolution;
 			}
 
@@ -195,6 +195,8 @@ void ProgResBFactor::sweepByResidue(std::vector<double> &residuesToChimera)
 		int k = round(at_pos.z[idx]/sampling) + floor(zdim/2);
 		int i = round(at_pos.y[idx]/sampling) + floor(ydim/2);
 		int j = round(at_pos.x[idx]/sampling) + floor(xdim/2);
+
+		std::cout << k << " " << i << " " << j << std::endl;
 
 		// Covalent Radius of the atom
 		double covRad = at_pos.atomCovRad[idx];

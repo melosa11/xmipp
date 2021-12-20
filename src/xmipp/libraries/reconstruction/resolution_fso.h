@@ -48,7 +48,7 @@ private:
     int Nthreads;
        
     // Bool params
-    bool do_3dfsc_filter;
+    bool do_3dfsc_filter, do_3dfsc_filter_halves;
 
     // Matrix2d for the projection angles
     Matrix2D<float> angles;
@@ -129,8 +129,7 @@ private:
         * by an anisotropic filter with cutoff the isosurface of the fsc at the given threshold
         * introduced by the user. */
         void directionalFilter(MultidimArray<std::complex<double>> &FThalf1,
-    		                    MultidimArray<double> &threeDfsc, MultidimArray<double> &filteredMap,
-                            	int m1sizeX, int m1sizeY, int m1sizeZ);
+    			MultidimArray<double> &threeDfsc, int m1sizeX, int m1sizeY, int m1sizeZ);
 
         /* RESOLUTIONDISTRIBUTION: This function stores in a metadata the resolution distribution on the
         * projection sphere. Thus the metadata contains the resolution of each direction.

@@ -83,6 +83,7 @@ void ProgFSO::defineParams()
 	addParamsLine("   [--threshold <thrs=0.143>]         : (Optional) Threshold for the FSC/directionalFSC estimation ");
 
     addParamsLine("   [--threedfsc_filter]               : (Optional) Put this flag to estimate the 3DFSC, and apply it as low pass filter to obtain a directionally filtered map. It mean to apply an anisotropic filter.");
+    addParamsLine("   [--threedfsc_filter_halves]        : (Optional) Put this flag to apply the anisotropy filter on both half maps.");
 	
 	addParamsLine("   [--threads <Nthreads=1>]           : (Optional) Number of threads to be used");
 
@@ -103,6 +104,7 @@ void ProgFSO::readParams()
 	ang_con = getDoubleParam("--anglecone");
 	thrs = getDoubleParam("--threshold");
 	do_3dfsc_filter = checkParam("--threedfsc_filter");
+	do_3dfsc_filter_halves = checkParam("--threedfsc_filter_halves");
 	
 	Nthreads = getIntParam("--threads");
 }
@@ -1049,9 +1051,8 @@ void ProgFSO::saveAnisotropyToMetadata(MetaDataVec &mdAnisotropy,
 }
 
 
-void ProgFSO::directionalFilter(MultidimArray<std::complex<double>> &FThalf1, 
-			MultidimArray<double> &threeDfsc, 
-			MultidimArray<double> &filteredMap, int m1sizeX, int m1sizeY, int m1sizeZ)
+void ProgFSO::directionalFilter(MultidimArray<std::complex<double>> &FThalf1,
+			MultidimArray<double> &threeDfsc, int m1sizeX, int m1sizeY, int m1sizeZ)
     {
     	Image<double> imgHalf1, imgHalf2;
     	imgHalf1.read(fnhalf1);
@@ -1060,20 +1061,66 @@ void ProgFSO::directionalFilter(MultidimArray<std::complex<double>> &FThalf1,
     	auto &half1 = imgHalf1();
     	auto &half2 = imgHalf2();
 
-        FourierTransformer transformer1(FFTW_BACKWARD);
-        transformer1.FourierTransform(half1, FThalf1);//, false);
-		FourierTransformer transformer2(FFTW_BACKWARD);
-		MultidimArray<std::complex<double>> FThalf2;
-		FThalf2.resizeNoCopy(FThalf1);
-        transformer1.FourierTransform(half2, FThalf2, false);
+    	if (do_3dfsc_filter_halves == true)
+		{
+    		MultidimArray<double> filteredHalf1, filteredHalf2;
+            FourierTransformer transformer1(FFTW_BACKWARD);
+            transformer1.FourierTransform(half1, FThalf1);//, false);
+    		FourierTransformer transformer2(FFTW_BACKWARD);
+    		MultidimArray<std::complex<double>> FThalf2;
+    		FThalf2.resizeNoCopy(FThalf1);
+            transformer1.FourierTransform(half2, FThalf2);
 
-    	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(threeDfsc)
-        {
-    		DIRECT_MULTIDIM_ELEM(FThalf1, n) += DIRECT_MULTIDIM_ELEM(FThalf2, n);
-			DIRECT_MULTIDIM_ELEM(FThalf1, n) *= DIRECT_MULTIDIM_ELEM(threeDfsc, n); 
+        	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(threeDfsc)
+            {
+    			DIRECT_MULTIDIM_ELEM(FThalf1, n) *= DIRECT_MULTIDIM_ELEM(threeDfsc, n);
+    			DIRECT_MULTIDIM_ELEM(FThalf2, n) *= DIRECT_MULTIDIM_ELEM(threeDfsc, n);
+        	}
+        	filteredHalf1.resizeNoCopy(m1sizeX, m1sizeY, m1sizeZ);
+        	filteredHalf2.resizeNoCopy(m1sizeX, m1sizeY, m1sizeZ);
+        	transformer1.inverseFourierTransform(FThalf1, filteredHalf1);
+        	transformer1.inverseFourierTransform(FThalf2, filteredHalf2);
+
+        	Image<double> saveImg2(filteredHalf1);
+    		saveImg2.write(fnOut+"/dirfiltered_half1.mrc");
+
+    		saveImg2() = filteredHalf2;
+    		saveImg2.write(fnOut+"/dirfiltered_half2.mrc");
+
+    		FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(filteredHalf1)
+			{
+				DIRECT_MULTIDIM_ELEM(filteredHalf1, n) += DIRECT_MULTIDIM_ELEM(filteredHalf2, n)*0.5;
+			}
+    		saveImg2() = filteredHalf1;
+    		saveImg2.write(fnOut+"/filteredMap.mrc");
+		}
+    	else
+    	{
+    		std::cout << "as" << std::endl;
+            FourierTransformer transformer1(FFTW_BACKWARD);
+            transformer1.FourierTransform(half1, FThalf1);//, false);
+    		FourierTransformer transformer2(FFTW_BACKWARD);
+    		MultidimArray<std::complex<double>> FThalf2;
+    		FThalf2.resizeNoCopy(FThalf1);
+            transformer1.FourierTransform(half2, FThalf2, false);
+
+        	FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(threeDfsc)
+            {
+        		DIRECT_MULTIDIM_ELEM(FThalf1, n) += DIRECT_MULTIDIM_ELEM(FThalf2, n);
+    			DIRECT_MULTIDIM_ELEM(FThalf1, n) *= DIRECT_MULTIDIM_ELEM(threeDfsc, n);
+        	}
+        	MultidimArray<double> filteredMap;
+        	std::cout << m1sizeX << "  " << m1sizeY << "  " << m1sizeZ << std::endl;
+        	filteredMap.resizeNoCopy(m1sizeX, m1sizeY, m1sizeZ);
+        	transformer1.inverseFourierTransform(FThalf1, filteredMap);
+
+        	Image<double> saveImg2;
+        	saveImg2() = filteredMap;
+    		saveImg2.write(fnOut+"/filteredMap.mrc");
     	}
-    	filteredMap.resizeNoCopy(m1sizeX, m1sizeY, m1sizeZ);
-    	transformer1.inverseFourierTransform(FThalf1, filteredMap);
+
+
+
     }
 
 
@@ -1410,14 +1457,13 @@ void ProgFSO::run()
 			realGaussianFilter(d3_aniFilter, sigma);
 
 			// DIRECTIONAL FILTERED MAP
-			MultidimArray<double> filteredMap;
-			directionalFilter(FT1, d3_aniFilter, filteredMap, xvoldim, yvoldim, zvoldim);
-			Image<double> saveImg2(filteredMap);
-			saveImg2.write(fnOut+"/filteredMap.mrc");
+//			MultidimArray<double> filteredMap;
+			directionalFilter(FT1, d3_aniFilter, xvoldim, yvoldim, zvoldim);
+//			Image<double> saveImg2(filteredMap);
+//			saveImg2.write(fnOut+"/filteredMap.mrc");
 
 
 			//FULL 3DFSC MAP
-
 			fn = fnOut+"/3dFSC.mrc";
 			createFullFourier(d3_FSCMap, fn, xvoldim, yvoldim, zvoldim);
 
