@@ -23,320 +23,303 @@
  *  e-mail address 'xmipp@cnb.csic.es'
  ***************************************************************************/
 
-#include "python_filename.h"
-#include "core/xmipp_filename.h"
-#include "core/xmipp_image_macros.h"
-#include "core/xmipp_image_extension.h"
-#include "core/xmipp_error.h"
+#include "python_metadata.h"
+#include "python_symmetry.h"
+#include "core/geometry.h"
+#include "core/symmetries.h"
 
 /***************************************************************/
-/*                            FileName                         */
-/**************************************************************/
-
-/* FileName methods */
-PyMethodDef FileName_methods[] =
-{
-    { "compose", (PyCFunction) FileName_compose, METH_VARARGS,
-      "Compose from root, number and extension OR prefix with number @" },
-    { "composeBlock", (PyCFunction) FileName_composeBlock, METH_VARARGS,
-      "Compose from blockname, number, root and extension" },
-    { "decompose", (PyCFunction) FileName_decompose, METH_NOARGS,
-      "Decompose filenames with @. Mainly from selfiles" },
-    { "getBaseName", (PyCFunction) FileName_getBaseName, METH_NOARGS,
-      "Get the base name from a FileName" },
-    { "getExtension", (PyCFunction) FileName_getExtension, METH_NOARGS,
-      "Get the last extension from a FileName" },
-    { "getNumber", (PyCFunction) FileName_getNumber, METH_NOARGS,
-      "Get the number from a FileName" },
-    { "isInStack", (PyCFunction) FileName_isInStack, METH_NOARGS,
-      "True if filename has stack format" },
-    { "exists", (PyCFunction) FileName_exists, METH_NOARGS,
-      "True if FileName exists" },
-    { "isMetaData", (PyCFunction) FileName_isMetaData, METH_NOARGS,
-      "True if is a MetaData" },
-    { "isImage", (PyCFunction) FileName_isImage, METH_NOARGS,
-      "True if is an image" },
-    { "isStar1", (PyCFunction) FileName_isStar1, METH_NOARGS,
-      "True if is a Star1" },
-    { "withoutExtension", (PyCFunction) FileName_withoutExtension, METH_NOARGS,
-      "return filename without extension" },
-    { "removeBlockName", (PyCFunction) FileName_removeBlockName, METH_NOARGS,
-      "return filename without block" },
-    { nullptr } /* Sentinel */
-};//FileName_methods
-
-/*FileName Type */
-PyTypeObject FileNameType =
-{
-   PyObject_HEAD_INIT(nullptr)
-   "xmipp.FileName", /*tp_name*/
-   sizeof(FileNameObject), /*tp_basicsize*/
-   0, /*tp_itemsize*/
-   (destructor)FileName_dealloc, /*tp_dealloc*/
-   0, /*tp_print*/
-   0, /*tp_getattr*/
-   0, /*tp_setattr*/
-   0, /*tp_compare*/
-   FileName_repr, /*tp_repr*/
-   0, /*tp_as_number*/
-   0, /*tp_as_sequence*/
-   0, /*tp_as_mapping*/
-   0, /*tp_hash */
-   0, /*tp_call*/
-   0, /*tp_str*/
-   0, /*tp_getattro*/
-   0, /*tp_setattro*/
-   0, /*tp_as_buffer*/
-   Py_TPFLAGS_DEFAULT, /*tp_flags*/
-   "Python wrapper to Xmipp FileName class",/* tp_doc */
-   0, /* tp_traverse */
-   0, /* tp_clear */
-   0, /* tp_richcompare */
-   0, /* tp_weaklistoffset */
-   0, /* tp_iter */
-   0, /* tp_iternext */
-   FileName_methods, /* tp_methods */
-   0, /* tp_members */
-   0, /* tp_getset */
-   0, /* tp_base */
-   0, /* tp_dict */
-   0, /* tp_descr_get */
-   0, /* tp_descr_set */
-   0, /* tp_dictoffset */
-   0, /* tp_init */
-   0, /* tp_alloc */
-   FileName_new, /* tp_new */
-};//FileNameType
-
-/* Destructor */
-void FileName_dealloc(FileNameObject* self)
-{
-    delete self->filename;
-    Py_TYPE(self)->tp_free((PyObject*)self);
-}
+/*                            SymList                          */
+/***************************************************************/
 
 /* Constructor */
 PyObject *
-FileName_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+SymList_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    FileNameObject *self;
-
-    self = (FileNameObject*)type->tp_alloc(type, 0);
+    auto *self = (SymListObject*)type->tp_alloc(type, 0);
     if (self != nullptr)
     {
-
-        PyObject *input = nullptr, *pyStr = nullptr;
-        PyObject *pyStr2 = nullptr;
-        char str[1024] = "", ext[1024] = "";
-        int number = ALL_IMAGES;
-        if (PyArg_ParseTuple(args, "|Ois", &input, &number, &ext))
-            //|| PyArg_ParseTuple(args, "|Os", &input, &ext)) FIXME
-        {
-            pyStr = PyObject_Str(input);
-            if (pyStr != nullptr)
-              {
-                   const char *strExcType =  PyUnicode_AsUTF8(pyStr);
-                   strcpy(str, strExcType);
-              }
-        }
-        if (number != ALL_IMAGES)
-            self->filename = new FileName(str, number, ext);
-        else
-            self->filename = new FileName(str);
-
+        self->symlist = new SymList();
+        //self->symlist->readSymmetryFile("i3");
     }
     return (PyObject *)self;
 }
 
-/* String representation */
-PyObject *
-FileName_repr(PyObject * obj)
+/* Destructor */
+ void SymList_dealloc(SymListObject* self)
 {
-    auto *self = (FileNameObject*) obj;
-    return PyUnicode_FromString(self->filename->c_str());
+    delete self->symlist;
+    Py_TYPE(self)->tp_free(self);
 }
 
-/* compose */
+/* readSymmetryFile */
 PyObject *
-FileName_compose(PyObject *obj, PyObject *args)
+SymList_readSymmetryFile(PyObject * obj, PyObject *args, PyObject *kwargs)
 {
-    auto *self = (FileNameObject*) obj;
-    PyObject* pyStr1 = nullptr, *pyStr2 = nullptr, *pyStr3 = nullptr;
+    char * str = nullptr;
 
-    if (self != nullptr)
+    if (PyArg_ParseTuple(args, "s", &str))
     {
-        PyObject *input = nullptr, *pyStr = nullptr;
-        PyObject *input2 = nullptr;
-        char str[1024] = "";
-        char * ext = nullptr;
-        char str2[1024] = "";
-        int number = -1;
-        size_t n = PyTuple_Size(args);
-        //"kk000001.xmp"
-        if (n == 3 && PyArg_ParseTuple(args, "Ois", &input, &number, &ext))
+        try
         {
-            pyStr = PyObject_Str(input);
-            if (pyStr != nullptr)
-                strcpy(str, PyUnicode_AsUTF8(pyStr));
-            self->filename->compose(str, number, ext);
+            auto *self = (SymListObject*) obj;
+            self->symlist->readSymmetryFile(str);
+            Py_RETURN_NONE;
         }
-        else if (n == 2  && PyArg_ParseTuple(args, "OO", &input, &input2))
+        catch (XmippError &xe)
         {
-            if( PyUnicode_Check( input ) )
-            {
-                //"jj@kk.xmp"
-                pyStr  = PyObject_Str(input);
-                pyStr2 = PyObject_Str(input2);
-                if (pyStr != nullptr)
-                	strcpy(str, PyUnicode_AsUTF8(pyStr));
-                if (pyStr2 != nullptr)
-                	strcpy(str2, PyUnicode_AsUTF8(pyStr2));
-                self->filename->compose(str, str2);
-            }
-            else if ( PyLong_Check( input ) )
-            {
-                //"1@kk.xmp"
-                number=PyLong_AsLong(input);
-                pyStr2 = PyObject_Str(input2);
-                strcpy(str2, PyUnicode_AsUTF8(pyStr2));
-                self->filename->compose(number, str2);
-            }
-            else
-                return nullptr;
+            PyErr_SetString(PyXmippError, xe.msg.c_str());
         }
-        Py_RETURN_NONE;//Return None(similar to void in C)
-    }
-    Py_RETURN_NONE;//Return None(similar to void in C)
-}
-/* composeBlock */
-PyObject *
-FileName_composeBlock(PyObject *obj, PyObject *args)
-{
-    auto *self = (FileNameObject*) obj;
-
-    if (self != nullptr)
-    {
-        char root[1024] = "", ext[32] = "", block[1024] ="";
-        int number = 1;
-        PyArg_ParseTuple(args, "sis|s", &block, &number, &root, &ext);
-        self->filename->composeBlock(block, number, root, ext);
-    }
-    Py_RETURN_NONE;//Return None(similar to void in C)
-}
-
-/* exists */
-PyObject *
-FileName_exists(PyObject *obj)
-{
-    auto *self = (FileNameObject*) obj;
-
-    if (self->filename->existsTrim())
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
-}
-
-/* isInStack */
-PyObject *
-FileName_isInStack(PyObject *obj)
-{
-    auto *self = (FileNameObject*) obj;
-
-    if (self->filename->isInStack())
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
-}
-
-/* isMetadata */
-PyObject *
-FileName_isMetaData(PyObject *obj)
-{
-    auto *self = (FileNameObject*) obj;
-    try
-    {
-        if(self->filename->isMetaData(false))
-        {
-            Py_RETURN_TRUE;
-        }
-        else
-        {
-            Py_RETURN_FALSE;
-        }
-    }
-    catch (XmippError &xe)
-    {
-        PyErr_SetString(PyXmippError, xe.msg.c_str());
     }
     return nullptr;
 }
 
-/* isImage */
+/* getTrueSymsNo */
 PyObject *
-FileName_isImage(PyObject *obj)
+SymList_getTrueSymsNo(PyObject * obj, PyObject *args, PyObject *kwargs)
 {
-    if (isImage(FileName_Value(obj)))
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    auto *self = (SymListObject*) obj;
+    return PyLong_FromLong(self->symlist->true_symNo);
 }
 
-/* isStar1 */
+/* getSymmetryMatrices, return list with symmetry matrices */
 PyObject *
-FileName_isStar1(PyObject *obj)
+SymList_getSymmetryMatrices(PyObject * obj, PyObject *args, PyObject *kwargs)
 {
-    auto *self = (FileNameObject*) obj;
+    Matrix2D<double>  L(4, 4), R(4, 4);
+    PyObject * symMatrices;
+    PyObject * symMatrix;
+    PyObject * row;
+    char * str = nullptr;
 
-    if (self->filename->isStar1(false))
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
+    if (PyArg_ParseTuple(args, "s", &str))
+    {
+        try
+        {
+            auto *self = (SymListObject*) obj;
+
+            //create symmetry object
+            self->symlist->readSymmetryFile(str);
+            symMatrices = PyList_New(self->symlist->symsNo()+1);
+            symMatrix   = PyList_New(3);
+
+            //add identity matrix to results
+            row = Py_BuildValue("[fff]", 1., 0., 0.);
+            PyList_SetItem(symMatrix,0,row);
+            row = Py_BuildValue("[fff]", 0., 1., 0.);
+            PyList_SetItem(symMatrix,1,row);
+            row = Py_BuildValue("[fff]", 0., 0., 1.);
+            PyList_SetItem(symMatrix,2,row);
+            PyList_SetItem(symMatrices,0,symMatrix);
+
+            //copy each symmetry matrix to a python list
+            for (int i=0; i < self->symlist->true_symNo; ++i)
+            {
+                symMatrix   = PyList_New(3);
+                self->symlist->getMatrices(i, L, R);
+                for (int j=0; j < 3; ++j)
+                    {
+                    row = Py_BuildValue("[fff]", R(j,0), R(j,1), R(j,2));
+                    PyList_SetItem(symMatrix,j,row);
+	                }
+                PyList_SetItem(symMatrices,i+1,symMatrix);
+            }
+            return symMatrices;
+        }
+        catch (XmippError &xe)
+        {
+            PyErr_SetString(PyXmippError, xe.msg.c_str());
+        }
+    }
+    return nullptr;
 }
 
+/* computeDistance */
 PyObject *
-FileName_getExtension(PyObject *obj)
+SymList_computeDistance(PyObject * obj, PyObject *args, PyObject *kwargs)
 {
-    auto *self = (FileNameObject*) obj;
 
-    return PyUnicode_FromString(self->filename->getExtension().c_str());
+    PyObject *pyMd = nullptr;
+    auto *pyProjdirMode = Py_False;
+    auto *pyCheckMirrors = Py_False;
+    auto *pyObjectRotation = Py_False;
+
+    if (PyArg_ParseTuple(args, "O|OOO", &pyMd,
+                         &pyProjdirMode,
+                         &pyCheckMirrors,
+                         &pyObjectRotation))
+    {
+        if (!MetaData_Check(pyMd))
+            PyErr_SetString(PyExc_TypeError,
+                            "Expected MetaData as first argument");
+        try
+        {
+            bool projdir_mode    = false;
+            bool check_mirrors   = false;
+            bool object_rotation = false;
+            if (PyBool_Check(pyProjdirMode))
+                projdir_mode = (pyProjdirMode == Py_True);
+            if (PyBool_Check(pyCheckMirrors))
+                check_mirrors = (pyCheckMirrors == Py_True);
+            if (PyBool_Check(pyObjectRotation))
+                object_rotation = (pyObjectRotation == Py_True);
+            auto *self = (SymListObject*) obj;
+            self->symlist->computeDistance(MetaData_Value(pyMd),projdir_mode,
+                                                                check_mirrors,
+                                                                object_rotation);
+            Py_RETURN_NONE;
+        }
+        catch (XmippError &xe)
+        {
+            PyErr_SetString(PyXmippError, xe.msg.c_str());
+        }
+    }
+    return nullptr;
 }
 
+/* computeDistance */
 PyObject *
-FileName_getNumber(PyObject *obj)
+SymList_computeDistanceAngles(PyObject * obj, PyObject *args, PyObject *kwargs)
 {
-    auto *self = (FileNameObject*) obj;
+	double rot1, tilt1, psi1, rot2, tilt2, psi2;
+    auto *pyProjdirMode = Py_False;
+    auto *pyCheckMirrors = Py_False;
+    auto *pyObjectRotation = Py_False;
 
-    return PyLong_FromLong(self->filename->getNumber());
+    if (PyArg_ParseTuple(args, "dddddd|OOO", &rot1, &tilt1, &psi1, &rot2, &tilt2, &psi2,
+                         &pyProjdirMode,
+                         &pyCheckMirrors,
+                         &pyObjectRotation))
+    {
+        try
+        {
+            bool projdir_mode    = false;
+            bool check_mirrors   = false;
+            bool object_rotation = false;
+            if (PyBool_Check(pyProjdirMode))
+                projdir_mode = (pyProjdirMode == Py_True);
+            if (PyBool_Check(pyCheckMirrors))
+                check_mirrors = (pyCheckMirrors == Py_True);
+            if (PyBool_Check(pyObjectRotation))
+                object_rotation = (pyObjectRotation == Py_True);
+            auto *self = (SymListObject*) obj;
+            double dist=self->symlist->computeDistance(rot1,tilt1,psi1,rot2,tilt2,psi2,
+            		projdir_mode,check_mirrors,object_rotation);
+            return PyFloat_FromDouble(dist);
+        }
+        catch (XmippError &xe)
+        {
+            PyErr_SetString(PyXmippError, xe.msg.c_str());
+        }
+    }
+    return nullptr;
 }
 
+/* computeDistance */
 PyObject *
-FileName_getBaseName(PyObject *obj)
+SymList_symmetricAngles(PyObject * obj, PyObject *args, PyObject *kwargs)
 {
-    auto *self = (FileNameObject*) obj;
+	double rot, tilt, psi;
+    if (PyArg_ParseTuple(args, "ddd", &rot, &tilt, &psi))
+    {
+        try
+        {
+            auto *self = (SymListObject*) obj;
+            SymList symlist=*(self->symlist);
 
-    return PyUnicode_FromString(self->filename->getBaseName().c_str());
+            PyObject * retval = PyList_New(symlist.symsNo()+1);
+            PyObject * angles = PyTuple_New(3);
+            PyTuple_SetItem(angles, 0, PyFloat_FromDouble(rot));
+            PyTuple_SetItem(angles, 1, PyFloat_FromDouble(tilt));
+            PyTuple_SetItem(angles, 2, PyFloat_FromDouble(psi));
+            PyList_SetItem(retval,0,angles);
+
+            Matrix2D<double>  L(4, 4), R(4, 4), E, Ep;
+            Euler_angles2matrix(rot,tilt,psi,E,false);
+            for (int isym = 0; isym < symlist.symsNo(); isym++)
+            {
+                symlist.getMatrices(isym, L, R);
+                R.resize(3, 3);
+                L.resize(3, 3);
+
+                Ep=L*E*R;
+                Euler_matrix2angles(Ep,rot,tilt,psi);
+
+                angles = PyTuple_New(3);
+                PyTuple_SetItem(angles, 0, PyFloat_FromDouble(rot));
+                PyTuple_SetItem(angles, 1, PyFloat_FromDouble(tilt));
+                PyTuple_SetItem(angles, 2, PyFloat_FromDouble(psi));
+                PyList_SetItem(retval,isym+1,angles);
+            }
+
+            return retval;
+        }
+        catch (XmippError &xe)
+        {
+            PyErr_SetString(PyXmippError, xe.msg.c_str());
+        }
+    }
+    return nullptr;
 }
 
-PyObject *
-FileName_decompose(PyObject *obj)
+/* SymList methods */
+PyMethodDef SymList_methods[] =
 {
-    auto *self = (FileNameObject*) obj;
-    size_t no;
-    String str;
-    self->filename->decompose(no, str);
-    return Py_BuildValue("is", no, str.c_str());
-}
+   { "readSymmetryFile", (PyCFunction) SymList_readSymmetryFile,
+     METH_VARARGS, "read symmetry file" },
+   { "computeDistance", (PyCFunction) SymList_computeDistance,
+       METH_VARARGS, "compute angular distance in a metadata" },
+   { "computeDistanceAngles", (PyCFunction) SymList_computeDistanceAngles,
+	   METH_VARARGS, "compute angular distance between two sets of angles" },
+   { "symmetricAngles", (PyCFunction) SymList_symmetricAngles,
+	   METH_VARARGS, "Returns the list of equivalent angles" },
+   { "getTrueSymsNo", (PyCFunction) SymList_getTrueSymsNo,
+	   METH_VARARGS, "Get the number os symmetries" },
+   { "getSymmetryMatrices", (PyCFunction) SymList_getSymmetryMatrices,
+	   METH_VARARGS, "Return all the symmetry matrices for a given symmetry string" },
+   { nullptr } /* Sentinel */
+};//SymList_methods
 
-PyObject *
-FileName_withoutExtension(PyObject *obj)
+/*SymList Type */
+PyTypeObject SymListType =
 {
-    auto *self = (FileNameObject*) obj;
-    return PyUnicode_FromString(self->filename->withoutExtension().c_str());
-}
+    PyObject_HEAD_INIT(nullptr)
+    "xmipp.SymList", /*tp_name*/
+    sizeof(SymListObject), /*tp_basicsize*/
+    0, /*tp_itemsize*/
+    (destructor)SymList_dealloc, /*tp_dealloc*/
+    0, /*tp_print*/
+    0, /*tp_getattr*/
+    0, /*tp_setattr*/
+    0, /*tp_compare*/
+    0, /*tp_repr*/
+    0, /*tp_as_number*/
+    0, /*tp_as_sequence*/
+    0, /*tp_as_mapping*/
+    0, /*tp_hash */
+    0, /*tp_call*/
+    0, /*tp_str*/
+    0, /*tp_getattro*/
+    0, /*tp_setattro*/
+    0, /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT, /*tp_flags*/
+    "Python wrapper to Xmipp SymList class",/* tp_doc */
+    0, /* tp_traverse */
+    0, /* tp_clear */
+    0, /* tp_richcompare */
+    0, /* tp_weaklistoffset */
+    0, /* tp_iter */
+    0, /* tp_iternext */
+    SymList_methods, /* tp_methods */
+    0, /* tp_members */
+    0, /* tp_getset */
+    0, /* tp_base */
+    0, /* tp_dict */
+    0, /* tp_descr_get */
+    0, /* tp_descr_set */
+    0, /* tp_dictoffset */
+    0, /* tp_init */
+    0, /* tp_alloc */
+    SymList_new /* tp_new */
+};//SymListType
 
-PyObject *
-FileName_removeBlockName(PyObject *obj )
-{
-    auto *self = (FileNameObject*) obj;
-    return PyUnicode_FromString(self->filename->removeBlockName().c_str());
-}
