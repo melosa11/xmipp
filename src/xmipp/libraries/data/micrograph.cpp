@@ -83,6 +83,7 @@ Micrograph & Micrograph::operator=(const Micrograph &other)
     fh_micrograph=other.fh_micrograph;
     labels=other.labels;
     stdevFilter=other.stdevFilter;
+
 #define COPYPTR(Itype,Iptr)\
     if (Iptr!=nullptr)\
     {\
@@ -96,9 +97,11 @@ Micrograph & Micrograph::operator=(const Micrograph &other)
     COPYPTR(Image<int>,IInt);
     COPYPTR(Image<unsigned int>,IUInt);
     COPYPTR(Image<float>,IFloat);
-}
+
 #undef COPYPTR
 
+return *this;
+}
 /* Clear ------------------------------------------------------------------- */
 void Micrograph::clear()
 {
