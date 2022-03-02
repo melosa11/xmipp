@@ -30,14 +30,19 @@
 // Read arguments ==========================================================
 void ProgVolumePCA::readParams()
 {
+	extremeVolPercentage = 0.0;
+
     fnVols = getParam("-i");
     fnVolsOut = getParam("-o");
     NPCA = getIntParam("--Npca");
     fnBasis = getParam("--saveBasis");
     fnAvgVol = getParam("--avgVolume");
-    fnOutStack = getParam("--opca");
+    fnOutPcaStack = getParam("--opca");
+    fnOutExtremeVolStack = getParam("--oext");
     if (checkParam("--generatePCAVolumes"))
     	getListParam("--generatePCAVolumes",listOfPercentiles);
+    if (checkParam("--generateExtremeVolumes"))
+    	extremeVolPercentage = getDoubleParam("--generateExtremeVolumes");
     if (checkParam("--mask"))
     	mask.readParams(this);
 }
@@ -52,8 +57,10 @@ void ProgVolumePCA::show() const
     		  << "Number of PCAs: " << NPCA       << std::endl
     		  << "Basis:          " << fnBasis    << std::endl
     		  << "Avg. volume:    " << fnAvgVol   << std::endl
-    		  << "Output PCA vols:" << fnOutStack << std::endl;
-    std::cout << "Percentiles:    ";
+    		  << "Output extreme vols:" << fnOutExtremeVolStack << std::endl
+    		  << "Extreme vol percentage:" << extremeVolPercentage << std::endl
+    		  << "Output PCA vols:" << fnOutPcaStack << std::endl;
+    std::cout << "PCA percentiles:    ";
     for (size_t i=0; i<listOfPercentiles.size(); i++)
     	std::cout << listOfPercentiles[i] << " ";
     std::cout << std::endl;
@@ -65,13 +72,15 @@ void ProgVolumePCA::show() const
 void ProgVolumePCA::defineParams()
 {
 	addUsageLine("Compute the PCA of a set of volumes, within a mask (optional).");
-    addParamsLine("   -i <volumes>             : Metadata with aligned volumes");
-    addParamsLine("  [-o <volumes=\"\">]       : Output metadata with PCA projections");
-    addParamsLine("  [--Npca <N=1>]            : Number of PCA bases");
-    addParamsLine("  [--saveBasis <stack=\"\">]: Save the bases as a stack of volumes");
-    addParamsLine("  [--generatePCAVolumes <...>]: List of percentiles (typically, \"10 90\"), to generate volumes along the 1st PCA basis");
-    addParamsLine("  [--avgVolume <volume=\"\">] : Volume on which to add the PCA basis");
-    addParamsLine("  [--opca <stack=\"\">]     : Stack of generated volumes");
+    addParamsLine("   -i <volumes>             			: Metadata with aligned volumes");
+    addParamsLine("  [-o <volumes=\"\">]       			: Output metadata with PCA projections");
+    addParamsLine("  [--Npca <N=1>]            			: Number of PCA bases");
+    addParamsLine("  [--saveBasis <stack=\"\">]			: Save the bases as a stack of volumes");
+    addParamsLine("  [--generatePCAVolumes <...>]		: List of percentiles (typically, \"10 90\"), to generate volumes along the 1st PCA basis");
+    addParamsLine("  [--generateExtremeVolumes <...>]	: Percentage of how far extreme volumes are");
+    addParamsLine("  [--avgVolume <volume=\"\">] 		: Volume on which to add the PCA basis");
+    addParamsLine("  [--opca <stack=\"\">]     			: Stack of generated PCA volumes");
+    addParamsLine("  [--oext <stack=\"\">]     			: Stack of generated extreme volumes");
     mask.defineParams(this,INT_MASK);
 }
 
@@ -101,6 +110,7 @@ void ProgVolumePCA::run()
     size_t Nvoxels=imask.sum();
     MultidimArray<float> v;
     v.initZeros(Nvoxels);
+	std::cout << "Number of considered voxels: " << Nvoxels << std::endl;
 
     // Add all volumes to the analyzer
     FileName fnVol;
@@ -158,29 +168,73 @@ void ProgVolumePCA::run()
     		V.write(fnBasis,i+1,true,WRITE_OVERWRITE);
     }
 
-	// Generate the PCA volumes
-	if (listOfPercentiles.size()>0 && fnOutStack!="" && fnAvgVol!="")
+	// Determine which output volumes are generated
+	const auto generatePcaVolumes = listOfPercentiles.size()>0 && fnOutPcaStack!="";
+	const auto generateExtremeVolumes = extremeVolPercentage > 0.0 && fnOutExtremeVolStack != "";
+
+	// Read the average
+	Image<double> Vavg;
+	Image<double> Vaux;
+	if (generatePcaVolumes || generateExtremeVolumes)
 	{
-		Image<double> Vavg;
 		if (fnAvgVol!="")
 			Vavg.read(fnAvgVol);
 		else
 			Vavg().initZeros(V());
+	}
 
+	// Generate the PCA volumes
+	if (generatePcaVolumes)
+	{
 		Matrix1D<double> p;
 		proj.toVector(p);
 		Matrix1D<double> psorted=p.sort();
 
-		Image<double> Vpca;
-		Vpca()=Vavg();
-		createEmptyFile(fnOutStack,(int)XSIZE(Vavg()),(int)YSIZE(Vavg()),(int)ZSIZE(Vavg()),listOfPercentiles.size());
+		//Vaux()=Vavg();
+		createEmptyFile(fnOutPcaStack,(int)XSIZE(Vavg()),(int)YSIZE(Vavg()),(int)ZSIZE(Vavg()),listOfPercentiles.size());
 		std::cout << "listOfPercentiles.size()=" << listOfPercentiles.size() << std::endl;
 		for (size_t i=0; i<listOfPercentiles.size(); i++)
 		{
 			auto idx=(int)round(textToFloat(listOfPercentiles[i].c_str())/100.0*VEC_XSIZE(p));
 			std::cout << "Percentile " << listOfPercentiles[i] << " -> idx=" << idx << " p(idx)=" << psorted(idx) << std::endl;
-			Vpca()+=psorted(idx)*V();
-			Vpca.write(fnOutStack,i+1,true,WRITE_REPLACE);
+			//Vaux()+=psorted(idx)*V();
+			Vaux()=Vavg()+psorted(idx)*V();
+			Vaux.write(fnOutPcaStack,i+1,true,WRITE_REPLACE);
 		}
+	}
+
+	// Generate extreme volumes
+	if (generateExtremeVolumes)
+	{
+		createEmptyFile(fnOutExtremeVolStack,(int)XSIZE(Vavg()),(int)YSIZE(Vavg()),(int)ZSIZE(Vavg()),2);
+
+		// Determine the maximum scaling factor that can be used before saturation
+		auto scaleFactor = std::numeric_limits<double>::max();
+		FOR_ALL_DIRECT_ELEMENTS_IN_MULTIDIMARRAY(Vavg()) {
+    		if (DIRECT_MULTIDIM_ELEM(imask, n)) {
+				// Compute the maximum difference that can be assumed for this component before saturation
+				/*const auto maxDelta = std::min(
+					DIRECT_MULTIDIM_ELEM(Vavg(), n),
+					1 - DIRECT_MULTIDIM_ELEM(Vavg(), n)
+				);*/
+
+				// Compute the scaling factor corresponding to this component
+				const auto r = std::abs(DIRECT_MULTIDIM_ELEM(Vavg(), n) / DIRECT_MULTIDIM_ELEM(V(), n));
+
+				// Update the scale factor if necesary
+				scaleFactor = std::min(scaleFactor, r);
+			}
+		}
+
+		// Apply the given percentage to the computed scaling factor
+		scaleFactor *= extremeVolPercentage / 100.0;
+		std::cout << "Scale factor: " << scaleFactor << std::endl;
+		scaleFactor = extremeVolPercentage;
+
+		// Compute and write two symmetric volumes
+		Vaux() = Vavg() + scaleFactor*V();
+		Vaux.write(fnOutExtremeVolStack,1,true,WRITE_REPLACE);
+		Vaux() = Vavg() - scaleFactor*V();
+		Vaux.write(fnOutExtremeVolStack,2,true,WRITE_REPLACE);
 	}
 }

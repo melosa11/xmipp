@@ -50,10 +50,14 @@ public:
     FileName fnBasis;
     /// List of percentiles to generate volumes
     StringVector listOfPercentiles;
+    /// Extreme volume percentage
+    double extremeVolPercentage;
     /// Average volume
     FileName fnAvgVol;
     /// Output PCA stack
-    FileName fnOutStack;
+    FileName fnOutPcaStack;
+    /// Output extreme volume stack
+    FileName fnOutExtremeVolStack;
 public:
     // Metadata with volumes
     MetaDataVec mdVols;
