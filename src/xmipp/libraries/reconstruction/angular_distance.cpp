@@ -260,10 +260,10 @@ void ProgAngularDistance::run()
             //DF_out.setValue(MDL_ANGLE_COMPARISON,output, id);
         }
 
-        double forT = double( noFill - forTime ) /  CLOCKS_PER_SEC;
-        double fillT = double( clock() - noFill ) /  CLOCKS_PER_SEC;
-        double  totalT = forT + fillT;
-        std::cout << "  Total (: " << i << ") for: " << totalT<< "  forTime: " <<  forT << " + fillOutput: " << fillT << std::endl;
+        float forT = float( noFill - forTime ) /  CLOCKS_PER_SEC;
+        float fillT = float( clock() - noFill ) /  CLOCKS_PER_SEC;
+        float  totalT = forT + fillT;
+        std::cout << "  Total for (" << i << " - " << fillOutput << "): " << totalT<< "  forTime: " <<  forT << " + fillOutput: " << fillT << std::endl;
 
         i++;
     }
