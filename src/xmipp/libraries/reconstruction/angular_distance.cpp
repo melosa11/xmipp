@@ -263,7 +263,7 @@ void ProgAngularDistance::run()
         double forT = double( noFill - forTime ) /  CLOCKS_PER_SEC;
         double fillT = double( clock() - noFill ) /  CLOCKS_PER_SEC;
         double  totalT = forT + fillT;
-        std::cout << "  Total (: " << i << ') for'<< totalT<< "  forTime - "<< i << ":  " << forT << " + fillOutput (" << fillOutput << ") " << fillT << std::endl;
+        std::cout << "  Total (: " << i << ") for: " << totalT<< "  forTime: " <<  forT << " + fillOutput: " << fillT << std::endl;
 
         i++;
     }
