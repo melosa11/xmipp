@@ -120,12 +120,17 @@ void ProgAngularDistance::produce_side_info()
 // Compute distance --------------------------------------------------------
 void ProgAngularDistance::run()
 {
+    const clock_t begin_time = clock();
+
     produce_side_info();
     if (compute_weights)
     {
     	computeWeights();
     	return;
     }
+    const clock_t one_time = clock();
+    std::cout << "ComputeWeights: " << float( one_time - begin_time ) /  CLOCKS_PER_SEC << std::endl;
+
 
     MetaDataDb DF_out;
     double angular_distance=0;
@@ -155,6 +160,8 @@ void ProgAngularDistance::run()
     auto iter2(DF2.ids().begin());
     for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)
     {
+        const clock_t forTime = clock();
+
         // Read input data
         double rot1,  tilt1,  psi1;
         double rot2,  tilt2,  psi2;
@@ -202,6 +209,8 @@ void ProgAngularDistance::run()
         Y_diff(i) = Y1 - Y2;
         shift_diff(i) = sqrt(X_diff(i)*X_diff(i)+Y_diff(i)*Y_diff(i));
         shift_distance += shift_diff(i);
+
+        const clock_t noFill = clock();
 
         // Fill the output result
         if (fillOutput)
@@ -251,6 +260,11 @@ void ProgAngularDistance::run()
             //DF_out.setValue(MDL_ANGLE_COMPARISON,output, id);
         }
 
+        double forT = double( noFill - forTime ) /  CLOCKS_PER_SEC;
+        double fillT = double( clock() - noFill ) /  CLOCKS_PER_SEC;
+        double  totalT = forT + fillT;
+        std::cout << "  Total (: " << i << ') for'<< totalT<< "  forTime - "<< i << ":  " << forT << " + fillOutput (" << fillOutput << ") " << fillT << std::endl;
+
         i++;
     }
     if (0 == i) {
@@ -261,6 +275,8 @@ void ProgAngularDistance::run()
 
     if (fillOutput)
     {
+    const clock_t fillO_time = clock();
+
         DF_out.write(fn_out + ".xmd");
         Histogram1D hist;
         compute_hist(vec_diff, hist, 0, 180, 180);
@@ -280,6 +296,8 @@ void ProgAngularDistance::run()
             compute_hist(Y_diff, hist, 20);
             hist.write(fn_out + "_Y_diff_hist.txt");
         }
+    std::cout << "Fill Output: " << float( clock() - fillO_time ) /  CLOCKS_PER_SEC << std::endl;
+
     }
 
     std::cout << "Global angular distance = " << angular_distance << std::endl;
