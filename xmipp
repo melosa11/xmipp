@@ -653,7 +653,6 @@ def linkToScipion(dirname):
     scipionBindings = os.path.join(scipionSoftware, 'bindings')
     scipionSoftwareEM = os.path.join(scipionSoftware, 'em')
     xmippHomeLink = os.path.join(scipionSoftwareEM, 'xmipp')
-    print(yellow(str("xmippHomeLink: " + xmippHomeLink)))
     currentDir = os.getcwd()
 
 
@@ -661,7 +660,6 @@ def linkToScipion(dirname):
             os.path.isdir(scipionBindings):
         runJob("ln -srf %s %s" % (dirname, xmippHomeLink))
         xmippLink = os.readlink(xmippHomeLink)
-        print(yellow(str("xmippLink: " + xmippLink)))
         coreLib = os.path.join(xmippLink, "lib", "libXmippCore.so")
         xmippLib = os.path.join(xmippLink, "lib", "libXmipp.so")
         SVMLib = os.path.join(xmippLink, "lib", "libsvm.so")
