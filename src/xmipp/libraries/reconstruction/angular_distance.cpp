@@ -153,27 +153,42 @@ void ProgAngularDistance::run()
 
     auto iter1(DF1.ids().begin());
     auto iter2(DF2.ids().begin());
+
+    //arrays to debug
+    int numPart = 21;
+    float array_DF1get[numPart];
+    float array_DF2get[numPart];
+    float array_Computes[numPart];
+    float array_FillOutput[numPart];
+
+
     for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)
     {
+        const clock_t begin_time = clock();
         // Read input data
         double rot1,  tilt1,  psi1;
         double rot2,  tilt2,  psi2;
         double rot2p, tilt2p, psi2p;
         double distp;
         double X1, X2, Y1, Y2;
-        DF1.getValue(MDL_IMAGE,fnImg, *iter1);
 
+        DF1.getValue(MDL_IMAGE,fnImg, *iter1);//is it neccesary?
         DF1.getValue(MDL_ANGLE_ROT,rot1, *iter1);
         DF1.getValue(MDL_ANGLE_TILT,tilt1, *iter1);
         DF1.getValue(MDL_ANGLE_PSI,psi1, *iter1);
         DF1.getValue(MDL_SHIFT_X,X1, *iter1);
         DF1.getValue(MDL_SHIFT_Y,Y1, *iter1);
+        const clock_t C2 = clock();
+        array_DF1get[i] = C2 - begin_time;
 
         DF2.getValue(MDL_ANGLE_ROT,rot2, *iter2);
         DF2.getValue(MDL_ANGLE_TILT,tilt2, *iter2);
         DF2.getValue(MDL_ANGLE_PSI,psi2, *iter2);
         DF2.getValue(MDL_SHIFT_X,X2, *iter2);
         DF2.getValue(MDL_SHIFT_Y,Y2, *iter2);
+
+        const clock_t C3= clock();
+        array_DF2get[i] = C3 - C2;
 
         // Bring both angles to a normalized set
         rot1 = realWRAP(rot1, -180, 180);
@@ -193,6 +208,7 @@ void ProgAngularDistance::run()
                                    check_mirrors, object_rotation);
         angular_distance += distp;
 
+
         // Compute angular difference
         rot_diff(i) = rot1 - rot2p;
         tilt_diff(i) = tilt1 - tilt2p;
@@ -203,6 +219,9 @@ void ProgAngularDistance::run()
         shift_diff(i) = sqrt(X_diff(i)*X_diff(i)+Y_diff(i)*Y_diff(i));
         shift_distance += shift_diff(i);
 
+
+        const clock_t C4= clock();
+        array_Computes[i] = C4 - C3;
         // Fill the output result
         if (fillOutput)
         {
@@ -250,9 +269,39 @@ void ProgAngularDistance::run()
             DF_out.setValue(MDL_IMAGE,fnImg,id);
             //DF_out.setValue(MDL_ANGLE_COMPARISON,output, id);
         }
-
+        const clock_t C5= clock();
+        array_FillOutput[i] = C5 - C4;
+        float sumClock = 0;
+        float sumarray_DF1get = 0;
+        float sumarray_DF2get = 0;
+        float sumarray_Computes = 0;
+        float sumarray_FillOutput = 0;
+        for (int n=0; n < i; ++n){
+            sumarray_DF1get += array_DF1get[n];
+            sumarray_DF2get += array_DF2get[n];
+            sumarray_Computes += array_Computes[n];
+            sumarray_FillOutput += array_FillOutput[n];
+            std::cout << "sumarray_DF2get: " << sumarray_DF2get << " array_DF2get[" << n << "]: " << array_DF2get[n] << std::endl;
+        }
         i++;
+
+//        std::cout << "i: " <<i << std::endl;
+//        std::cout << "array_DF1get: " << (sumarray_DF1get /CLOCKS_PER_SEC* 1.0) / (i * 1.0) << std::endl;
+        //std::cout << sumarray_DF2get /CLOCKS_PER_SEC << " / " << i << " = " << (sumarray_DF2get /CLOCKS_PER_SEC * 1.0)  / (i * 1.0) << std::endl;
+          std::cout << sumarray_DF2get  / CLOCKS_PER_SEC<< " / " << i << " = " << (sumarray_DF2get / CLOCKS_PER_SEC)  / (i * 1.0) << std::endl;
+
+//        std::cout << "array_Computes: " << (sumarray_Computes /CLOCKS_PER_SEC* 1.0)  / (i * 1.0)  << std::endl;
+//        std::cout << "array_FillOutput: " << (sumarray_FillOutput /CLOCKS_PER_SEC* 1.0)  / (i * 1.0)  << std::endl;
     }
+
+//    for(int j=0; j<numPart;j++){
+//     std::cout <<",  " << array_DF1get[j];
+//    }
+    for(int j=0; j<numPart;j++){
+     std::cout <<" " << array_DF2get[j] << std::endl;
+    }
+
+
     if (0 == i) {
         REPORT_ERROR(ERR_NUMERICAL, "i is zero (0), which would lead to division by zero");
     }
@@ -282,12 +331,19 @@ void ProgAngularDistance::run()
         }
     }
 
+
     std::cout << "Global angular distance = " << angular_distance << std::endl;
     std::cout << "Global shift   distance = " << shift_distance   << std::endl;
 }
 
+
+
+
+
 void ProgAngularDistance::computeWeights()
 {
+    const clock_t begin_time = clock();
+    // do something
 	MetaDataDb DF1sorted, DF2sorted, DFweights;
 	MDLabel label=MDL::str2Label(idLabel);
 	DF1sorted.sort(DF1,label);
