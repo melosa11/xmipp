@@ -156,11 +156,11 @@ void ProgAngularDistance::run()
 
     //arrays to debug
     int numPart = 21;
-    float array_DF1get[numPart];
-    float array_DF2get[numPart];
-    float array_Computes[numPart];
-    float array_FillOutput[numPart];
-
+    int iterTimes = 5;
+    double array_DF1get[numPart];
+    double array_DF2get[numPart];
+    double array_Computes[numPart];
+    double array_FillOutput[numPart];
 
     for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)
     {
@@ -179,7 +179,8 @@ void ProgAngularDistance::run()
         DF1.getValue(MDL_SHIFT_X,X1, *iter1);
         DF1.getValue(MDL_SHIFT_Y,Y1, *iter1);
         const clock_t C2 = clock();
-        array_DF1get[i] = C2 - begin_time;
+
+        if (i%iterTimes == 0){array_DF1get[i] = C2 - begin_time;}
 
         DF2.getValue(MDL_ANGLE_ROT,rot2, *iter2);
         DF2.getValue(MDL_ANGLE_TILT,tilt2, *iter2);
@@ -188,7 +189,8 @@ void ProgAngularDistance::run()
         DF2.getValue(MDL_SHIFT_Y,Y2, *iter2);
 
         const clock_t C3= clock();
-        array_DF2get[i] = C3 - C2;
+        if (i%iterTimes == 0){array_DF2get[i] = C3 - C2;}
+
 
         // Bring both angles to a normalized set
         rot1 = realWRAP(rot1, -180, 180);
@@ -221,6 +223,8 @@ void ProgAngularDistance::run()
 
 
         const clock_t C4= clock();
+        if (i%iterTimes == 0){array_Computes[i] = C4 - C3;}
+
         array_Computes[i] = C4 - C3;
         // Fill the output result
         if (fillOutput)
@@ -270,37 +274,42 @@ void ProgAngularDistance::run()
             //DF_out.setValue(MDL_ANGLE_COMPARISON,output, id);
         }
         const clock_t C5= clock();
-        array_FillOutput[i] = C5 - C4;
-        float sumClock = 0;
-        float sumarray_DF1get = 0;
-        float sumarray_DF2get = 0;
-        float sumarray_Computes = 0;
-        float sumarray_FillOutput = 0;
-        for (int n=0; n < i; ++n){
+        if (i%iterTimes == 0){array_FillOutput[i] = C5 - C4;}
+
+        double sumClock = 0;
+        double sumarray_DF1get = 0;
+        double sumarray_DF2get = 0;
+        double sumarray_Computes = 0;
+        double sumarray_FillOutput = 0;
+        for (int n=0; n <= i; ++n){
             sumarray_DF1get += array_DF1get[n];
             sumarray_DF2get += array_DF2get[n];
             sumarray_Computes += array_Computes[n];
             sumarray_FillOutput += array_FillOutput[n];
-            std::cout << "sumarray_DF2get: " << sumarray_DF2get << " array_DF2get[" << n << "]: " << array_DF2get[n] << std::endl;
+            //std::cout << "sumarray_DF2get: " << sumarray_DF2get << " array_DF2get[" << n << "]: " << array_DF2get[n] << std::endl;
+        }
+
+        if (i%iterTimes == 0 and i < 1000){
+          int iteration = i / iterTimes;
+          double mediaSumDF1get = (sumarray_DF1get /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
+          double mediaSumDF2get = (sumarray_DF2get /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
+          double mediaSumDComputes= (sumarray_Computes /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
+          double mediaSumFillOutput = (sumarray_FillOutput /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
+
+          std::cout << "---i: " <<i << " -iteration: " << iteration << std::endl;
+          std::cout << "media sumarray_DF1get: " << mediaSumDF1get<< std::endl;
+          std::cout << "media sumarray_DF2get: " << mediaSumDF2get<< std::endl;
+          std::cout << "media sumarray_Computes: " << mediaSumDComputes<< std::endl;
+          std::cout << "media sumarray_FillOutput: " << mediaSumFillOutput << std::endl;
+          double totalTimeLoop = mediaSumDF1get + mediaSumDF2get + mediaSumDComputes + mediaSumFillOutput;
+          std::cout << "Total each iteration: " << totalTimeLoop << std::endl;
         }
         i++;
-
-//        std::cout << "i: " <<i << std::endl;
-//        std::cout << "array_DF1get: " << (sumarray_DF1get /CLOCKS_PER_SEC* 1.0) / (i * 1.0) << std::endl;
-        //std::cout << sumarray_DF2get /CLOCKS_PER_SEC << " / " << i << " = " << (sumarray_DF2get /CLOCKS_PER_SEC * 1.0)  / (i * 1.0) << std::endl;
-          std::cout << sumarray_DF2get  / CLOCKS_PER_SEC<< " / " << i << " = " << (sumarray_DF2get / CLOCKS_PER_SEC)  / (i * 1.0) << std::endl;
-
-//        std::cout << "array_Computes: " << (sumarray_Computes /CLOCKS_PER_SEC* 1.0)  / (i * 1.0)  << std::endl;
-//        std::cout << "array_FillOutput: " << (sumarray_FillOutput /CLOCKS_PER_SEC* 1.0)  / (i * 1.0)  << std::endl;
     }
-
+        std::cout << "no commented"<< std::endl;
 //    for(int j=0; j<numPart;j++){
 //     std::cout <<",  " << array_DF1get[j];
 //    }
-    for(int j=0; j<numPart;j++){
-     std::cout <<" " << array_DF2get[j] << std::endl;
-    }
-
 
     if (0 == i) {
         REPORT_ERROR(ERR_NUMERICAL, "i is zero (0), which would lead to division by zero");
@@ -310,6 +319,7 @@ void ProgAngularDistance::run()
 
     if (fillOutput)
     {
+        const clock_t CfillOutput= clock();
         DF_out.write(fn_out + ".xmd");
         Histogram1D hist;
         compute_hist(vec_diff, hist, 0, 180, 180);
@@ -329,6 +339,11 @@ void ProgAngularDistance::run()
             compute_hist(Y_diff, hist, 20);
             hist.write(fn_out + "_Y_diff_hist.txt");
         }
+        const clock_t CfillOutput_end= clock();
+        float timeFillOut = ((CfillOutput_end - CfillOutput) /CLOCKS_PER_SEC* 1.0);
+        std::cout << "CLOCKS_PER_SEC: " << CLOCKS_PER_SEC << std::endl;
+        std::cout << "fillOutput time: " << timeFillOut << std::endl;
+
     }
 
 
