@@ -120,17 +120,12 @@ void ProgAngularDistance::produce_side_info()
 // Compute distance --------------------------------------------------------
 void ProgAngularDistance::run()
 {
-    const clock_t begin_time = clock();
-
     produce_side_info();
     if (compute_weights)
     {
     	computeWeights();
     	return;
     }
-    const clock_t one_time = clock();
-    std::cout << "ComputeWeights: " << float( one_time - begin_time ) /  CLOCKS_PER_SEC << std::endl;
-
 
     MetaDataDb DF_out;
     double angular_distance=0;
@@ -158,29 +153,44 @@ void ProgAngularDistance::run()
 
     auto iter1(DF1.ids().begin());
     auto iter2(DF2.ids().begin());
+
+    //arrays to debug
+    int numPart = 20000;
+    int iterTimes = 5;
+    double array_DF1get[numPart];
+    double array_DF2get[numPart];
+    double array_Computes[numPart];
+    double array_FillOutput[numPart];
+
     for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)
     {
-        const clock_t forTime = clock();
-
+        const clock_t begin_time = clock();
         // Read input data
         double rot1,  tilt1,  psi1;
         double rot2,  tilt2,  psi2;
         double rot2p, tilt2p, psi2p;
         double distp;
         double X1, X2, Y1, Y2;
-        DF1.getValue(MDL_IMAGE,fnImg, *iter1);
 
+        DF1.getValue(MDL_IMAGE,fnImg, *iter1);//is it neccesary?
         DF1.getValue(MDL_ANGLE_ROT,rot1, *iter1);
         DF1.getValue(MDL_ANGLE_TILT,tilt1, *iter1);
         DF1.getValue(MDL_ANGLE_PSI,psi1, *iter1);
         DF1.getValue(MDL_SHIFT_X,X1, *iter1);
         DF1.getValue(MDL_SHIFT_Y,Y1, *iter1);
+        const clock_t C2 = clock();
+
+        if (i%iterTimes == 0){array_DF1get[i/iterTimes] = C2 - begin_time;}
 
         DF2.getValue(MDL_ANGLE_ROT,rot2, *iter2);
         DF2.getValue(MDL_ANGLE_TILT,tilt2, *iter2);
         DF2.getValue(MDL_ANGLE_PSI,psi2, *iter2);
         DF2.getValue(MDL_SHIFT_X,X2, *iter2);
         DF2.getValue(MDL_SHIFT_Y,Y2, *iter2);
+
+        const clock_t C3= clock();
+        if (i%iterTimes == 0){array_DF2get[i/iterTimes] = C3 - C2;}
+
 
         // Bring both angles to a normalized set
         rot1 = realWRAP(rot1, -180, 180);
@@ -200,6 +210,7 @@ void ProgAngularDistance::run()
                                    check_mirrors, object_rotation);
         angular_distance += distp;
 
+
         // Compute angular difference
         rot_diff(i) = rot1 - rot2p;
         tilt_diff(i) = tilt1 - tilt2p;
@@ -210,8 +221,11 @@ void ProgAngularDistance::run()
         shift_diff(i) = sqrt(X_diff(i)*X_diff(i)+Y_diff(i)*Y_diff(i));
         shift_distance += shift_diff(i);
 
-        const clock_t noFill = clock();
 
+        const clock_t C4= clock();
+        if (i%iterTimes == 0){array_Computes[i/iterTimes] = C4 - C3;}
+
+        array_Computes[i] = C4 - C3;
         // Fill the output result
         if (fillOutput)
         {
@@ -256,17 +270,47 @@ void ProgAngularDistance::run()
 
             id = DF_out.addRow(row);
             //id = DF_out.addObject();
-            DF_out.setValue(MDL_IMAGE,fnImg,id);
+            //DF_out.setValue(MDL_IMAGE,fnImg,id);
             //DF_out.setValue(MDL_ANGLE_COMPARISON,output, id);
         }
+        const clock_t C5= clock();
+        if (i%iterTimes == 0){array_FillOutput[i/iterTimes] = C5 - C4;}
 
-        float forT = float( noFill - forTime ) /  CLOCKS_PER_SEC;
-        float fillT = float( clock() - noFill ) /  CLOCKS_PER_SEC;
-        float  totalT = forT + fillT;
-        std::cout << "  Total for (" << i << " - " << fillOutput << "): " << totalT<< "  forTime: " <<  forT << " + fillOutput: " << fillT << std::endl;
+        double sumClock = 0;
+        double sumarray_DF1get = 0;
+        double sumarray_DF2get = 0;
+        double sumarray_Computes = 0;
+        double sumarray_FillOutput = 0;
+        for (int n=0; n <= i; ++n){
+            sumarray_DF1get += array_DF1get[n];
+            sumarray_DF2get += array_DF2get[n];
+            sumarray_Computes += array_Computes[n];
+            sumarray_FillOutput += array_FillOutput[n];
+            //std::cout << "sumarray_DF2get: " << sumarray_DF2get << " array_DF2get[" << n << "]: " << array_DF2get[n] << std::endl;
+        }
 
+        if (i%iterTimes == 0){
+          int iteration = i / iterTimes;
+          double mediaSumDF1get = (sumarray_DF1get /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
+          double mediaSumDF2get = (sumarray_DF2get /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
+          double mediaSumDComputes= (sumarray_Computes /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
+          double mediaSumFillOutput = (sumarray_FillOutput /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
+
+          std::cout << "---i: " <<i << " -iteration: " << iteration << std::endl;
+          std::cout << "media sumarray_DF1get: " << mediaSumDF1get<< std::endl;
+          std::cout << "media sumarray_DF2get: " << mediaSumDF2get<< std::endl;
+          std::cout << "media sumarray_Computes: " << mediaSumDComputes<< std::endl;
+          std::cout << "media sumarray_FillOutput: " << mediaSumFillOutput << std::endl;
+          double totalTimeLoop = mediaSumDF1get + mediaSumDF2get + mediaSumDComputes + mediaSumFillOutput;
+          std::cout << "Total each iteration: " << totalTimeLoop << std::endl;
+        }
         i++;
     }
+        std::cout << "no commented"<< std::endl;
+//    for(int j=0; j<numPart;j++){
+//     std::cout <<",  " << array_DF1get[j];
+//    }
+
     if (0 == i) {
         REPORT_ERROR(ERR_NUMERICAL, "i is zero (0), which would lead to division by zero");
     }
@@ -275,8 +319,7 @@ void ProgAngularDistance::run()
 
     if (fillOutput)
     {
-    const clock_t fillO_time = clock();
-
+        const clock_t CfillOutput= clock();
         DF_out.write(fn_out + ".xmd");
         Histogram1D hist;
         compute_hist(vec_diff, hist, 0, 180, 180);
@@ -296,16 +339,26 @@ void ProgAngularDistance::run()
             compute_hist(Y_diff, hist, 20);
             hist.write(fn_out + "_Y_diff_hist.txt");
         }
-    std::cout << "Fill Output: " << float( clock() - fillO_time ) /  CLOCKS_PER_SEC << std::endl;
+        const clock_t CfillOutput_end= clock();
+        double timeFillOut = ((CfillOutput_end - CfillOutput) /CLOCKS_PER_SEC* 1.0);
+        std::cout << "CLOCKS_PER_SEC: " << CLOCKS_PER_SEC << std::endl;
+        std::cout << "fillOutput time: " << timeFillOut << std::endl;
 
     }
+
 
     std::cout << "Global angular distance = " << angular_distance << std::endl;
     std::cout << "Global shift   distance = " << shift_distance   << std::endl;
 }
 
+
+
+
+
 void ProgAngularDistance::computeWeights()
 {
+    const clock_t begin_time = clock();
+    // do something
 	MetaDataDb DF1sorted, DF2sorted, DFweights;
 	MDLabel label=MDL::str2Label(idLabel);
 	DF1sorted.sort(DF1,label);
