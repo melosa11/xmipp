@@ -120,6 +120,7 @@ void ProgAngularDistance::produce_side_info()
 // Compute distance --------------------------------------------------------
 void ProgAngularDistance::run()
 {
+    const clock_t time_0 = clock();
     produce_side_info();
     if (compute_weights)
     {
@@ -178,18 +179,13 @@ void ProgAngularDistance::run()
         DF1.getValue(MDL_ANGLE_PSI,psi1, *iter1);
         DF1.getValue(MDL_SHIFT_X,X1, *iter1);
         DF1.getValue(MDL_SHIFT_Y,Y1, *iter1);
-        const clock_t C2 = clock();
 
-        if (i%iterTimes == 0){array_DF1get[i/iterTimes] = C2 - begin_time;}
 
         DF2.getValue(MDL_ANGLE_ROT,rot2, *iter2);
         DF2.getValue(MDL_ANGLE_TILT,tilt2, *iter2);
         DF2.getValue(MDL_ANGLE_PSI,psi2, *iter2);
         DF2.getValue(MDL_SHIFT_X,X2, *iter2);
         DF2.getValue(MDL_SHIFT_Y,Y2, *iter2);
-
-        const clock_t C3= clock();
-        if (i%iterTimes == 0){array_DF2get[i/iterTimes] = C3 - C2;}
 
 
         // Bring both angles to a normalized set
@@ -221,11 +217,6 @@ void ProgAngularDistance::run()
         shift_diff(i) = sqrt(X_diff(i)*X_diff(i)+Y_diff(i)*Y_diff(i));
         shift_distance += shift_diff(i);
 
-
-        const clock_t C4= clock();
-        if (i%iterTimes == 0){array_Computes[i/iterTimes] = C4 - C3;}
-
-        array_Computes[i] = C4 - C3;
         // Fill the output result
         if (fillOutput)
         {
@@ -273,40 +264,13 @@ void ProgAngularDistance::run()
             //DF_out.setValue(MDL_IMAGE,fnImg,id);
             //DF_out.setValue(MDL_ANGLE_COMPARISON,output, id);
         }
-        const clock_t C5= clock();
-        if (i%iterTimes == 0){array_FillOutput[i/iterTimes] = C5 - C4;}
 
-        double sumClock = 0;
-        double sumarray_DF1get = 0;
-        double sumarray_DF2get = 0;
-        double sumarray_Computes = 0;
-        double sumarray_FillOutput = 0;
-        for (int n=0; n <= i; ++n){
-            sumarray_DF1get += array_DF1get[n];
-            sumarray_DF2get += array_DF2get[n];
-            sumarray_Computes += array_Computes[n];
-            sumarray_FillOutput += array_FillOutput[n];
-            //std::cout << "sumarray_DF2get: " << sumarray_DF2get << " array_DF2get[" << n << "]: " << array_DF2get[n] << std::endl;
-        }
+        const clock_t finish_time = clock();
+        float iter_time= ((finish_time - begin_time) /CLOCKS_PER_SEC* 1.0);
+        std::cout << "iter_time : " << iter_time << std::endl;
 
-        if (i%iterTimes == 0){
-          int iteration = i / iterTimes;
-          double mediaSumDF1get = (sumarray_DF1get /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
-          double mediaSumDF2get = (sumarray_DF2get /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
-          double mediaSumDComputes= (sumarray_Computes /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
-          double mediaSumFillOutput = (sumarray_FillOutput /CLOCKS_PER_SEC* 1.0) / (iteration * 1.0);
-
-          std::cout << "---i: " <<i << " -iteration: " << iteration << std::endl;
-          std::cout << "media sumarray_DF1get: " << mediaSumDF1get<< std::endl;
-          std::cout << "media sumarray_DF2get: " << mediaSumDF2get<< std::endl;
-          std::cout << "media sumarray_Computes: " << mediaSumDComputes<< std::endl;
-          std::cout << "media sumarray_FillOutput: " << mediaSumFillOutput << std::endl;
-          double totalTimeLoop = mediaSumDF1get + mediaSumDF2get + mediaSumDComputes + mediaSumFillOutput;
-          std::cout << "Total each iteration: " << totalTimeLoop << std::endl;
-        }
         i++;
     }
-        std::cout << "no commented"<< std::endl;
 //    for(int j=0; j<numPart;j++){
 //     std::cout <<",  " << array_DF1get[j];
 //    }
@@ -341,10 +305,17 @@ void ProgAngularDistance::run()
         }
         const clock_t CfillOutput_end= clock();
         double timeFillOut = ((CfillOutput_end - CfillOutput) /CLOCKS_PER_SEC* 1.0);
-        std::cout << "CLOCKS_PER_SEC: " << CLOCKS_PER_SEC << std::endl;
+        //std::cout << "CLOCKS_PER_SEC: " << CLOCKS_PER_SEC << std::endl;
         std::cout << "fillOutput time: " << timeFillOut << std::endl;
 
     }
+
+
+    const clock_t time_finish = clock();
+    float TotalTime= ((time_finish - time_0) /CLOCKS_PER_SEC* 1.0);
+    std::cout << "TotalTime : " << TotalTime << std::endl;
+
+
 
 
     std::cout << "Global angular distance = " << angular_distance << std::endl;
