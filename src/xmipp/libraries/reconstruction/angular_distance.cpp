@@ -270,11 +270,11 @@ void ProgAngularDistance::run()
             //DF_out.setValue(MDL_ANGLE_COMPARISON,output, id);
             auto time_3 = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_1-time_0).count();
-            std::cout << "gedValues: " << duration/1000 << "us" << std::endl;
+            std::cout << "getValues: " << duration/1000.0 << "us" << std::endl;
             duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_2-time_1).count();
-            std::cout << "Calculos: " << duration/1000 << "us" << std::endl;
+            std::cout << "Calculos: " << duration/1000.0 << "us" << std::endl;
             duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_3-time_2).count();
-            std::cout << "setValues: " << duration/1000 << "us" << std::endl;
+            std::cout << "setValues: " << duration/1000.0 << "us" << std::endl;
         }
         i++;
     }
@@ -312,7 +312,7 @@ void ProgAngularDistance::run()
          std::cout << "---------------" << std::endl;
         auto time_5 = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_5-time_4).count();
-        std::cout << "hitogram: " << duration/1000 << "us" << std::endl;
+        std::cout << "hitogram: " << duration/1000.0 << "us" << std::endl;
     }
 
 
