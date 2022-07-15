@@ -28,7 +28,7 @@
 #include <core/args.h>
 #include <core/histogram.h>
 #include "core/geometry.h"
-
+#include <chrono>
 // Read arguments ==========================================================
 void ProgAngularDistance::readParams()
 {
@@ -120,7 +120,6 @@ void ProgAngularDistance::produce_side_info()
 // Compute distance --------------------------------------------------------
 void ProgAngularDistance::run()
 {
-    const clock_t time_0 = clock();
     produce_side_info();
     if (compute_weights)
     {
@@ -165,6 +164,8 @@ void ProgAngularDistance::run()
 
     for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)
     {
+        auto time_0 = std::chrono::high_resolution_clock::now();
+
         const clock_t begin_time = clock();
         // Read input data
         double rot1,  tilt1,  psi1;
@@ -187,6 +188,8 @@ void ProgAngularDistance::run()
         DF2.getValue(MDL_SHIFT_X,X2, *iter2);
         DF2.getValue(MDL_SHIFT_Y,Y2, *iter2);
 
+
+        auto time_1 = std::chrono::high_resolution_clock::now();
 
         // Bring both angles to a normalized set
         rot1 = realWRAP(rot1, -180, 180);
@@ -216,6 +219,8 @@ void ProgAngularDistance::run()
         Y_diff(i) = Y1 - Y2;
         shift_diff(i) = sqrt(X_diff(i)*X_diff(i)+Y_diff(i)*Y_diff(i));
         shift_distance += shift_diff(i);
+
+        auto time_2 = std::chrono::high_resolution_clock::now();
 
         // Fill the output result
         if (fillOutput)
@@ -263,17 +268,18 @@ void ProgAngularDistance::run()
             //id = DF_out.addObject();
             //DF_out.setValue(MDL_IMAGE,fnImg,id);
             //DF_out.setValue(MDL_ANGLE_COMPARISON,output, id);
+            auto time_3 = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_1-time_0).count();
+            std::cout << "gedValues: " << duration/1000 << "us" << std::endl;
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_2-time_1).count();
+            std::cout << "Calculos: " << duration/1000 << "us" << std::endl;
+            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_3-time_2).count();
+            std::cout << "setValues: " << duration/1000 << "us" << std::endl;
         }
-
-        const clock_t finish_time = clock();
-        float iter_time= ((finish_time - begin_time) /CLOCKS_PER_SEC* 1.0);
-        std::cout << "iter_time : " << iter_time << std::endl;
-
         i++;
     }
-//    for(int j=0; j<numPart;j++){
-//     std::cout <<",  " << array_DF1get[j];
-//    }
+
+
 
     if (0 == i) {
         REPORT_ERROR(ERR_NUMERICAL, "i is zero (0), which would lead to division by zero");
@@ -283,7 +289,7 @@ void ProgAngularDistance::run()
 
     if (fillOutput)
     {
-        const clock_t CfillOutput= clock();
+        auto time_4 = std::chrono::high_resolution_clock::now();
         DF_out.write(fn_out + ".xmd");
         Histogram1D hist;
         compute_hist(vec_diff, hist, 0, 180, 180);
@@ -303,17 +309,11 @@ void ProgAngularDistance::run()
             compute_hist(Y_diff, hist, 20);
             hist.write(fn_out + "_Y_diff_hist.txt");
         }
-        const clock_t CfillOutput_end= clock();
-        double timeFillOut = ((CfillOutput_end - CfillOutput) /CLOCKS_PER_SEC* 1.0);
-        //std::cout << "CLOCKS_PER_SEC: " << CLOCKS_PER_SEC << std::endl;
-        std::cout << "fillOutput time: " << timeFillOut << std::endl;
-
+         std::cout << "---------------" << std::endl;
+        auto time_5 = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_5-time_4).count();
+        std::cout << "hitogram: " << duration/1000 << "us" << std::endl;
     }
-
-
-    const clock_t time_finish = clock();
-    float TotalTime= ((time_finish - time_0) /CLOCKS_PER_SEC* 1.0);
-    std::cout << "TotalTime : " << TotalTime << std::endl;
 
 
 
@@ -321,8 +321,6 @@ void ProgAngularDistance::run()
     std::cout << "Global angular distance = " << angular_distance << std::endl;
     std::cout << "Global shift   distance = " << shift_distance   << std::endl;
 }
-
-
 
 
 
