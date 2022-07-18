@@ -161,6 +161,7 @@ void ProgAngularDistance::run()
     //arrays to debug
     int numPart = 20000;
     int iterTimes = 5;
+    float nano2mili = 1000000.0;
     double array_DF1get[numPart];
     double array_DF2get[numPart];
     double array_Computes[numPart];
@@ -172,7 +173,7 @@ void ProgAngularDistance::run()
     float getTotal = 0;
     float calculoTotal = 0;
     float setTotal = 0;
-    float nano2mili = 1000000.0;
+
     auto time_for_0 = std::chrono::high_resolution_clock::now();
     for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)
     {
