@@ -29,6 +29,7 @@
 #include <core/histogram.h>
 #include "core/geometry.h"
 #include <chrono>
+#include <thread>
 // Read arguments ==========================================================
 void ProgAngularDistance::readParams()
 {
@@ -120,6 +121,9 @@ void ProgAngularDistance::produce_side_info()
 // Compute distance --------------------------------------------------------
 void ProgAngularDistance::run()
 {
+    auto time_run_0 = std::chrono::high_resolution_clock::now();
+    auto time_setting_0 = std::chrono::high_resolution_clock::now();
+
     produce_side_info();
     if (compute_weights)
     {
@@ -161,12 +165,15 @@ void ProgAngularDistance::run()
     double array_DF2get[numPart];
     double array_Computes[numPart];
     double array_FillOutput[numPart];
+    auto time_setting_1 = std::chrono::high_resolution_clock::now();
+    auto durationn = std::chrono::duration_cast<std::chrono::nanoseconds>(time_setting_1-time_setting_0).count();
+    std::cout <<  std::endl << "time_setting: " << durationn/1000.0 << " us" << std::endl << std::endl;
+    float totalTime = 0;
 
+    auto time_for_0 = std::chrono::high_resolution_clock::now();
     for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)
     {
         auto time_0 = std::chrono::high_resolution_clock::now();
-
-        const clock_t begin_time = clock();
         // Read input data
         double rot1,  tilt1,  psi1;
         double rot2,  tilt2,  psi2;
@@ -181,13 +188,11 @@ void ProgAngularDistance::run()
         DF1.getValue(MDL_SHIFT_X,X1, *iter1);
         DF1.getValue(MDL_SHIFT_Y,Y1, *iter1);
 
-
         DF2.getValue(MDL_ANGLE_ROT,rot2, *iter2);
         DF2.getValue(MDL_ANGLE_TILT,tilt2, *iter2);
         DF2.getValue(MDL_ANGLE_PSI,psi2, *iter2);
         DF2.getValue(MDL_SHIFT_X,X2, *iter2);
         DF2.getValue(MDL_SHIFT_Y,Y2, *iter2);
-
 
         auto time_1 = std::chrono::high_resolution_clock::now();
 
@@ -268,16 +273,27 @@ void ProgAngularDistance::run()
             //id = DF_out.addObject();
             //DF_out.setValue(MDL_IMAGE,fnImg,id);
             //DF_out.setValue(MDL_ANGLE_COMPARISON,output, id);
-            auto time_3 = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_1-time_0).count();
-            std::cout << "getValues: " << duration/1000.0 << "us" << std::endl;
-            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_2-time_1).count();
-            std::cout << "Calculos: " << duration/1000.0 << "us" << std::endl;
-            duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_3-time_2).count();
-            std::cout << "setValues: " << duration/1000.0 << "us" << std::endl;
         }
+
+        auto time_3 = std::chrono::high_resolution_clock::now();
+
+        auto duration1 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_1-time_0).count();
+        //std::cout << "getValues: " << duration/1000.0 << " us" << std::endl;
+        totalTime = totalTime  + duration1/1000.0;
+        auto duration2 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_2-time_1).count();
+        //std::cout << "Calculos: " << duration/1000.0 << " us" << std::endl;
+        totalTime = totalTime  + duration2/1000.0;
+        auto duration3 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_3-time_2).count();
+        //std::cout << "setValues: " << duration3/1000.0 << " us" << std::endl << std::endl;
+        totalTime = totalTime  + duration3/1000.0;
+
         i++;
     }
+
+    auto time_for_1 = std::chrono::high_resolution_clock::now();
+    auto durationFor = std::chrono::duration_cast<std::chrono::nanoseconds>(time_for_1-time_for_0).count();
+    std::cout <<  std::endl << "time_For: " << durationFor/1000.0 << " us" << std::endl << std::endl;
+    std::cout << "for_Total_Time: " << totalTime << " us" << std::endl;
 
 
 
@@ -311,9 +327,16 @@ void ProgAngularDistance::run()
         }
          std::cout << "---------------" << std::endl;
         auto time_5 = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(time_5-time_4).count();
-        std::cout << "hitogram: " << duration/1000.0 << "us" << std::endl;
+        auto durationH = std::chrono::duration_cast<std::chrono::nanoseconds>(time_5-time_4).count();
+        std::cout << "hitogram: " << durationH/1000.0 << " us" << std::endl;
     }
+
+
+    auto time_run_1 = std::chrono::high_resolution_clock::now();
+    auto durationRUN = std::chrono::duration_cast<std::chrono::nanoseconds>(time_run_1-time_run_0).count();
+    std::cout << "---------------" << std::endl;
+    std::cout << "Run Time: " << durationRUN/1000.0 << " us" << std::endl;
+    std::cout << "---------------" << std::endl;
 
 
 
@@ -326,7 +349,6 @@ void ProgAngularDistance::run()
 
 void ProgAngularDistance::computeWeights()
 {
-    const clock_t begin_time = clock();
     // do something
 	MetaDataDb DF1sorted, DF2sorted, DFweights;
 	MDLabel label=MDL::str2Label(idLabel);
