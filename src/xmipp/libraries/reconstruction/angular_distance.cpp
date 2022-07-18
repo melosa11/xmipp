@@ -167,9 +167,12 @@ void ProgAngularDistance::run()
     double array_FillOutput[numPart];
     auto time_setting_1 = std::chrono::high_resolution_clock::now();
     auto durationn = std::chrono::duration_cast<std::chrono::nanoseconds>(time_setting_1-time_setting_0).count();
-    std::cout <<  std::endl << "time_setting: " << durationn/1000.0 << " us" << std::endl << std::endl;
+    std::cout <<  std::endl << "time_setting: " << durationn/nano2mili << " ms" << std::endl;
     float totalTime = 0;
-
+    float getTotal = 0;
+    float calculoTotal = 0;
+    float setTotal = 0;
+    float nano2mili = 1000000.0
     auto time_for_0 = std::chrono::high_resolution_clock::now();
     for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)
     {
@@ -279,11 +282,15 @@ void ProgAngularDistance::run()
 
         auto duration1 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_1-time_0).count();
         //std::cout << "getValues: " << duration/1000.0 << " us" << std::endl;
+        getTotal = getTotal + duration1;
         totalTime = totalTime  + duration1/1000.0;
         auto duration2 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_2-time_1).count();
+        calculoTotal = calculoTotal + duration2;
+
         //std::cout << "Calculos: " << duration/1000.0 << " us" << std::endl;
         totalTime = totalTime  + duration2/1000.0;
         auto duration3 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_3-time_2).count();
+        setTotal = setTotal + duration3;
         //std::cout << "setValues: " << duration3/1000.0 << " us" << std::endl << std::endl;
         totalTime = totalTime  + duration3/1000.0;
 
@@ -292,10 +299,14 @@ void ProgAngularDistance::run()
 
     auto time_for_1 = std::chrono::high_resolution_clock::now();
     auto durationFor = std::chrono::duration_cast<std::chrono::nanoseconds>(time_for_1-time_for_0).count();
-    std::cout <<  std::endl << "time_For: " << durationFor/1000.0 << " us" << std::endl << std::endl;
-    std::cout << "for_Total_Time: " << totalTime << " us" << std::endl;
 
-
+    std::cout << "---------------" << std::endl;
+    std::cout <<  std::endl << "getTotal: " << getTotal/nano2mili << " ms" << std::endl;
+    std::cout <<  std::endl << "calculoTotal: " << calculoTotal/nano2mili << " ms"  << std::endl;
+    std::cout <<  std::endl << "setTotal: " << setTotal/nano2mili << " ms"  << std::endl;
+    std::cout << "---------------" << std::endl;
+    std::cout <<  std::endl << "for_in_sum: " << durationFor/nano2mili<< " ms" << std::endl;
+    std::cout << "for_out_Total: " << totalTime << " ms" << std::endl;
 
     if (0 == i) {
         REPORT_ERROR(ERR_NUMERICAL, "i is zero (0), which would lead to division by zero");
@@ -335,7 +346,7 @@ void ProgAngularDistance::run()
     auto time_run_1 = std::chrono::high_resolution_clock::now();
     auto durationRUN = std::chrono::duration_cast<std::chrono::nanoseconds>(time_run_1-time_run_0).count();
     std::cout << "---------------" << std::endl;
-    std::cout << "Run Time: " << durationRUN/1000.0 << " us" << std::endl;
+    std::cout << "Run Time: " << durationRUN/nano2mili << " ms" << std::endl;
     std::cout << "---------------" << std::endl;
 
 
