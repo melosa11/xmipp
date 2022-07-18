@@ -284,16 +284,16 @@ void ProgAngularDistance::run()
         auto duration1 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_1-time_0).count();
         //std::cout << "getValues: " << duration/1000.0 << " us" << std::endl;
         getTotal = getTotal + duration1;
-        totalTime = totalTime  + duration1/1000.0;
+        totalTime = totalTime  + duration1;
         auto duration2 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_2-time_1).count();
         calculoTotal = calculoTotal + duration2;
 
         //std::cout << "Calculos: " << duration/1000.0 << " us" << std::endl;
-        totalTime = totalTime  + duration2/1000.0;
+        totalTime = totalTime  + duration2;
         auto duration3 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_3-time_2).count();
         setTotal = setTotal + duration3;
         //std::cout << "setValues: " << duration3/1000.0 << " us" << std::endl << std::endl;
-        totalTime = totalTime  + duration3/1000.0;
+        totalTime = totalTime  + duration3;
 
         i++;
     }
