@@ -172,7 +172,7 @@ void ProgAngularDistance::run()
     float getTotal = 0;
     float calculoTotal = 0;
     float setTotal = 0;
-    float nano2mili = 1000000.0
+    float nano2mili = 1000000.0;
     auto time_for_0 = std::chrono::high_resolution_clock::now();
     for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)
     {
