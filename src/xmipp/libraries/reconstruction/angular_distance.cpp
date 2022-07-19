@@ -295,11 +295,10 @@ void ProgAngularDistance::run()
     auto durationFor = std::chrono::duration_cast<std::chrono::nanoseconds>(time_for_1-time_for_0).count();
 
     std::cout << "---------------" << std::endl;
-    std::cout <<  std::endl << "getTotal: " << getTotal/nano2mili << " ms" << std::endl;
-    std::cout <<  std::endl << "calculoTotal: " << calculoTotal/nano2mili << " ms"  << std::endl;
-    std::cout <<  std::endl << "setTotal: " << setTotal/nano2mili << " ms"  << std::endl;
-    std::cout << "---------------" << std::endl;
-    std::cout <<  std::endl << "for_in_sum: " << durationFor/nano2mili<< " ms" << std::endl;
+    std::cout <<  "getTotal: " << getTotal/nano2mili << " ms" << std::endl;
+    std::cout <<  "calculoTotal: " << calculoTotal/nano2mili << " ms"  << std::endl;
+    std::cout <<  "setTotal: " << setTotal/nano2mili << " ms"  << std::endl << std::endl;
+    std::cout << "for_in_sum: " << durationFor/nano2mili<< " ms" << std::endl;
     std::cout << "for_out_Total: " << totalTime << " ms" << std::endl;
 
     if (0 == i) {
