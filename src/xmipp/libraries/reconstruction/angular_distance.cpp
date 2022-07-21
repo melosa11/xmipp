@@ -286,7 +286,8 @@ void ProgAngularDistance::run()
         calculoTotal = calculoTotal + duration2;
         auto duration3 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_3-time_2).count();
         setTotal = setTotal + duration3;
-        totalTime = totalTime  + duration1 + duration2 + duration3;
+        //std::cout <<  "i: " << i <<  "  setTotal: "<< setTotal/nano2mili <<" ms  duration3: " << duration3/nano2mili <<" ms" << std::endl;
+        totalTime = getTotal + calculoTotal + setTotal;
 
         i++;
     }
@@ -298,8 +299,8 @@ void ProgAngularDistance::run()
     std::cout <<  "getTotal: " << getTotal/nano2mili << " ms" << std::endl;
     std::cout <<  "calculoTotal: " << calculoTotal/nano2mili << " ms"  << std::endl;
     std::cout <<  "setTotal: " << setTotal/nano2mili << " ms"  << std::endl << std::endl;
-    std::cout << "for_in_sum: " << durationFor/nano2mili<< " ms" << std::endl;
-    std::cout << "for_out_Total: " << totalTime << " ms" << std::endl;
+    std::cout << "for_out_Total: " << durationFor/nano2mili<< " ms" << std::endl;
+    std::cout << "for_in_suma: " << totalTime/nano2mili << " ms" << std::endl;
 
     if (0 == i) {
         REPORT_ERROR(ERR_NUMERICAL, "i is zero (0), which would lead to division by zero");
