@@ -173,11 +173,19 @@ void ProgAngularDistance::run()
     float getTotal = 0;
     float calculoTotal = 0;
     float setTotal = 0;
-
+    float jumpFor = 0;
+    auto time_end =std::chrono::high_resolution_clock::now();
     auto time_for_0 = std::chrono::high_resolution_clock::now();
-    for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)
+    std::cout << "DF1.size() : " << DF1.size()  << std::endl;
+    //std::cout << "iter1: " << iter1 << std::endl;
+
+    //for (; iter1 != DF1.ids().end(); ++iter1, ++iter2)//here is spent the most of the time!!!
+    for (; i < DF1.size() ; ++iter1, ++iter2)//here is spent the most of the time!!!
     {
         auto time_0 = std::chrono::high_resolution_clock::now();
+        auto durationJump = std::chrono::duration_cast<std::chrono::nanoseconds>(time_0-time_end).count();
+        //std::cout << "durationJump: " << durationJump/nano2mili << " ms" << std::endl;
+
         // Read input data
         double rot1,  tilt1,  psi1;
         double rot2,  tilt2,  psi2;
@@ -286,10 +294,12 @@ void ProgAngularDistance::run()
         calculoTotal = calculoTotal + duration2;
         auto duration3 = std::chrono::duration_cast<std::chrono::nanoseconds>(time_3-time_2).count();
         setTotal = setTotal + duration3;
+        jumpFor = jumpFor + durationJump;
         //std::cout <<  "i: " << i <<  "  setTotal: "<< setTotal/nano2mili <<" ms  duration3: " << duration3/nano2mili <<" ms" << std::endl;
         totalTime = getTotal + calculoTotal + setTotal;
 
         i++;
+        time_end = std::chrono::high_resolution_clock::now();
     }
 
     auto time_for_1 = std::chrono::high_resolution_clock::now();
@@ -299,6 +309,7 @@ void ProgAngularDistance::run()
     std::cout <<  "getTotal: " << getTotal/nano2mili << " ms" << std::endl;
     std::cout <<  "calculoTotal: " << calculoTotal/nano2mili << " ms"  << std::endl;
     std::cout <<  "setTotal: " << setTotal/nano2mili << " ms"  << std::endl << std::endl;
+    std::cout << "jumpFor: " << jumpFor/nano2mili << " ms" << std::endl;
     std::cout << "for_out_Total: " << durationFor/nano2mili<< " ms" << std::endl;
     std::cout << "for_in_suma: " << totalTime/nano2mili << " ms" << std::endl;
 
