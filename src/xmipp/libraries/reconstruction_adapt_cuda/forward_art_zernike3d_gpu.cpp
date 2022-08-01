@@ -93,7 +93,7 @@ void ProgForwardArtZernike3DGPU::readParams()
 }
 
 // Show ====================================================================
-void ProgForwardArtZernike3DGPU::show()
+void ProgForwardArtZernike3DGPU::show() const
 {
 	if (!verbose)
 		return;
