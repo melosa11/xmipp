@@ -726,20 +726,10 @@ void ProgForwardArtZernike3DGPU::artModel()
 template <bool USESZERNIKE, ProgForwardArtZernike3DGPU::Direction DIRECTION>
 void ProgForwardArtZernike3DGPU::zernikeModel()
 {
-	auto &mV = Vrefined();
-
-	auto futures = std::vector<std::future<void>>();
-	futures.reserve(mV.zdim);
-
 	if (DIRECTION == Direction::Forward)
 		forwardModel(USESZERNIKE);
 	else if (DIRECTION == Direction::Backward)
 		backwardModel(USESZERNIKE);
-
-	for (auto &f : futures)
-	{
-        f.get();
-    }
 }
 
 template<typename T>
