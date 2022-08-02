@@ -35,6 +35,9 @@
 #include <core/xmipp_error.h>
 #include <data/blobs.h>
 #include <CTPL/ctpl_stl.h>
+#include <reconstruction_cuda/cuda_forward_art_zernike3d.h>
+
+#include <memory>
 
 // Precision type
 using PrecisionType = float;
@@ -154,6 +157,9 @@ public:
 
     // Filter
     FourierFilter filter, filter2;
+
+    // GPU interface
+    std::unique_ptr<CUDAForwardArtZernike3D<PrecisionType>> cudaForwardArtZernike3D = nullptr;
 
 public:
     enum class Mode { Proj, Vol };

@@ -304,6 +304,23 @@ void ProgForwardArtZernike3DGPU::preProcess()
 	filter.FilterShape=REALGAUSSIANZ;
 	filter2.FilterBand=LOWPASS;
 	filter2.FilterShape=REALGAUSSIANZ2;
+
+    // Create GPU interface
+    const CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters = {
+            .Vrefined = Vrefined,
+            .VRecMask = VRecMask,
+            .sphMask = sphMask,
+            .vL1 = vL1,
+            .vN = vN,
+            .vL2 = vL2,
+            .vM = vM,
+            .sigma = sigma,
+            .RmaxDef = RmaxDef,
+            .rot = rot,
+            .tilt = tilt,
+            .psi = psi
+    };
+    cudaForwardArtZernike3D = std::make_unique<CUDAForwardArtZernike3D>(parameters);
 }
 
 void ProgForwardArtZernike3DGPU::finishProcessing()
