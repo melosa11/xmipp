@@ -242,7 +242,7 @@ public:
      *
      * Bilinear interpolation. (x,y) are in logical coordinates.
      */
-    PrecisionType ProgForwardArtZernike3DGPU::interpolatedElement2DCuda(double x, double y, MultidimArrayCuda<PrecisionType> &diffImage);
+    PrecisionType interpolatedElement2DCuda(double x, double y, MultidimArrayCuda<PrecisionType> &diffImage) const;
 
     void backwardModel(bool usesZernike);
 
