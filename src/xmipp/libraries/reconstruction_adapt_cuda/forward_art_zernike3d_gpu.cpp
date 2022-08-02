@@ -320,7 +320,7 @@ void ProgForwardArtZernike3DGPU::preProcess()
             .tilt = tilt,
             .psi = psi
     };
-    cudaForwardArtZernike3D = std::make_unique<CUDAForwardArtZernike3D>(parameters);
+    cudaForwardArtZernike3D = std::make_unique<CUDAForwardArtZernike3D<PrecisionType>>(parameters);
 }
 
 void ProgForwardArtZernike3DGPU::finishProcessing()
