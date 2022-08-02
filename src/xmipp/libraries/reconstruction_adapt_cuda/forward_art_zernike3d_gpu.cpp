@@ -728,20 +728,13 @@ void ProgForwardArtZernike3DGPU::zernikeModel()
 {
 	auto &mV = Vrefined();
 
-	const auto lastZ = FINISHINGZ(mV);
-	const int step = DIRECTION == Direction::Forward ? loop_step : 1;
-
-	// Parallelization
 	auto futures = std::vector<std::future<void>>();
 	futures.reserve(mV.zdim);
 
-	for (int k = STARTINGZ(mV); k <= lastZ; k += step)
-	{
-		if (DIRECTION == Direction::Forward)
-			forwardModel(k, USESZERNIKE);
-		else if (DIRECTION == Direction::Backward)
-			backwardModel(k, USESZERNIKE);
-	}
+	if (DIRECTION == Direction::Forward)
+		forwardModel(k, USESZERNIKE);
+	else if (DIRECTION == Direction::Backward)
+		backwardModel(k, USESZERNIKE);
 
 	for (auto &f : futures)
 	{
@@ -797,59 +790,63 @@ void ProgForwardArtZernike3DGPU::forwardModel(int k, bool usesZernike)
 	auto *cudaP = tempP.data();
 	auto *cudaW = tempW.data();
 
+	const auto lastZ = FINISHINGZ(cudaMV);
 	const auto lastY = FINISHINGY(cudaMV);
 	const auto lastX = FINISHINGX(cudaMV);
 	const int step = loop_step;
-	for (int i = STARTINGY(cudaMV); i <= lastY; i += step)
+	for (int k = STARTINGZ(cudaMV); k <= lastZ; k += step)
 	{
-		for (int j = STARTINGX(cudaMV); j <= lastX; j += step)
+		for (int i = STARTINGY(cudaMV); i <= lastY; i += step)
 		{
-			PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-			if (A3D_ELEM(cudaVRecMask, k, i, j) != 0)
+			for (int j = STARTINGX(cudaMV); j <= lastX; j += step)
 			{
-				int img_idx = 0;
-				if (sigma.size() > 1)
+				PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
+				if (A3D_ELEM(cudaVRecMask, k, i, j) != 0)
 				{
-					PrecisionType sigma_mask = A3D_ELEM(cudaVRecMask, k, i, j);
-					auto it = find(sigma.begin(), sigma.end(), sigma_mask);
-					img_idx = it - sigma.begin();
-				}
-				auto &mP = cudaP[img_idx];
-				auto &mW = cudaW[img_idx];
-				if (usesZernike)
-				{
-					auto k2 = k * k;
-					auto kr = k * iRmaxF;
-					auto k2i2 = k2 + i * i;
-					auto ir = i * iRmaxF;
-					auto r2 = k2i2 + j * j;
-					auto jr = j * iRmaxF;
-					auto rr = SQRT(r2) * iRmaxF;
-					for (size_t idx = 0; idx < idxY0; idx++)
+					int img_idx = 0;
+					if (sigma.size() > 1)
 					{
-						auto l1 = VEC_ELEM(vL1, idx);
-						auto n = VEC_ELEM(vN, idx);
-						auto l2 = VEC_ELEM(vL2, idx);
-						auto m = VEC_ELEM(vM, idx);
-						if (rr > 0 || l2 == 0)
+						PrecisionType sigma_mask = A3D_ELEM(cudaVRecMask, k, i, j);
+						auto it = find(sigma.begin(), sigma.end(), sigma_mask);
+						img_idx = it - sigma.begin();
+					}
+					auto &mP = cudaP[img_idx];
+					auto &mW = cudaW[img_idx];
+					if (usesZernike)
+					{
+						auto k2 = k * k;
+						auto kr = k * iRmaxF;
+						auto k2i2 = k2 + i * i;
+						auto ir = i * iRmaxF;
+						auto r2 = k2i2 + j * j;
+						auto jr = j * iRmaxF;
+						auto rr = SQRT(r2) * iRmaxF;
+						for (size_t idx = 0; idx < idxY0; idx++)
 						{
-							PrecisionType zsph = ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-							gx += clnm[idx] * (zsph);
-							gy += clnm[idx + idxY0] * (zsph);
-							gz += clnm[idx + idxZ0] * (zsph);
+							auto l1 = VEC_ELEM(vL1, idx);
+							auto n = VEC_ELEM(vN, idx);
+							auto l2 = VEC_ELEM(vL2, idx);
+							auto m = VEC_ELEM(vM, idx);
+							if (rr > 0 || l2 == 0)
+							{
+								PrecisionType zsph = ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
+								gx += clnm[idx] * (zsph);
+								gy += clnm[idx + idxY0] * (zsph);
+								gz += clnm[idx + idxZ0] * (zsph);
+							}
 						}
 					}
+
+					auto r_x = j + gx;
+					auto r_y = i + gy;
+					auto r_z = k + gz;
+
+					auto pos = std::array<PrecisionType, 2>{};
+					pos[0] = R.mdata[0] * r_x + R.mdata[1] * r_y + R.mdata[2] * r_z;
+					pos[1] = R.mdata[3] * r_x + R.mdata[4] * r_y + R.mdata[5] * r_z;
+					PrecisionType voxel_mV = A3D_ELEM(cudaMV, k, i, j);
+					splattingAtPos(pos, voxel_mV, mP, mW);
 				}
-
-				auto r_x = j + gx;
-				auto r_y = i + gy;
-				auto r_z = k + gz;
-
-				auto pos = std::array<PrecisionType, 2>{};
-				pos[0] = R.mdata[0] * r_x + R.mdata[1] * r_y + R.mdata[2] * r_z;
-				pos[1] = R.mdata[3] * r_x + R.mdata[4] * r_y + R.mdata[5] * r_z;
-				PrecisionType voxel_mV = A3D_ELEM(cudaMV, k, i, j);
-				splattingAtPos(pos, voxel_mV, mP, mW);
 			}
 		}
 	}
@@ -873,49 +870,53 @@ void ProgForwardArtZernike3DGPU::backwardModel(int k, bool usesZernike)
 		return tmp;
 	}();
 
+	const auto lastZ = FINISHINGZ(mV);
 	const auto lastY = FINISHINGY(mV);
 	const auto lastX = FINISHINGX(mV);
 	const int step = 1;
-	for (int i = STARTINGY(mV); i <= lastY; i += step)
+	for (int k = STARTINGZ(mV); k <= lastZ; k += step)
 	{
-		for (int j = STARTINGX(mV); j <= lastX; j += step)
+		for (int i = STARTINGY(mV); i <= lastY; i += step)
 		{
-			PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-			if (A3D_ELEM(sphMask, k, i, j) != 0)
+			for (int j = STARTINGX(mV); j <= lastX; j += step)
 			{
-				if (usesZernike)
+				PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
+				if (A3D_ELEM(sphMask, k, i, j) != 0)
 				{
-					auto k2 = k * k;
-					auto kr = k * iRmaxF;
-					auto k2i2 = k2 + i * i;
-					auto ir = i * iRmaxF;
-					auto r2 = k2i2 + j * j;
-					auto jr = j * iRmaxF;
-					auto rr = SQRT(r2) * iRmaxF;
-					for (size_t idx = 0; idx < idxY0; idx++)
+					if (usesZernike)
 					{
-						auto l1 = VEC_ELEM(vL1, idx);
-						auto n = VEC_ELEM(vN, idx);
-						auto l2 = VEC_ELEM(vL2, idx);
-						auto m = VEC_ELEM(vM, idx);
-						if (rr > 0 || l2 == 0)
+						auto k2 = k * k;
+						auto kr = k * iRmaxF;
+						auto k2i2 = k2 + i * i;
+						auto ir = i * iRmaxF;
+						auto r2 = k2i2 + j * j;
+						auto jr = j * iRmaxF;
+						auto rr = SQRT(r2) * iRmaxF;
+						for (size_t idx = 0; idx < idxY0; idx++)
 						{
-							PrecisionType zsph = ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-							gx += clnm[idx] * (zsph);
-							gy += clnm[idx + idxY0] * (zsph);
-							gz += clnm[idx + idxZ0] * (zsph);
+							auto l1 = VEC_ELEM(vL1, idx);
+							auto n = VEC_ELEM(vN, idx);
+							auto l2 = VEC_ELEM(vL2, idx);
+							auto m = VEC_ELEM(vM, idx);
+							if (rr > 0 || l2 == 0)
+							{
+								PrecisionType zsph = ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
+								gx += clnm[idx] * (zsph);
+								gy += clnm[idx + idxY0] * (zsph);
+								gz += clnm[idx + idxZ0] * (zsph);
+							}
 						}
 					}
+
+					auto r_x = j + gx;
+					auto r_y = i + gy;
+					auto r_z = k + gz;
+
+					auto pos_x = R.mdata[0] * r_x + R.mdata[1] * r_y + R.mdata[2] * r_z;
+					auto pos_y = R.mdata[3] * r_x + R.mdata[4] * r_y + R.mdata[5] * r_z;
+					PrecisionType voxel = mId.interpolatedElement2D(pos_x, pos_y);
+					A3D_ELEM(mV, k, i, j) += voxel;
 				}
-
-				auto r_x = j + gx;
-				auto r_y = i + gy;
-				auto r_z = k + gz;
-
-				auto pos_x = R.mdata[0] * r_x + R.mdata[1] * r_y + R.mdata[2] * r_z;
-				auto pos_y = R.mdata[3] * r_x + R.mdata[4] * r_y + R.mdata[5] * r_z;
-				PrecisionType voxel = mId.interpolatedElement2D(pos_x, pos_y);
-				A3D_ELEM(mV, k, i, j) += voxel;
 			}
 		}
 	}
