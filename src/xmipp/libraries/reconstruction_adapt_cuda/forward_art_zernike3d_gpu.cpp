@@ -87,14 +87,6 @@ void ProgForwardArtZernike3DGPU::readParams()
 	{
     	return std::stod(val);
 	});
-
-	// Parallelization
-	int threads = getIntParam("--thr");
-	if (0 >= threads)
-	{
-		threads = CPU::findCores();
-	}
-	m_threadPool.resize(threads);
 }
 
 // Show ====================================================================
@@ -151,7 +143,7 @@ void ProgForwardArtZernike3DGPU::defineParams()
 	addParamsLine("                               : dot product with the N previous inserted projections. Use -1 to sort with all  ");
 	addParamsLine("                               : previous projections");
 	addParamsLine("  [--resume]                   : Resume processing");
-	addParamsLine("  [--thr <N=-1>]                      : Maximal number of the processing CPU threads");
+	addParamsLine("  [--thr <N=-1>]                      : Maximal number of the processing CPU threads (unused)");
 	addExampleLine("A typical use is:", false);
 	addExampleLine("xmipp_forward_art_zernike3d -i anglesFromContinuousAssignment.xmd --ref reference.vol -o assigned_anglesAndDeformations.xmd --l1 3 --l2 2");
 }
@@ -743,20 +735,13 @@ void ProgForwardArtZernike3DGPU::zernikeModel()
 	// Parallelization
 	auto futures = std::vector<std::future<void>>();
 	futures.reserve(mV.zdim);
-	auto routine_forward = [this](int thrId, int k) {
-		forwardModel(k, USESZERNIKE);
-    };
-
-	auto routine_backward = [this](int thrId, int k) {
-		backwardModel(k, USESZERNIKE);
-    };
 
 	for (int k = STARTINGZ(mV); k <= lastZ; k += step)
 	{
 		if (DIRECTION == Direction::Forward)
-			futures.emplace_back(m_threadPool.push(routine_forward, k));
+			forwardModel(k, USESZERNIKE);
 		else if (DIRECTION == Direction::Backward)
-			futures.emplace_back(m_threadPool.push(routine_backward, k));
+			backwardModel(k, USESZERNIKE);
 	}
 
 	for (auto &f : futures)
