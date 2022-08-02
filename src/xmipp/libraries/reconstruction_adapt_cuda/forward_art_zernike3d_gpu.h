@@ -237,6 +237,13 @@ public:
     MultidimArrayCuda<T> initializeMultidimArray(MultidimArray<T> &multidimArray);    
 
     void forwardModel(bool usesZernike);
+
+    /** Interpolates the value of the nth 2D matrix M at the point (x,y)
+     *
+     * Bilinear interpolation. (x,y) are in logical coordinates.
+     */
+    PrecisionType ProgForwardArtZernike3DGPU::interpolatedElement2DCuda(double x, double y, MultidimArrayCuda<PrecisionType> &diffImage) const;
+
     void backwardModel(bool usesZernike);
 
 };
