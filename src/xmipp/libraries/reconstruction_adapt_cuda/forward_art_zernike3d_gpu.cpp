@@ -408,11 +408,11 @@ void ProgForwardArtZernike3DGPU::fillVectorTerms(int l1, int l2, Matrix1D<int> &
 	}
 }
 
-void ProgForwardArtZernike3DGPU::splattingAtPos(std::array<PrecisionType, 2> r, PrecisionType weight,
+void ProgForwardArtZernike3DGPU::splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, PrecisionType weight,
 											 MultidimArrayCuda<PrecisionType> &mP, MultidimArrayCuda<PrecisionType> &mW)
 {
-	int i = round(r[1]);
-	int j = round(r[0]);
+	int i = round(pos_y);
+	int j = round(pos_x);
 	if(!IS_OUTSIDE2D(mP, i, j))
 	{
 		int idy = (i)-STARTINGY(mP);
@@ -779,6 +779,13 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 	}
 	auto *cudaP = tempP.data();
 	auto *cudaW = tempW.data();
+	auto cudaVL1 = vL1.vdata;
+	auto cudaVN = vN.vdata;
+	auto cudaVL2 = vL2.vdata;
+	auto cudaVM = vM.vdata;
+	auto cudaClnm = clnm.data();
+	auto cudaR = R.mdata;
+	auto sigma_size = sigma.size();
 
 	const auto lastZ = FINISHINGZ(mV);
 	const auto lastY = FINISHINGY(mV);
@@ -795,7 +802,7 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 				if (A3D_ELEM(cudaVRecMask, k, i, j) != 0)
 				{
 					int img_idx = 0;
-					if (sigma.size() > 1)
+					if (sigma_size > 1)
 					{
 						PrecisionType sigma_mask = A3D_ELEM(cudaVRecMask, k, i, j);
 						auto it = find(sigma.begin(), sigma.end(), sigma_mask);
@@ -814,16 +821,16 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 						auto rr = SQRT(r2) * iRmaxF;
 						for (size_t idx = 0; idx < idxY0; idx++)
 						{
-							auto l1 = VEC_ELEM(vL1, idx);
-							auto n = VEC_ELEM(vN, idx);
-							auto l2 = VEC_ELEM(vL2, idx);
-							auto m = VEC_ELEM(vM, idx);
+							auto l1 = cudaVL1[idx];
+							auto n = cudaVN[idx];
+							auto l2 = cudaVL2[idx];
+							auto m = cudaVM[idx];
 							if (rr > 0 || l2 == 0)
 							{
 								PrecisionType zsph = ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-								gx += clnm[idx] * (zsph);
-								gy += clnm[idx + idxY0] * (zsph);
-								gz += clnm[idx + idxZ0] * (zsph);
+								gx += cudaClnm[idx] * (zsph);
+								gy += cudaClnm[idx + idxY0] * (zsph);
+								gz += cudaClnm[idx + idxZ0] * (zsph);
 							}
 						}
 					}
@@ -832,11 +839,10 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 					auto r_y = i + gy;
 					auto r_z = k + gz;
 
-					auto pos = std::array<PrecisionType, 2>{};
-					pos[0] = R.mdata[0] * r_x + R.mdata[1] * r_y + R.mdata[2] * r_z;
-					pos[1] = R.mdata[3] * r_x + R.mdata[4] * r_y + R.mdata[5] * r_z;
+					auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
+					auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
 					PrecisionType voxel_mV = A3D_ELEM(cudaMV, k, i, j);
-					splattingAtPos(pos, voxel_mV, mP, mW);
+					splattingAtPos(pos_x, pos_y, voxel_mV, mP, mW);
 				}
 				// End of future CUDA code
 			}

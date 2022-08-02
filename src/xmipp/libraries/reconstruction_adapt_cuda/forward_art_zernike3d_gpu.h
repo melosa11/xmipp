@@ -220,7 +220,7 @@ public:
     void zernikeModel();
 
     // Spaltting at position r
-    void splattingAtPos(std::array<PrecisionType, 2> r, PrecisionType weight,
+    void splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, PrecisionType weight,
                         MultidimArrayCuda<PrecisionType> &mP, MultidimArrayCuda<PrecisionType> &mW);
 
     virtual void run();
