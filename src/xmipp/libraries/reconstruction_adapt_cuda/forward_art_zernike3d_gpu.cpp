@@ -143,7 +143,6 @@ void ProgForwardArtZernike3DGPU::defineParams()
 	addParamsLine("                               : dot product with the N previous inserted projections. Use -1 to sort with all  ");
 	addParamsLine("                               : previous projections");
 	addParamsLine("  [--resume]                   : Resume processing");
-	addParamsLine("  [--thr <N=-1>]                      : Maximal number of the processing CPU threads (unused)");
 	addExampleLine("A typical use is:", false);
 	addExampleLine("xmipp_forward_art_zernike3d -i anglesFromContinuousAssignment.xmd --ref reference.vol -o assigned_anglesAndDeformations.xmd --l1 3 --l2 2");
 }
