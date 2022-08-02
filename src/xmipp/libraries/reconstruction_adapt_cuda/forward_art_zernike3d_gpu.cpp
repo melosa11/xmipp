@@ -790,9 +790,9 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 	auto *cudaP = tempP.data();
 	auto *cudaW = tempW.data();
 
-	const auto lastZ = FINISHINGZ(cudaMV);
-	const auto lastY = FINISHINGY(cudaMV);
-	const auto lastX = FINISHINGX(cudaMV);
+	const auto lastZ = FINISHINGZ(mV);
+	const auto lastY = FINISHINGY(mV);
+	const auto lastX = FINISHINGX(mV);
 	const int step = loop_step;
 	for (int k = STARTINGZ(cudaMV); k <= lastZ; k += step)
 	{
@@ -800,6 +800,7 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 		{
 			for (int j = STARTINGX(cudaMV); j <= lastX; j += step)
 			{
+				// Future CUDA code
 				PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
 				if (A3D_ELEM(cudaVRecMask, k, i, j) != 0)
 				{
@@ -847,6 +848,7 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 					PrecisionType voxel_mV = A3D_ELEM(cudaMV, k, i, j);
 					splattingAtPos(pos, voxel_mV, mP, mW);
 				}
+				// End of future CUDA code
 			}
 		}
 	}
