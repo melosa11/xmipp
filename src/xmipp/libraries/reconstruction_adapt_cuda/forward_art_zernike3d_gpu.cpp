@@ -862,6 +862,16 @@ void ProgForwardArtZernike3DGPU::backwardModel(bool usesZernike)
 		return tmp;
 	}();
 
+	// Setup data for CUDA kernel
+	auto cudaSphMask = initializeMultidimArray(sphMask);
+	auto cudaVL1 = vL1.vdata;
+	auto cudaVN = vN.vdata;
+	auto cudaVL2 = vL2.vdata;
+	auto cudaVM = vM.vdata;
+	auto cudaClnm = clnm.data();
+	auto cudaR = R.mdata;
+	auto cudaMV = initializeMultidimArray(mV);
+
 	const auto lastZ = FINISHINGZ(mV);
 	const auto lastY = FINISHINGY(mV);
 	const auto lastX = FINISHINGX(mV);
@@ -872,8 +882,9 @@ void ProgForwardArtZernike3DGPU::backwardModel(bool usesZernike)
 		{
 			for (int j = STARTINGX(mV); j <= lastX; j += step)
 			{
+				// Future CUDA code
 				PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-				if (A3D_ELEM(sphMask, k, i, j) != 0)
+				if (A3D_ELEM(cudaSphMask, k, i, j) != 0)
 				{
 					if (usesZernike)
 					{
@@ -886,16 +897,16 @@ void ProgForwardArtZernike3DGPU::backwardModel(bool usesZernike)
 						auto rr = SQRT(r2) * iRmaxF;
 						for (size_t idx = 0; idx < idxY0; idx++)
 						{
-							auto l1 = VEC_ELEM(vL1, idx);
-							auto n = VEC_ELEM(vN, idx);
-							auto l2 = VEC_ELEM(vL2, idx);
-							auto m = VEC_ELEM(vM, idx);
+							auto l1 = cudaVL1[idx];
+							auto n = cudaVN[idx];
+							auto l2 = cudaVL2[idx];
+							auto m = cudaVM[idx];
 							if (rr > 0 || l2 == 0)
 							{
 								PrecisionType zsph = ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-								gx += clnm[idx] * (zsph);
-								gy += clnm[idx + idxY0] * (zsph);
-								gz += clnm[idx + idxZ0] * (zsph);
+								gx += cudaClnm[idx] * (zsph);
+								gy += cudaClnm[idx + idxY0] * (zsph);
+								gz += cudaClnm[idx + idxZ0] * (zsph);
 							}
 						}
 					}
@@ -904,11 +915,12 @@ void ProgForwardArtZernike3DGPU::backwardModel(bool usesZernike)
 					auto r_y = i + gy;
 					auto r_z = k + gz;
 
-					auto pos_x = R.mdata[0] * r_x + R.mdata[1] * r_y + R.mdata[2] * r_z;
-					auto pos_y = R.mdata[3] * r_x + R.mdata[4] * r_y + R.mdata[5] * r_z;
+					auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
+					auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
 					PrecisionType voxel = mId.interpolatedElement2D(pos_x, pos_y);
-					A3D_ELEM(mV, k, i, j) += voxel;
+					A3D_ELEM(cudaMV, k, i, j) += voxel;
 				}
+				// End of future CUDA code
 			}
 		}
 	}
