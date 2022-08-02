@@ -844,7 +844,7 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 	}
 }
 
-PrecisionType ProgForwardArtZernike3DGPU::interpolatedElement2DCuda(double x, double y, MultidimArrayCuda<PrecisionType> &diffImage) const
+PrecisionType ProgForwardArtZernike3DGPU::interpolatedElement2DCuda(double x, double y, MultidimArrayCuda<PrecisionType> &diffImage)
 {
     int x0 = floor(x);
     double fx = x - x0;
