@@ -732,9 +732,9 @@ void ProgForwardArtZernike3DGPU::zernikeModel()
 	futures.reserve(mV.zdim);
 
 	if (DIRECTION == Direction::Forward)
-		forwardModel(k, USESZERNIKE);
+		forwardModel(USESZERNIKE);
 	else if (DIRECTION == Direction::Backward)
-		backwardModel(k, USESZERNIKE);
+		backwardModel(USESZERNIKE);
 
 	for (auto &f : futures)
 	{
@@ -757,7 +757,7 @@ MultidimArrayCuda<T> ProgForwardArtZernike3DGPU::initializeMultidimArray(Multidi
 	return cudaArray;
 }
 
-void ProgForwardArtZernike3DGPU::forwardModel(int k, bool usesZernike)
+void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 {
 	auto &mV = Vrefined();
 	const size_t idxY0 = usesZernike ? (clnm.size() / 3) : 0;
@@ -852,7 +852,7 @@ void ProgForwardArtZernike3DGPU::forwardModel(int k, bool usesZernike)
 	}
 }
 
-void ProgForwardArtZernike3DGPU::backwardModel(int k, bool usesZernike)
+void ProgForwardArtZernike3DGPU::backwardModel(bool usesZernike)
 {
 	auto &mId = Idiff();
 	auto &mV = Vrefined();
