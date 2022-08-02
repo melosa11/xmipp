@@ -858,17 +858,17 @@ PrecisionType ProgForwardArtZernike3DGPU::interpolatedElement2DCuda(double x, do
     int iF=FINISHINGY(diffImage);
     int jF=FINISHINGX(diffImage);
 
-#define ASSIGNVAL2D(d,i,j) \
+#define ASSIGNVAL2DCUDA(d,i,j) \
      if ((j) < j0 || (j) > jF || (i) < i0 || (i) > iF) \
-      d=outside_value;\
+      d=(PrecisionType) 0;\
         else \
          d=A2D_ELEM(diffImage, i, j);
 
     double d00, d10, d11, d01;
-    ASSIGNVAL2D(d00,y0,x0);
-    ASSIGNVAL2D(d01,y0,x1);
-    ASSIGNVAL2D(d10,y1,x0);
-    ASSIGNVAL2D(d11,y1,x1);
+    ASSIGNVAL2DCUDA(d00,y0,x0);
+    ASSIGNVAL2DCUDA(d01,y0,x1);
+    ASSIGNVAL2DCUDA(d10,y1,x0);
+    ASSIGNVAL2DCUDA(d11,y1,x1);
 
     double d0 = LIN_INTERP(fx, d00, d01);
     double d1 = LIN_INTERP(fx, d10, d11);
