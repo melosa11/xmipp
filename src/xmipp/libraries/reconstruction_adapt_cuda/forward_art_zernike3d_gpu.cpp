@@ -316,6 +316,7 @@ void ProgForwardArtZernike3DGPU::preProcess()
             .vM = vM,
             .sigma = sigma,
             .RmaxDef = RmaxDef,
+            .loopStep = loop_step,
             .rot = rot,
             .tilt = tilt,
             .psi = psi,

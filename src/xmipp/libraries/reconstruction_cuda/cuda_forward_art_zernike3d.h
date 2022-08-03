@@ -41,6 +41,7 @@ public:
         Matrix1D<int> &vL1, &vN, &vL2, &vM;
         std::vector<PrecisionType> &sigma;
         int RmaxDef;
+        int loopStep;
         PrecisionType rot, tilt, psi;
         std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &p_busy_elem;
         std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &w_busy_elem;
@@ -67,6 +68,8 @@ private:
     MultidimArrayCuda<int> VRecMask, sphMask;
 
     int RmaxDef;
+
+    int loopStep;
 
     PrecisionType rot, tilt, psi;
 

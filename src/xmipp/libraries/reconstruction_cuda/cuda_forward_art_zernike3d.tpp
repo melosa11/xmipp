@@ -82,7 +82,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(
     const auto lastZ = FINISHINGZ(mV);
     const auto lastY = FINISHINGY(mV);
     const auto lastX = FINISHINGX(mV);
-    const int step = loop_step;
+    const int step = loopStep;
     for (int k = STARTINGZ(cudaMV); k <= lastZ; k += step)
     {
         for (int i = STARTINGY(cudaMV); i <= lastY; i += step)
