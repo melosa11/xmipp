@@ -34,10 +34,6 @@
 #include <fstream>
 #include <iterator>
 
-// Macros
-#define IS_OUTSIDE2D(ImD,i,j) \
-    ((j) < STARTINGX((ImD)) || (j) > FINISHINGX((ImD)) || \
-     (i) < STARTINGY((ImD)) || (i) > FINISHINGY((ImD)))	 
 
 // Empty constructor =======================================================
 ProgForwardArtZernike3DGPU::ProgForwardArtZernike3DGPU()

@@ -7,6 +7,11 @@
 #include <core/matrix2d.h>
 #include "data/numerical_tools.h"
 
+// Macros
+#define IS_OUTSIDE2D(ImD,i,j) \
+    ((j) < STARTINGX((ImD)) || (j) > FINISHINGX((ImD)) || \
+     (i) < STARTINGY((ImD)) || (i) > FINISHINGY((ImD)))
+
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
         const CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters) {
