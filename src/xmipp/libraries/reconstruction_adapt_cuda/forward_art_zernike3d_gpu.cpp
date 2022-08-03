@@ -781,10 +781,10 @@ PrecisionType ProgForwardArtZernike3DGPU::interpolatedElement2DCuda(double x, do
 
 size_t ProgForwardArtZernike3DGPU::findCuda(PrecisionType *begin, size_t size, PrecisionType value) 
 {
-	/*if (size == 0) 
+	if (size == 0) 
 	{
 		return 0;
-	}*/
+	}
 	for (size_t i = 0; i < size; i++) 
 	{
 		if (begin[i] == value) 
@@ -852,17 +852,10 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 				if (A3D_ELEM(cudaVRecMask, k, i, j) != 0)
 				{
 					int img_idx = 0;
-					int img_idx_my = 0;
 					if (sigma_size > 1)
 					{
 						PrecisionType sigma_mask = A3D_ELEM(cudaVRecMask, k, i, j);
-						auto it = find(sigma.begin(), sigma.end(), sigma_mask);
-						img_idx = it - sigma.begin();
-						img_idx_my = findCuda(cudaSigma, sigma_size, sigma_mask);
-						if (img_idx != img_idx_my) 
-						{
-							printf("orig = %d mine = %d\n", img_idx, img_idx_my);
-						}
+						img_idx = findCuda(cudaSigma, sigma_size, sigma_mask);
 					}
 					auto &mP = cudaP[img_idx];
 					auto &mW = cudaW[img_idx];
