@@ -1,7 +1,8 @@
+#ifndef CUDA_FORWARD_ART_ZERNIKE3D_TPP
+#define CUDA_FORWARD_ART_ZERNIKE3D_TPP
+
 // Xmipp includes
 #include "cuda_forward_art_zernike3d.h"
-// Standard includes
-#include <iostream>
 
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
@@ -34,9 +35,4 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(const std::vector
     }
 }
 
-// We need tell the compiler the types for which we want
-// to compile, because we want the definition and implementation
-// to be in separate files.
-
-template class CUDAForwardArtZernike3D<float>;
-template class CUDAForwardArtZernike3D<double>;
+#endif// CUDA_FORWARD_ART_ZERNIKE3D_TPP

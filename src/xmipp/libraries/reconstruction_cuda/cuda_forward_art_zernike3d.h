@@ -46,4 +46,7 @@ public:
     ~CUDAForwardArtZernike3D();
 };
 
+// Include template implementation
+#include "cuda_forward_art_zernike3d.tpp"
+
 #endif// CUDA_FORWARD_ART_ZERNIKE3D_H
