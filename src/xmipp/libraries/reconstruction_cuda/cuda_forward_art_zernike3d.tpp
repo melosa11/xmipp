@@ -45,7 +45,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(
         PrecisionType rot,
         PrecisionType tilt,
         PrecisionType psi) {
-    auto mV = V;
+    auto &mV = V;
     const size_t idxY0 = usesZernike ? (clnm.size() / 3) : 0;
     const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
     const PrecisionType RmaxF = usesZernike ? RmaxDef : 0;
@@ -55,7 +55,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(
     const Matrix2D<PrecisionType> R = createRotationMatrix(rot, tilt, psi);
 
     // Setup data for CUDA kernel
-    auto cudaVRecMask = VRecMask;
+    auto &cudaVRecMask = VRecMask;
     auto cudaMV = mV;
     std::vector<MultidimArrayCuda<PrecisionType>> tempP;
     std::vector<MultidimArrayCuda<PrecisionType>> tempW;
