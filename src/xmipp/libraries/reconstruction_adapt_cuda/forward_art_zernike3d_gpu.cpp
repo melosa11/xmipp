@@ -318,7 +318,9 @@ void ProgForwardArtZernike3DGPU::preProcess()
             .RmaxDef = RmaxDef,
             .rot = rot,
             .tilt = tilt,
-            .psi = psi
+            .psi = psi,
+            .p_busy_elem = p_busy_elem,
+            .w_busy_elem = w_busy_elem
     };
     cudaForwardArtZernike3D = std::make_unique<CUDAForwardArtZernike3D<PrecisionType>>(parameters);
 }

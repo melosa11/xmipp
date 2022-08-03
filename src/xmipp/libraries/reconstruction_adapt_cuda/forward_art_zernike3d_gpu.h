@@ -44,17 +44,6 @@ using PrecisionType = float;
 // Functions
 #define SQRT sqrtf
 
-template<typename T>
-struct MultidimArrayCuda {
-    size_t xdim;
-    size_t ydim;
-    size_t yxdim;
-    int xinit;
-    int yinit;
-    int zinit;
-    T* data;
-};
-
 /** Predict Continuous Parameters. */
 class ProgForwardArtZernike3DGPU: public XmippMetadataProgram
 {

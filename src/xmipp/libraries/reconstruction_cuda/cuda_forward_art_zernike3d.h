@@ -9,9 +9,22 @@
 #include <core/multidim_array.h>
 // Standard includes
 #include <vector>
+#include <memory>
+#include <atomic>
 
 struct float3;
 struct double3;
+
+template<typename T>
+struct MultidimArrayCuda {
+    size_t xdim;
+    size_t ydim;
+    size_t yxdim;
+    int xinit;
+    int yinit;
+    int zinit;
+    T* data;
+};
 
 template<typename PrecisionType = float>
 class CUDAForwardArtZernike3D
@@ -29,6 +42,8 @@ public:
         std::vector<PrecisionType> &sigma;
         int RmaxDef;
         PrecisionType rot, tilt, psi;
+        std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &p_busy_elem;
+        std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &w_busy_elem;
     };
 
 public:
@@ -44,6 +59,37 @@ public:
 
     CUDAForwardArtZernike3D(const ConstantParameters parameters);
     ~CUDAForwardArtZernike3D();
+
+private:
+
+    MultidimArrayCuda<PrecisionType> V;
+
+    MultidimArrayCuda<int> VRecMask, sphMask;
+
+    int RmaxDef;
+
+    PrecisionType rot, tilt, psi;
+
+    Matrix1D<int> vL1, vN, vL2, vM;
+
+    std::vector<PrecisionType> sigma;
+
+    std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> p_busy_elem;
+    std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> w_busy_elem;
+
+private:
+
+    /// Move data from MultidimArray to struct usable by CUDA kernel
+    template<typename T>
+    MultidimArrayCuda<T> initializeMultidimArray(MultidimArray<T> &multidimArray) const;
+
+    /// Function inspired by std::find with support for CUDA allowed data types
+    size_t findCuda(PrecisionType *begin, size_t size, PrecisionType value);
+
+    void splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, PrecisionType weight,
+                        MultidimArrayCuda<PrecisionType> &mP, MultidimArrayCuda<PrecisionType> &mW,
+                        std::unique_ptr<std::atomic<PrecisionType *>> *p_busy_elem_cuda,
+                        std::unique_ptr<std::atomic<PrecisionType *>> *w_busy_elem_cuda);
 };
 
 // Include template implementation
