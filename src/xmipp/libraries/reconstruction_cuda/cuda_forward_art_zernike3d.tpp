@@ -210,9 +210,9 @@ size_t CUDAForwardArtZernike3D<PrecisionType>::findCuda(PrecisionType *begin, si
 }
 
 template<typename PrecisionType>
-Matrix2D<PrecisionType> CUDAForwardArtZernike3D::createRotationMatrix(PrecisionType rot,
-                                                                      PrecisionType tilt,
-                                                                      PrecisionType psi) {
+Matrix2D<PrecisionType> CUDAForwardArtZernike3D<PrecisionType>::createRotationMatrix(PrecisionType rot,
+                                                                                     PrecisionType tilt,
+                                                                                     PrecisionType psi) {
     constexpr size_t matrixSize = 3;
     auto tmp = Matrix2D<PrecisionType>();
     tmp.initIdentity(matrixSize);
