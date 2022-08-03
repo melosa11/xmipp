@@ -42,7 +42,6 @@ public:
         std::vector<PrecisionType> &sigma;
         int RmaxDef;
         int loopStep;
-        PrecisionType rot, tilt, psi;
         std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &p_busy_elem;
         std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &w_busy_elem;
     };
@@ -52,7 +51,10 @@ public:
     template<bool usesZernike>
     void runForwardKernel(const std::vector<PrecisionType> &clnm,
                           std::vector<Image<PrecisionType>> &P,
-                          std::vector<Image<PrecisionType>> &W);
+                          std::vector<Image<PrecisionType>> &W,
+                          PrecisionType rot,
+                          PrecisionType tilt,
+                          PrecisionType psi);
 
     template<bool usesZernike>
     void runBackwardKernel(const std::vector<PrecisionType> &clnm,
@@ -72,8 +74,6 @@ private:
     int loopStep;
 
     int lastX, lastY, lastZ;
-
-    PrecisionType rot, tilt, psi;
 
     Matrix1D<int> vL1, vN, vL2, vM;
 

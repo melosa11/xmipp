@@ -30,10 +30,6 @@ CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
     vL2 = parameters.vL2;
     vN = parameters.vN;
     vM = parameters.vM;
-
-    rot = parameters.rot;
-    tilt = parameters.tilt;
-    psi = parameters.psi;
 }
 
 template<typename PrecisionType>
@@ -46,7 +42,10 @@ template<bool usesZernike>
 void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(
         const std::vector<PrecisionType> &clnm,
         std::vector<Image<PrecisionType>> &P,
-        std::vector<Image<PrecisionType>> &W) {
+        std::vector<Image<PrecisionType>> &W,
+        PrecisionType rot,
+        PrecisionType tilt,
+        PrecisionType psi) {
     auto mV = V;
     const size_t idxY0 = usesZernike ? (clnm.size() / 3) : 0;
     const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;

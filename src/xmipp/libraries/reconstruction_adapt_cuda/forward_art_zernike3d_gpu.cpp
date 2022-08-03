@@ -313,9 +313,6 @@ void ProgForwardArtZernike3DGPU::preProcess()
             .sigma = sigma,
             .RmaxDef = RmaxDef,
             .loopStep = loop_step,
-            .rot = rot,
-            .tilt = tilt,
-            .psi = psi,
             .p_busy_elem = p_busy_elem,
             .w_busy_elem = w_busy_elem
     };
