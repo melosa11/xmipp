@@ -4,7 +4,6 @@
 // Xmipp includes
 #include "cuda_forward_art_zernike3d.h"
 #include <core/geometry.h>
-#include <core/matrix2d.h>
 #include "data/numerical_tools.h"
 
 // Macros
@@ -51,15 +50,9 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(
     const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
     const PrecisionType RmaxF = usesZernike ? RmaxDef : 0;
     const PrecisionType iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
+
     // Rotation Matrix
-    constexpr size_t matrixSize = 3;
-    const Matrix2D<PrecisionType> R = [this]()
-    {
-        auto tmp = Matrix2D<PrecisionType>();
-        tmp.initIdentity(matrixSize);
-        Euler_angles2matrix(rot, tilt, psi, tmp, false);
-        return tmp;
-    }();
+    const Matrix2D<PrecisionType> R = createRotationMatrix(rot, tilt, psi);
 
     // Setup data for CUDA kernel
     auto cudaVRecMask = VRecMask;
@@ -214,6 +207,17 @@ size_t CUDAForwardArtZernike3D<PrecisionType>::findCuda(PrecisionType *begin, si
         }
     }
     return size - 1;
+}
+
+template<typename PrecisionType>
+Matrix2D<PrecisionType> CUDAForwardArtZernike3D::createRotationMatrix(PrecisionType rot,
+                                                                      PrecisionType tilt,
+                                                                      PrecisionType psi) {
+    constexpr size_t matrixSize = 3;
+    auto tmp = Matrix2D<PrecisionType>();
+    tmp.initIdentity(matrixSize);
+    Euler_angles2matrix(rot, tilt, psi, tmp, false);
+    return tmp;
 }
 
 #endif// CUDA_FORWARD_ART_ZERNIKE3D_TPP

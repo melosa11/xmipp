@@ -6,6 +6,7 @@
 #include <core/multidim_array.h>
 #include <core/xmipp_image.h>
 #include <core/matrix1d.h>
+#include <core/matrix2d.h>
 #include <core/multidim_array.h>
 // Standard includes
 #include <vector>
@@ -95,6 +96,8 @@ private:
                         MultidimArrayCuda<PrecisionType> &mP, MultidimArrayCuda<PrecisionType> &mW,
                         std::unique_ptr<std::atomic<PrecisionType *>> *p_busy_elem_cuda,
                         std::unique_ptr<std::atomic<PrecisionType *>> *w_busy_elem_cuda);
+
+    Matrix2D<PrecisionType> createRotationMatrix(PrecisionType rot, PrecisionType tilt, PrecisionType psi);
 };
 
 // Include template implementation
