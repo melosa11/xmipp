@@ -727,7 +727,7 @@ template <bool USESZERNIKE, ProgForwardArtZernike3DGPU::Direction DIRECTION>
 void ProgForwardArtZernike3DGPU::zernikeModel()
 {
 	if (DIRECTION == Direction::Forward)
-		forwardModel(USESZERNIKE);
+        cudaForwardArtZernike3D->forwardKernel<USESZERNIKE>(clnm, P, W);
 	else if (DIRECTION == Direction::Backward)
 		backwardModel(USESZERNIKE);
 }
