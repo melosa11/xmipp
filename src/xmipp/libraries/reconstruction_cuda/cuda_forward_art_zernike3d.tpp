@@ -17,6 +17,10 @@ CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
     sigma = parameters.sigma;
     RmaxDef = parameters.RmaxDef;
 
+    lastZ = FINISHINGZ(parameters.Vrefined());
+    lastY = FINISHINGY(parameters.Vrefined());
+    lastX = FINISHINGX(parameters.Vrefined());
+
     vL1 = parameters.vL1;
     vL2 = parameters.vL2;
     vN = parameters.vN;
@@ -79,9 +83,9 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(
     auto p_busy_elem_cuda = p_busy_elem.data();
     auto w_busy_elem_cuda = w_busy_elem.data();
 
-    const auto lastZ = FINISHINGZ(mV);
-    const auto lastY = FINISHINGY(mV);
-    const auto lastX = FINISHINGX(mV);
+    const auto lastZ = this->lastZ;
+    const auto lastY = this->lastY;
+    const auto lastX = this->lastX;
     const int step = loopStep;
     for (int k = STARTINGZ(cudaMV); k <= lastZ; k += step)
     {

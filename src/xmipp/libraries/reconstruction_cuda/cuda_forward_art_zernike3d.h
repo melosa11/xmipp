@@ -71,6 +71,8 @@ private:
 
     int loopStep;
 
+    int lastX, lastY, lastZ;
+
     PrecisionType rot, tilt, psi;
 
     Matrix1D<int> vL1, vN, vL2, vM;
