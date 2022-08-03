@@ -232,14 +232,16 @@ public:
     template<typename T>
     MultidimArrayCuda<T> initializeMultidimArray(MultidimArray<T> &multidimArray);    
 
-    void forwardModel(bool usesZernike);
-
     /** Interpolates the value of the nth 2D matrix M at the point (x,y)
      *
      * Bilinear interpolation. (x,y) are in logical coordinates.
      */
     PrecisionType interpolatedElement2DCuda(double x, double y, MultidimArrayCuda<PrecisionType> &diffImage) const;
 
+    /// Function inspired by std::find with support for CUDA allowed data types
+    size_t findCuda(PrecisionType *begin, size_t size, PrecisionType value);
+
+    void forwardModel(bool usesZernike);
     void backwardModel(bool usesZernike);
 
 };

@@ -747,6 +747,55 @@ MultidimArrayCuda<T> ProgForwardArtZernike3DGPU::initializeMultidimArray(Multidi
 	return cudaArray;
 }
 
+// Future CUDA functions
+PrecisionType ProgForwardArtZernike3DGPU::interpolatedElement2DCuda(double x, double y, MultidimArrayCuda<PrecisionType> &diffImage) const
+{
+    int x0 = floor(x);
+    double fx = x - x0;
+    int x1 = x0 + 1;
+    int y0 = floor(y);
+    double fy = y - y0;
+    int y1 = y0 + 1;
+
+    int i0=STARTINGY(diffImage);
+    int j0=STARTINGX(diffImage);
+    int iF=FINISHINGY(diffImage);
+    int jF=FINISHINGX(diffImage);
+
+#define ASSIGNVAL2DCUDA(d,i,j) \
+     if ((j) < j0 || (j) > jF || (i) < i0 || (i) > iF) \
+      d=(PrecisionType) 0;\
+        else \
+         d=A2D_ELEM(diffImage, i, j);
+
+    double d00, d10, d11, d01;
+    ASSIGNVAL2DCUDA(d00,y0,x0);
+    ASSIGNVAL2DCUDA(d01,y0,x1);
+    ASSIGNVAL2DCUDA(d10,y1,x0);
+    ASSIGNVAL2DCUDA(d11,y1,x1);
+
+    double d0 = LIN_INTERP(fx, d00, d01);
+    double d1 = LIN_INTERP(fx, d10, d11);
+    return (PrecisionType) LIN_INTERP(fy, d0, d1);
+}
+
+size_t ProgForwardArtZernike3DGPU::findCuda(PrecisionType *begin, size_t size, PrecisionType value) 
+{
+	if (size == 0) 
+	{
+		return 0;
+	}
+	for (size_t i = 0; i < size; i++) 
+	{
+		if (begin[i] == value) 
+		{
+			return i;
+		}
+	}
+	return size - 1;
+}
+// End of future CUDA functions
+
 void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 {
 	auto &mV = Vrefined();
@@ -777,8 +826,8 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 	{
 		tempW.push_back(initializeMultidimArray(W[m]()));	
 	}
-	auto *cudaP = tempP.data();
-	auto *cudaW = tempW.data();
+	auto cudaP = tempP.data();
+	auto cudaW = tempW.data();
 	auto cudaVL1 = vL1.vdata;
 	auto cudaVN = vN.vdata;
 	auto cudaVL2 = vL2.vdata;
@@ -786,6 +835,7 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 	auto cudaClnm = clnm.data();
 	auto cudaR = R.mdata;
 	auto sigma_size = sigma.size();
+	auto cudaSigma = sigma.data();
 
 	const auto lastZ = FINISHINGZ(mV);
 	const auto lastY = FINISHINGY(mV);
@@ -802,11 +852,17 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 				if (A3D_ELEM(cudaVRecMask, k, i, j) != 0)
 				{
 					int img_idx = 0;
+					int img_idx_my = 0;
 					if (sigma_size > 1)
 					{
 						PrecisionType sigma_mask = A3D_ELEM(cudaVRecMask, k, i, j);
 						auto it = find(sigma.begin(), sigma.end(), sigma_mask);
 						img_idx = it - sigma.begin();
+						img_idx_my = findCuda(cudaSigma, sigma_size, sigma_mask);
+						if (img_idx != img_idx_my) 
+						{
+							printf("orig = %d mine = %d\n", img_idx, img_idx_my);
+						}
 					}
 					auto &mP = cudaP[img_idx];
 					auto &mW = cudaW[img_idx];
@@ -848,37 +904,6 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 			}
 		}
 	}
-}
-
-PrecisionType ProgForwardArtZernike3DGPU::interpolatedElement2DCuda(double x, double y, MultidimArrayCuda<PrecisionType> &diffImage) const
-{
-    int x0 = floor(x);
-    double fx = x - x0;
-    int x1 = x0 + 1;
-    int y0 = floor(y);
-    double fy = y - y0;
-    int y1 = y0 + 1;
-
-    int i0=STARTINGY(diffImage);
-    int j0=STARTINGX(diffImage);
-    int iF=FINISHINGY(diffImage);
-    int jF=FINISHINGX(diffImage);
-
-#define ASSIGNVAL2DCUDA(d,i,j) \
-     if ((j) < j0 || (j) > jF || (i) < i0 || (i) > iF) \
-      d=(PrecisionType) 0;\
-        else \
-         d=A2D_ELEM(diffImage, i, j);
-
-    double d00, d10, d11, d01;
-    ASSIGNVAL2DCUDA(d00,y0,x0);
-    ASSIGNVAL2DCUDA(d01,y0,x1);
-    ASSIGNVAL2DCUDA(d10,y1,x0);
-    ASSIGNVAL2DCUDA(d11,y1,x1);
-
-    double d0 = LIN_INTERP(fx, d00, d01);
-    double d1 = LIN_INTERP(fx, d10, d11);
-    return (PrecisionType) LIN_INTERP(fy, d0, d1);
 }
 
 void ProgForwardArtZernike3DGPU::backwardModel(bool usesZernike)
