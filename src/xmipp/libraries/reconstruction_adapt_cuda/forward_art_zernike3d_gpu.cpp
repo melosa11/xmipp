@@ -408,26 +408,6 @@ void ProgForwardArtZernike3DGPU::fillVectorTerms(int l1, int l2, Matrix1D<int> &
 	}
 }
 
-void ProgForwardArtZernike3DGPU::splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, PrecisionType weight,
-											 MultidimArrayCuda<PrecisionType> &mP, MultidimArrayCuda<PrecisionType> &mW)
-{
-	int i = round(pos_y);
-	int j = round(pos_x);
-	if(!IS_OUTSIDE2D(mP, i, j))
-	{
-		int idy = (i)-STARTINGY(mP);
-		int idx = (j)-STARTINGX(mP);
-		int idn = (idy) * (mP).xdim + (idx);
-		while ((*p_busy_elem[idn]) == &A2D_ELEM(mP, i, j));
-		(*p_busy_elem[idn]).exchange(&A2D_ELEM(mP, i, j));
-		(*w_busy_elem[idn]).exchange(&A2D_ELEM(mW, i, j));
-		A2D_ELEM(mP, i, j) += weight;
-		A2D_ELEM(mW, i, j) += 1.0;
-		(*p_busy_elem[idn]).exchange(nullptr);
-		(*w_busy_elem[idn]).exchange(nullptr);
-	}
-}
-
 void ProgForwardArtZernike3DGPU::recoverVol()
 {
 	// Find the part of the volume that must be updated
@@ -748,6 +728,29 @@ MultidimArrayCuda<T> ProgForwardArtZernike3DGPU::initializeMultidimArray(Multidi
 }
 
 // Future CUDA functions
+void ProgForwardArtZernike3DGPU::splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, PrecisionType weight,
+											 MultidimArrayCuda<PrecisionType> &mP, MultidimArrayCuda<PrecisionType> &mW, 
+											 std::unique_ptr<std::atomic<PrecisionType *>> *p_busy_elem_cuda,
+											 std::unique_ptr<std::atomic<PrecisionType *>> *w_busy_elem_cuda)
+{
+	int i = round(pos_y);
+	int j = round(pos_x);
+	if(!IS_OUTSIDE2D(mP, i, j))
+	{
+		int idy = (i)-STARTINGY(mP);
+		int idx = (j)-STARTINGX(mP);
+		int idn = (idy) * (mP).xdim + (idx);
+		// Not sure if std::unique_ptr and std::atomic can be used in CUDA code
+		while ((*p_busy_elem_cuda[idn]) == &A2D_ELEM(mP, i, j));
+		(*p_busy_elem_cuda[idn]).exchange(&A2D_ELEM(mP, i, j));
+		(*w_busy_elem_cuda[idn]).exchange(&A2D_ELEM(mW, i, j));
+		A2D_ELEM(mP, i, j) += weight;
+		A2D_ELEM(mW, i, j) += 1.0;
+		(*p_busy_elem_cuda[idn]).exchange(nullptr);
+		(*w_busy_elem_cuda[idn]).exchange(nullptr);
+	}
+}
+
 PrecisionType ProgForwardArtZernike3DGPU::interpolatedElement2DCuda(double x, double y, MultidimArrayCuda<PrecisionType> &diffImage) const
 {
     int x0 = floor(x);
@@ -836,6 +839,8 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 	auto cudaR = R.mdata;
 	auto sigma_size = sigma.size();
 	auto cudaSigma = sigma.data();
+	auto p_busy_elem_cuda = p_busy_elem.data();
+	auto w_busy_elem_cuda = w_busy_elem.data();
 
 	const auto lastZ = FINISHINGZ(mV);
 	const auto lastY = FINISHINGY(mV);
@@ -891,7 +896,7 @@ void ProgForwardArtZernike3DGPU::forwardModel(bool usesZernike)
 					auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
 					auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
 					PrecisionType voxel_mV = A3D_ELEM(cudaMV, k, i, j);
-					splattingAtPos(pos_x, pos_y, voxel_mV, mP, mW);
+					splattingAtPos(pos_x, pos_y, voxel_mV, mP, mW, p_busy_elem_cuda, w_busy_elem_cuda);
 				}
 				// End of future CUDA code
 			}
