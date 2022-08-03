@@ -781,10 +781,10 @@ PrecisionType ProgForwardArtZernike3DGPU::interpolatedElement2DCuda(double x, do
 
 size_t ProgForwardArtZernike3DGPU::findCuda(PrecisionType *begin, size_t size, PrecisionType value) 
 {
-	if (size == 0) 
+	/*if (size == 0) 
 	{
 		return 0;
-	}
+	}*/
 	for (size_t i = 0; i < size; i++) 
 	{
 		if (begin[i] == value) 
