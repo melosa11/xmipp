@@ -77,7 +77,7 @@ public:
     void setupStdVector(std::vector<T>& inputVector, T** outputVector);
 
     template<typename T>
-    void setupMatrix2D(Matrix2D<T>& inputMatrix, T** outputMatrixData) ;
+    void setupMatrix2D(Matrix2D<T>& inputMatrix, T** outputMatrixData);
 
     explicit CUDAForwardArtZernike3D(const ConstantParameters parameters) noexcept;
     ~CUDAForwardArtZernike3D();

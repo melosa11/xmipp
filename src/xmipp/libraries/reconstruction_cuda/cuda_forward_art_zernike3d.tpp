@@ -6,6 +6,9 @@
 #include <core/geometry.h>
 #include "data/numerical_tools.h"
 
+// Forward declarations
+enum cudaError;
+
 // Macros
 #define IS_OUTSIDE2D(ImD,i,j) \
     ((j) < STARTINGX((ImD)) || (j) > FINISHINGX((ImD)) || \
