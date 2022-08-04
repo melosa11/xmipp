@@ -25,6 +25,8 @@ CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
     lastY = FINISHINGY(parameters.Vrefined());
     lastX = FINISHINGX(parameters.Vrefined());
 
+    loopStep = parameters.loopStep;
+
     vL1 = parameters.vL1;
     vL2 = parameters.vL2;
     vN = parameters.vN;
