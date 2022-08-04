@@ -313,8 +313,6 @@ void ProgForwardArtZernike3DGPU::preProcess()
             .sigma = sigma,
             .RmaxDef = RmaxDef,
             .loopStep = loop_step,
-            .p_busy_elem = p_busy_elem,
-            .w_busy_elem = w_busy_elem
     };
     cudaForwardArtZernike3D = std::make_unique<CUDAForwardArtZernike3D<PrecisionType>>(parameters);
 }
@@ -720,7 +718,7 @@ template <bool USESZERNIKE, ProgForwardArtZernike3DGPU::Direction DIRECTION>
 void ProgForwardArtZernike3DGPU::zernikeModel()
 {
 	if (DIRECTION == Direction::Forward)
-        cudaForwardArtZernike3D->runForwardKernel<USESZERNIKE>(clnm, P, W, rot, tilt, psi);
+        cudaForwardArtZernike3D->runForwardKernel<USESZERNIKE>(clnm, P, W, p_busy_elem, w_busy_elem, rot, tilt, psi);
 	else if (DIRECTION == Direction::Backward)
 		backwardModel(USESZERNIKE);
 }

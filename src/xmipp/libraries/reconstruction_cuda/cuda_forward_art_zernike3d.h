@@ -43,8 +43,6 @@ public:
         std::vector<PrecisionType> &sigma;
         int RmaxDef;
         int loopStep;
-        std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &p_busy_elem;
-        std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &w_busy_elem;
     };
 
 public:
@@ -53,6 +51,8 @@ public:
     void runForwardKernel(const std::vector<PrecisionType> &clnm,
                           std::vector<Image<PrecisionType>> &P,
                           std::vector<Image<PrecisionType>> &W,
+                          std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &p_busy_elem,
+                          std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &w_busy_elem,
                           PrecisionType rot,
                           PrecisionType tilt,
                           PrecisionType psi);
@@ -80,8 +80,6 @@ private:
 
     std::vector<PrecisionType> sigma;
 
-    std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> p_busy_elem;
-    std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> w_busy_elem;
 
 private:
 

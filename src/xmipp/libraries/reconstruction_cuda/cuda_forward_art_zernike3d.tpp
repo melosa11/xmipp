@@ -44,6 +44,8 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(
         const std::vector<PrecisionType> &clnm,
         std::vector<Image<PrecisionType>> &P,
         std::vector<Image<PrecisionType>> &W,
+        std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &p_busy_elem,
+        std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &w_busy_elem,
         PrecisionType rot,
         PrecisionType tilt,
         PrecisionType psi) {
