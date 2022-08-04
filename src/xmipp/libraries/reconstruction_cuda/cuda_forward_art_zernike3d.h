@@ -66,20 +66,19 @@ public:
 
 private:
 
-    MultidimArrayCuda<PrecisionType> V;
+    const MultidimArrayCuda<PrecisionType> V;
 
-    MultidimArrayCuda<int> VRecMask, sphMask;
+    const MultidimArrayCuda<int> VRecMask, sphMask;
 
-    int RmaxDef;
+    const int RmaxDef;
 
-    int loopStep;
+    const int loopStep;
 
-    int lastX, lastY, lastZ;
+    const int lastX, lastY, lastZ;
 
-    Matrix1D<int> vL1, vN, vL2, vM;
+    const Matrix1D<int> vL1, vN, vL2, vM;
 
-    std::vector<PrecisionType> sigma;
-
+    const std::vector<PrecisionType> sigma;
 
 private:
 
