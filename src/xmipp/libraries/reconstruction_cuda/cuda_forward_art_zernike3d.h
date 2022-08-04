@@ -46,7 +46,7 @@ public:
     };
 
     struct AngleParameters {
-       PrecisionType rot, tilt, psi,
+       PrecisionType rot, tilt, psi;
     };
 
 public:
