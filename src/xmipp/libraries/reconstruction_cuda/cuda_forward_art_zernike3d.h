@@ -61,7 +61,7 @@ public:
 public:
 
     template<bool usesZernike>
-    void runForwardKernel(struct DynamicParameters parameters);
+    void runForwardKernel(struct DynamicParameters &parameters);
 
     template<bool usesZernike>
     void runBackwardKernel(const std::vector<PrecisionType> &clnm,

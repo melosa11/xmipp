@@ -32,7 +32,7 @@ CUDAForwardArtZernike3D<PrecisionType>::~CUDAForwardArtZernike3D() {
 
 template<typename PrecisionType>
 template<bool usesZernike>
-void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicParameters parameters) {
+void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicParameters &parameters) {
     auto clnm = parameters.clnm;
     auto P = parameters.P;
     auto W = parameters.W;
@@ -300,7 +300,7 @@ namespace {
 // explicit template instantiation
 template class CUDAForwardArtZernike3D<float>;
 template class CUDAForwardArtZernike3D<double>;
-template void CUDAForwardArtZernike3D<float>::runForwardKernel<true>(struct DynamicParameters parameters);
-template void CUDAForwardArtZernike3D<float>::runForwardKernel<false>(struct DynamicParameters parameters);
-template void CUDAForwardArtZernike3D<double>::runForwardKernel<true>(struct DynamicParameters parameters);
-template void CUDAForwardArtZernike3D<double>::runForwardKernel<false>(struct DynamicParameters parameters);
+template void CUDAForwardArtZernike3D<float>::runForwardKernel<true>(struct DynamicParameters&);
+template void CUDAForwardArtZernike3D<float>::runForwardKernel<false>(struct DynamicParameters&);
+template void CUDAForwardArtZernike3D<double>::runForwardKernel<true>(struct DynamicParameters&);
+template void CUDAForwardArtZernike3D<double>::runForwardKernel<false>(struct DynamicParameters&);
