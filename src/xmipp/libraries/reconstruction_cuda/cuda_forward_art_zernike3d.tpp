@@ -41,9 +41,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(
         std::vector<Image<PrecisionType>> &W,
         std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &p_busy_elem,
         std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &w_busy_elem,
-        PrecisionType rot,
-        PrecisionType tilt,
-        PrecisionType psi) {
+        struct AngleParameters angles) {
     auto &mV = V;
     const size_t idxY0 = usesZernike ? (clnm.size() / 3) : 0;
     const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
@@ -51,7 +49,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(
     const PrecisionType iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
 
     // Rotation Matrix
-    const Matrix2D<PrecisionType> R = createRotationMatrix(rot, tilt, psi);
+    const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
 
     // Setup data for CUDA kernel
     auto &cudaVRecMask = VRecMask;
@@ -209,9 +207,8 @@ size_t CUDAForwardArtZernike3D<PrecisionType>::findCuda(const PrecisionType *beg
 }
 
 template<typename PrecisionType>
-Matrix2D<PrecisionType> CUDAForwardArtZernike3D<PrecisionType>::createRotationMatrix(PrecisionType rot,
-                                                                                     PrecisionType tilt,
-                                                                                     PrecisionType psi) {
+Matrix2D<PrecisionType> CUDAForwardArtZernike3D<PrecisionType>::createRotationMatrix(struct AngleParameters angles) {
+    auto [rot, tilt, psi] = angles;
     constexpr size_t matrixSize = 3;
     auto tmp = Matrix2D<PrecisionType>();
     tmp.initIdentity(matrixSize);

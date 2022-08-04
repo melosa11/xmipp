@@ -45,6 +45,10 @@ public:
         int loopStep;
     };
 
+    struct AngleParameters {
+       PrecisionType rot, tilt, psi,
+    };
+
 public:
 
     template<bool usesZernike>
@@ -53,9 +57,7 @@ public:
                           std::vector<Image<PrecisionType>> &W,
                           std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &p_busy_elem,
                           std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &w_busy_elem,
-                          PrecisionType rot,
-                          PrecisionType tilt,
-                          PrecisionType psi);
+                          struct AngleParameters angles);
 
     template<bool usesZernike>
     void runBackwardKernel(const std::vector<PrecisionType> &clnm,
@@ -94,7 +96,7 @@ private:
                         std::unique_ptr<std::atomic<PrecisionType *>> *p_busy_elem_cuda,
                         std::unique_ptr<std::atomic<PrecisionType *>> *w_busy_elem_cuda);
 
-    Matrix2D<PrecisionType> createRotationMatrix(PrecisionType rot, PrecisionType tilt, PrecisionType psi);
+    Matrix2D<PrecisionType> createRotationMatrix(struct AngleParameters angles);
 };
 
 // Include template implementation

@@ -717,8 +717,14 @@ void ProgForwardArtZernike3DGPU::artModel()
 template <bool USESZERNIKE, ProgForwardArtZernike3DGPU::Direction DIRECTION>
 void ProgForwardArtZernike3DGPU::zernikeModel()
 {
+    CUDAForwardArtZernike3D<PrecisionType>::AngleParameters angles = {
+            .rot = rot,
+            .tilt = tilt,
+            .psi = psi
+    };
+
 	if (DIRECTION == Direction::Forward)
-        cudaForwardArtZernike3D->runForwardKernel<USESZERNIKE>(clnm, P, W, p_busy_elem, w_busy_elem, rot, tilt, psi);
+        cudaForwardArtZernike3D->runForwardKernel<USESZERNIKE>(clnm, P, W, p_busy_elem, w_busy_elem, angles);
 	else if (DIRECTION == Direction::Backward)
 		backwardModel(USESZERNIKE);
 }
