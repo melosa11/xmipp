@@ -87,7 +87,7 @@ private:
     MultidimArrayCuda<T> initializeMultidimArray(MultidimArray<T> &multidimArray) const;
 
     /// Function inspired by std::find with support for CUDA allowed data types
-    size_t findCuda(PrecisionType *begin, size_t size, PrecisionType value);
+    size_t findCuda(const PrecisionType *begin, size_t size, PrecisionType value);
 
     void splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, PrecisionType weight,
                         MultidimArrayCuda<PrecisionType> &mP, MultidimArrayCuda<PrecisionType> &mW,
