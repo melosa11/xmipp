@@ -89,14 +89,14 @@ private:
     MultidimArrayCuda<T> initializeMultidimArray(MultidimArray<T> &multidimArray) const;
 
     /// Function inspired by std::find with support for CUDA allowed data types
-    size_t findCuda(const PrecisionType *begin, size_t size, PrecisionType value);
+    size_t findCuda(const PrecisionType *begin, size_t size, PrecisionType value) const;
 
     void splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, PrecisionType weight,
                         MultidimArrayCuda<PrecisionType> &mP, MultidimArrayCuda<PrecisionType> &mW,
                         std::unique_ptr<std::atomic<PrecisionType *>> *p_busy_elem_cuda,
-                        std::unique_ptr<std::atomic<PrecisionType *>> *w_busy_elem_cuda);
+                        std::unique_ptr<std::atomic<PrecisionType *>> *w_busy_elem_cuda) const;
 
-    Matrix2D<PrecisionType> createRotationMatrix(struct AngleParameters angles);
+    Matrix2D<PrecisionType> createRotationMatrix(struct AngleParameters angles) const;
 };
 
 // Include template implementation

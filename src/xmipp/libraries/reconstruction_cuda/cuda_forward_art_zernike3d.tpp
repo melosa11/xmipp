@@ -169,7 +169,7 @@ template<typename PrecisionType>
 void CUDAForwardArtZernike3D<PrecisionType>::splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, PrecisionType weight,
                                                 MultidimArrayCuda<PrecisionType> &mP, MultidimArrayCuda<PrecisionType> &mW,
                                                 std::unique_ptr<std::atomic<PrecisionType *>> *p_busy_elem_cuda,
-                                                std::unique_ptr<std::atomic<PrecisionType *>> *w_busy_elem_cuda)
+                                                std::unique_ptr<std::atomic<PrecisionType *>> *w_busy_elem_cuda) const
 {
     int i = round(pos_y);
     int j = round(pos_x);
@@ -190,7 +190,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::splattingAtPos(PrecisionType pos_x,
 }
 
 template<typename PrecisionType>
-size_t CUDAForwardArtZernike3D<PrecisionType>::findCuda(const PrecisionType *begin, size_t size, PrecisionType value)
+size_t CUDAForwardArtZernike3D<PrecisionType>::findCuda(const PrecisionType *begin, size_t size, PrecisionType value) const
 {
     if (size <= 0)
     {
@@ -207,7 +207,7 @@ size_t CUDAForwardArtZernike3D<PrecisionType>::findCuda(const PrecisionType *beg
 }
 
 template<typename PrecisionType>
-Matrix2D<PrecisionType> CUDAForwardArtZernike3D<PrecisionType>::createRotationMatrix(struct AngleParameters angles) {
+Matrix2D<PrecisionType> CUDAForwardArtZernike3D<PrecisionType>::createRotationMatrix(struct AngleParameters angles) const {
     auto [rot, tilt, psi] = angles;
     constexpr size_t matrixSize = 3;
     auto tmp = Matrix2D<PrecisionType>();
