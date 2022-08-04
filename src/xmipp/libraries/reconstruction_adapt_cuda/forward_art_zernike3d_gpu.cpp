@@ -723,8 +723,17 @@ void ProgForwardArtZernike3DGPU::zernikeModel()
             .psi = psi
     };
 
+    CUDAForwardArtZernike3D<PrecisionType>::DynamicParameters parameters = {
+            .clnm = clnm,
+            .P = P,
+            .W = W,
+            .p_busy_elem = p_busy_elem,
+            .w_busy_elem = w_busy_elem,
+            .angles = angles
+    };
+
 	if (DIRECTION == Direction::Forward)
-        cudaForwardArtZernike3D->runForwardKernel<USESZERNIKE>(clnm, P, W, p_busy_elem, w_busy_elem, angles);
+        cudaForwardArtZernike3D->runForwardKernel<USESZERNIKE>(parameters);
 	else if (DIRECTION == Direction::Backward)
 		backwardModel(USESZERNIKE);
 }
