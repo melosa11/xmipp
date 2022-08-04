@@ -75,7 +75,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(
     auto cudaClnm = clnm.data();
     auto cudaR = R.mdata;
     auto sigma_size = sigma.size();
-    auto cudaSigma = sigma.data();
+    const auto cudaSigma = sigma.data();
     auto p_busy_elem_cuda = p_busy_elem.data();
     auto w_busy_elem_cuda = w_busy_elem.data();
 
@@ -192,7 +192,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::splattingAtPos(PrecisionType pos_x,
 }
 
 template<typename PrecisionType>
-size_t CUDAForwardArtZernike3D<PrecisionType>::findCuda(PrecisionType *begin, size_t size, PrecisionType value)
+size_t CUDAForwardArtZernike3D<PrecisionType>::findCuda(const PrecisionType *begin, size_t size, PrecisionType value)
 {
     if (size <= 0)
     {
