@@ -13,7 +13,7 @@
 
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
-        const CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters)
+        const CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters) noexcept
     : V(initializeMultidimArray(parameters.Vrefined())),
       VRecMask(initializeMultidimArray(parameters.VRecMask)),
       sphMask(initializeMultidimArray(parameters.sphMask)),
