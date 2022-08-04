@@ -7,7 +7,11 @@
 #include "data/numerical_tools.h"
 
 // Forward declarations
-enum cudaError;
+enum cudaError : int;
+enum cudaError_t : int;
+extern int cudaSuccess;
+char* cudaGetErrorString(cudaError_t error);
+extern int  cudaMemcpyHostToDevice;
 
 // Macros
 #define IS_OUTSIDE2D(ImD,i,j) \
