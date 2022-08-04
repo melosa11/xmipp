@@ -13,25 +13,20 @@
 
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
-        const CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters) {
-
-    V = initializeMultidimArray(parameters.Vrefined());
-    VRecMask = initializeMultidimArray(parameters.VRecMask);
-    sphMask = initializeMultidimArray(parameters.sphMask);
-    sigma = parameters.sigma;
-    RmaxDef = parameters.RmaxDef;
-
-    lastZ = FINISHINGZ(parameters.Vrefined());
-    lastY = FINISHINGY(parameters.Vrefined());
-    lastX = FINISHINGX(parameters.Vrefined());
-
-    loopStep = parameters.loopStep;
-
-    vL1 = parameters.vL1;
-    vL2 = parameters.vL2;
-    vN = parameters.vN;
-    vM = parameters.vM;
-}
+        const CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters)
+    : V(initializeMultidimArray(parameters.Vrefined())),
+      VRecMask(initializeMultidimArray(parameters.VRecMask)),
+      sphMask(initializeMultidimArray(parameters.sphMask)),
+      sigma(parameters.sigma),
+      RmaxDef(parameters.RmaxDef),
+      lastZ(FINISHINGZ(parameters.Vrefined())),
+      lastY(FINISHINGY(parameters.Vrefined())),
+      lastX(FINISHINGX(parameters.Vrefined())),
+      loopStep(parameters.loopStep),
+      vL1(parameters.vL1),
+      vL2(arameters.vL2),
+      vN(parameters.vN),
+      vM(parameters.vM) { }
 
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::~CUDAForwardArtZernike3D() {
