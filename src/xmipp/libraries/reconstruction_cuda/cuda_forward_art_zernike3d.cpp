@@ -33,7 +33,12 @@ CUDAForwardArtZernike3D<PrecisionType>::~CUDAForwardArtZernike3D() {
 template<typename PrecisionType>
 template<bool usesZernike>
 void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicParameters parameters) {
-    auto [clnm, P, W, p_busy_elem, w_busy_elem, angles] = parameters;
+    auto clnm = parameters.clnm;
+    auto P = parameters.P;
+    auto W = parameters.W;
+    auto p_busy_elem = parameters.p_busy_elem;
+    auto w_busy_elem = parameters.w_busy_elem;
+    auto angles = parameters.angles;
     auto &mV = V;
     const size_t idxY0 = usesZernike ? (clnm.size() / 3) : 0;
     const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
@@ -200,7 +205,9 @@ size_t CUDAForwardArtZernike3D<PrecisionType>::findCuda(const PrecisionType *beg
 
 template<typename PrecisionType>
 Matrix2D<PrecisionType> CUDAForwardArtZernike3D<PrecisionType>::createRotationMatrix(struct AngleParameters angles) const {
-    auto [rot, tilt, psi] = angles;
+    auto rot = angles.rot;
+    auto tilt = angles.tilt;
+    auto psi = angles.psi;
     constexpr size_t matrixSize = 3;
     auto tmp = Matrix2D<PrecisionType>();
     tmp.initIdentity(matrixSize);
