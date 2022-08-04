@@ -61,7 +61,7 @@ public:
     void runBackwardKernel(const std::vector<PrecisionType> &clnm,
                            const Image<PrecisionType> &Idiff);
 
-    CUDAForwardArtZernike3D(const ConstantParameters parameters);
+    explicit CUDAForwardArtZernike3D(const ConstantParameters parameters) noexcept;
     ~CUDAForwardArtZernike3D();
 
 private:
