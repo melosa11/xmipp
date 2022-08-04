@@ -12,6 +12,7 @@ enum cudaError_t : int;
 extern int cudaSuccess;
 char* cudaGetErrorString(cudaError_t error);
 extern int  cudaMemcpyHostToDevice;
+cudaError_t cudaGetLastError(void);
 
 // Macros
 #define IS_OUTSIDE2D(ImD,i,j) \
