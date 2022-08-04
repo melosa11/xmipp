@@ -6,14 +6,6 @@
 #include <core/geometry.h>
 #include "data/numerical_tools.h"
 
-// Forward declarations
-enum cudaError : int;
-enum cudaError_t : int;
-extern int cudaSuccess;
-char* cudaGetErrorString(cudaError_t error);
-extern int  cudaMemcpyHostToDevice;
-cudaError_t cudaGetLastError(void);
-
 // Macros
 #define IS_OUTSIDE2D(ImD,i,j) \
     ((j) < STARTINGX((ImD)) || (j) > FINISHINGX((ImD)) || \
