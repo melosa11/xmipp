@@ -728,5 +728,3 @@ void ProgForwardArtZernike3DGPU::zernikeModel()
 	else if (DIRECTION == Direction::Backward)
         cudaForwardArtZernike3D->runBackwardKernel<USESZERNIKE>(parameters);
 }
-
-// End of future CUDA functions
