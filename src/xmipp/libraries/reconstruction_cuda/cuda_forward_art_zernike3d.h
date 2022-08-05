@@ -107,7 +107,7 @@ private:
 
     PrecisionType interpolatedElement2DCuda(PrecisionType x,
                                             PrecisionType y,
-                                            MultidimArrayCuda<PrecisionType> &diffImage) const
+                                            MultidimArrayCuda<PrecisionType> &diffImage) const;
 };
 
 #endif// CUDA_FORWARD_ART_ZERNIKE3D_H
