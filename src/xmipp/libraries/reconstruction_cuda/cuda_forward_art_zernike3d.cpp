@@ -4,6 +4,8 @@
 #include "data/numerical_tools.h"
 
 // Macros
+#define SQRT sqrtf
+
 #define IS_OUTSIDE2D(ImD,i,j) \
     ((j) < STARTINGX((ImD)) || (j) > FINISHINGX((ImD)) || \
      (i) < STARTINGY((ImD)) || (i) > FINISHINGY((ImD)))
@@ -113,9 +115,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
                         auto ir = i * iRmaxF;
                         auto r2 = k2i2 + j * j;
                         auto jr = j * iRmaxF;
-#define SQRT sqrtf
                         auto rr = SQRT(r2) * iRmaxF;
-#undef SQRT
                         for (size_t idx = 0; idx < idxY0; idx++)
                         {
                             auto l1 = cudaVL1[idx];
