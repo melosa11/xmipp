@@ -3,8 +3,6 @@
 #include <core/geometry.h>
 #include "data/numerical_tools.h"
 
-#include <memory>
-
 // Macros
 #define IS_OUTSIDE2D(ImD,i,j) \
     ((j) < STARTINGX((ImD)) || (j) > FINISHINGX((ImD)) || \
@@ -29,12 +27,12 @@ CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
    auto Xdim = parameters.Xdim;
    p_busy_elem.resize(Xdim*Xdim);
    for (auto& p : p_busy_elem) {
-       p = std::make_unique<std::atomic<PrecisionType*>>(nullptr);
+       p = std::unique_ptr<std::atomic<PrecisionType*>>(new std::atomic<PrecisionType*>(nullptr));
    }
 
    w_busy_elem.resize(Xdim*Xdim);
    for (auto& p : w_busy_elem) {
-       p = std::make_unique<std::atomic<PrecisionType*>>(nullptr);
+       p = std::unique_ptr<std::atomic<PrecisionType*>>(new std::atomic<PrecisionType*>(nullptr));
    }
 }
 
