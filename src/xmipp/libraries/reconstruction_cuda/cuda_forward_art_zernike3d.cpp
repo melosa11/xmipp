@@ -414,3 +414,7 @@ template void CUDAForwardArtZernike3D<float>::runForwardKernel<true>(struct Dyna
 template void CUDAForwardArtZernike3D<float>::runForwardKernel<false>(struct DynamicParameters&);
 template void CUDAForwardArtZernike3D<double>::runForwardKernel<true>(struct DynamicParameters&);
 template void CUDAForwardArtZernike3D<double>::runForwardKernel<false>(struct DynamicParameters&);
+template void CUDAForwardArtZernike3D<float>::runBackwardKernel<true>(struct DynamicParameters&);
+template void CUDAForwardArtZernike3D<float>::runBackwardKernel<false>(struct DynamicParameters&);
+template void CUDAForwardArtZernike3D<double>::runBackwardKernel<true>(struct DynamicParameters&);
+template void CUDAForwardArtZernike3D<double>::runBackwardKernel<false>(struct DynamicParameters&);
