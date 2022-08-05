@@ -23,7 +23,18 @@ CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
       vL1(parameters.vL1),
       vL2(parameters.vL2),
       vN(parameters.vN),
-      vM(parameters.vM) { }
+      vM(parameters.vM) {
+   auto Xdim = parameters.Xdim;
+   p_busy_elem.resize(Xdim*Xdim);
+   for (auto& p : p_busy_elem) {
+       p = std::make_unique<std::atomic<PrecisionType*>>(nullptr);
+   }
+
+   w_busy_elem.resize(Xdim*Xdim);
+   for (auto& p : w_busy_elem) {
+       p = std::make_unique<std::atomic<PrecisionType*>>(nullptr);
+   }
+}
 
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::~CUDAForwardArtZernike3D() {
@@ -36,8 +47,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     auto clnm = parameters.clnm;
     auto P = parameters.P;
     auto W = parameters.W;
-    auto p_busy_elem = parameters.p_busy_elem;
-    auto w_busy_elem = parameters.w_busy_elem;
     auto angles = parameters.angles;
     auto &mV = V;
     const size_t idxY0 = usesZernike ? (clnm.size() / 3) : 0;

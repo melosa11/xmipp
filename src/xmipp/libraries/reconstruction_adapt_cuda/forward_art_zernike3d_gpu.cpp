@@ -171,15 +171,6 @@ void ProgForwardArtZernike3DGPU::preProcess()
 
 	Xdim = XSIZE(V());
 
-	p_busy_elem.resize(Xdim*Xdim);
-    for (auto& p : p_busy_elem) {
-        p = std::make_unique<std::atomic<PrecisionType*>>(nullptr);
-    }
-
-	w_busy_elem.resize(Xdim*Xdim);
-    for (auto& p : w_busy_elem) {
-        p = std::make_unique<std::atomic<PrecisionType*>>(nullptr);
-    }
 
 	Vout().initZeros(V());
 	Vout().setXmippOrigin();
@@ -313,6 +304,7 @@ void ProgForwardArtZernike3DGPU::preProcess()
             .sigma = sigma,
             .RmaxDef = RmaxDef,
             .loopStep = loop_step,
+            .Xdim = Xdim,
     };
     cudaForwardArtZernike3D = std::make_unique<CUDAForwardArtZernike3D<PrecisionType>>(parameters);
 }
@@ -727,8 +719,6 @@ void ProgForwardArtZernike3DGPU::zernikeModel()
             .clnm = clnm,
             .P = P,
             .W = W,
-            .p_busy_elem = p_busy_elem,
-            .w_busy_elem = w_busy_elem,
             .angles = angles
     };
 

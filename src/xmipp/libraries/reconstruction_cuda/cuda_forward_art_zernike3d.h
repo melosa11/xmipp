@@ -43,6 +43,7 @@ public:
         std::vector<PrecisionType> &sigma;
         int RmaxDef;
         int loopStep;
+        size_t Xdim;
     };
 
     struct AngleParameters {
@@ -53,8 +54,6 @@ public:
         const std::vector<PrecisionType> &clnm;
         std::vector<Image<PrecisionType>> &P;
         std::vector<Image<PrecisionType>> &W;
-        std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &p_busy_elem;
-        std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> &w_busy_elem;
         struct AngleParameters angles;
     };
 
@@ -85,6 +84,10 @@ private:
     const Matrix1D<int> vL1, vN, vL2, vM;
 
     const std::vector<PrecisionType> sigma;
+
+    // Atomic mutex
+    std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> p_busy_elem;
+    std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> w_busy_elem;
 
 private:
 
