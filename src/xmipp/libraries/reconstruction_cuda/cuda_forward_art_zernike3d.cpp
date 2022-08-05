@@ -226,7 +226,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
 
 template<typename PrecisionType>
 template<typename T>
-MultidimArrayCuda<T> CUDAForwardArtZernike3D<PrecisionType>::initializeMultidimArray(MultidimArray<T> &multidimArray) const {
+MultidimArrayCuda<T> CUDAForwardArtZernike3D<PrecisionType>::initializeMultidimArray(const MultidimArray<T> &multidimArray) const {
     struct MultidimArrayCuda<T> cudaArray = {
             .xdim = multidimArray.xdim,
             .ydim = multidimArray.ydim,
