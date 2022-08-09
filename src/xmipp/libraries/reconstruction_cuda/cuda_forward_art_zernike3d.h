@@ -94,17 +94,6 @@ class CUDAForwardArtZernike3D {
 	template<bool usesZernike>
 	struct CommonKernelParameters setCommonArgumentsKernel(struct DynamicParameters &parameters);
 
-	/// Function inspired by std::find with support for CUDA allowed data types
-	size_t findCuda(const PrecisionType *begin, size_t size, PrecisionType value) const;
-
-	void splattingAtPos(PrecisionType pos_x,
-						PrecisionType pos_y,
-						PrecisionType weight,
-						MultidimArrayCuda<PrecisionType> &mP,
-						MultidimArrayCuda<PrecisionType> &mW,
-						std::unique_ptr<std::atomic<PrecisionType *>> *p_busy_elem_cuda,
-						std::unique_ptr<std::atomic<PrecisionType *>> *w_busy_elem_cuda) const;
-
 	Matrix2D<PrecisionType> createRotationMatrix(struct AngleParameters angles) const;
 
 	PrecisionType interpolatedElement2DCuda(PrecisionType x,
