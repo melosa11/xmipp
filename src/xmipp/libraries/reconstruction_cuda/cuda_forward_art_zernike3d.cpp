@@ -46,13 +46,12 @@ CUDAForwardArtZernike3D<PrecisionType>::~CUDAForwardArtZernike3D() {
 
 template<typename PrecisionType>
 template<bool usesZernike>
-void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicParameters &parameters) {
+struct CommonKernelParameters CUDAForwardArtZernike3D<PrecisionType>::setCommonArgumentsKernel(struct DynamicParameters &parameters) {
     auto clnm = parameters.clnm;
-    auto P = parameters.P;
-    auto W = parameters.W;
     auto angles = parameters.angles;
+
     // We can't set idxY0 to 0 because the compiler
-    // would give irrelevant warnings.
+    // would give irrelevant warnings.  
     assert(usesZernike || clnm.size() == 0);
     const size_t idxY0 = clnm.size() / 3;
     const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
@@ -61,6 +60,38 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
 
     // Rotation Matrix
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
+
+    auto cudaClnm = clnm.data();
+    auto cudaR = R.mdata;
+
+    CommonKernelParameters output = {
+        .idxY0 = idxY0,
+        .idxZ0 = idxZ0,
+        .RmaxF = RmaxF,
+        .iRmaxF = iRmaxF,
+        .cudaR = cudaR,
+        .cudaClnm = cudaClnm
+    };
+
+    return output;
+}
+
+template<typename PrecisionType>
+template<bool usesZernike>
+void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicParameters &parameters) {
+    auto clnm = parameters.clnm;
+    auto P = parameters.P;
+    auto W = parameters.W;
+    auto angles = parameters.angles;
+
+    // Common parameters
+    auto commonParameters = setCommonArgumentsKernel(parameters);
+    auto idxY0 = commonParameters.idxY0;
+    auto idxZ0 = commonParameters.idxZ0;
+    auto RmaxF = commonParameters.RmaxF;
+    auto iRmaxF = commonParameters.iRmaxF;
+    auto cudaR = commonParameters.cudaR;
+    auto cudaClnm = commonParameters.cudaClnm;
 
     // Setup data for CUDA kernel
     std::vector<MultidimArrayCuda<PrecisionType>> tempP;
@@ -75,8 +106,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     }
     auto cudaP = tempP.data();
     auto cudaW = tempW.data();
-    auto cudaClnm = clnm.data();
-    auto cudaR = R.mdata;
     auto sigma_size = sigma.size();
     const auto cudaSigma = sigma.data();
     auto p_busy_elem_cuda = p_busy_elem.data();
@@ -147,19 +176,17 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
     auto clnm = parameters.clnm;
     auto angles = parameters.angles;
     auto &mId = parameters.Idiff();
-    // We can't set idxY0 to 0 because the compiler
-    // would give irrelevant warnings.
-    assert(usesZernike || clnm.size() == 0);
-    const size_t idxY0 = clnm.size() / 3;
-    const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
-    const PrecisionType RmaxF = usesZernike ? RmaxDef : 0;
-    const PrecisionType iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
-    // Rotation Matrix
-    const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
+
+    // Common parameters
+    auto commonParameters = setCommonArgumentsKernel(parameters);
+    auto idxY0 = commonParameters.idxY0;
+    auto idxZ0 = commonParameters.idxZ0;
+    auto RmaxF = commonParameters.RmaxF;
+    auto iRmaxF = commonParameters.iRmaxF;
+    auto cudaR = commonParameters.cudaR;
+    auto cudaClnm = commonParameters.cudaClnm;
 
     // Setup data for CUDA kernel
-    auto cudaClnm = clnm.data();
-    auto cudaR = R.mdata;
     auto cudaMId = initializeMultidimArray(mId);
 
     const int step = 1;

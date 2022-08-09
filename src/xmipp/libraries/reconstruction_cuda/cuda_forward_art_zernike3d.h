@@ -58,6 +58,13 @@ public:
         struct AngleParameters angles;
     };
 
+    template<typename T>
+    struct CommonKernelParameters {
+        size_t idxY0, idxZ0;
+        PrecisionType RmaxF, iRmaxF;
+        PrecisionType *cudaR, cudaClnm;
+    };
+
 public:
 
     template<bool usesZernike>
@@ -90,6 +97,9 @@ private:
     std::vector<std::unique_ptr<std::atomic<PrecisionType*>>> w_busy_elem;
 
 private:
+
+    template<bool usesZernike>
+    struct CommonKernelParameters setCommonArgumentsKernel(struct DynamicParameters &parameters);
 
     /// Move data from MultidimArray to struct usable by CUDA kernel
     template<typename T>
