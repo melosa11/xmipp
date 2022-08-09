@@ -46,7 +46,7 @@ CUDAForwardArtZernike3D<PrecisionType>::~CUDAForwardArtZernike3D() {
 
 template<typename PrecisionType>
 template<bool usesZernike>
-struct CommonKernelParameters CUDAForwardArtZernike3D<PrecisionType>::setCommonArgumentsKernel(struct DynamicParameters &parameters) {
+struct CUDAForwardArtZernike3D<PrecisionType>::CommonKernelParameters CUDAForwardArtZernike3D<PrecisionType>::setCommonArgumentsKernel(struct DynamicParameters &parameters) {
     auto clnm = parameters.clnm;
     auto angles = parameters.angles;
 
