@@ -374,7 +374,6 @@ namespace {
         if (cudaMemcpy(*dest, tmp.data(), sizeof(Target) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
             processCudaError();
         }
-        processCudaError();
     }
     template<typename T>
     void setupMultidimArray(MultidimArray<T>& inputArray, T** outputArrayData)
@@ -393,6 +392,7 @@ namespace {
     void setupMatrix1D(Matrix1D<T>& inputVector, T** outputVector)
     {
         transformData(outputVector, inputVector.vdata, inputVector.vdim);
+        processCudaError();
     }
 
     template<typename T>
