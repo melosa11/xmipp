@@ -334,15 +334,12 @@ __forceinline__ __device__ PrecisionType ZernikeSphericalHarmonics(int l1, int n
 
 
 template<typename PrecisionType>
-__device__ void splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, PrecisionType weight,
-                               MultidimArrayCuda<PrecisionType> &mP, MultidimArrayCuda<PrecisionType> &mW)
+__device__ void splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, PrecisionType weight)
 {
     int i = round(pos_y);
     int j = round(pos_x);
     if(!IS_OUTSIDE2D(mP, i, j))
     {
-        int idy = (i)-STARTINGY(mP);
-        int idx = (j)-STARTINGX(mP);
         A2D_ELEM(mP, i, j) += weight;
         A2D_ELEM(mW, i, j) += 1.0;
     }
@@ -380,6 +377,8 @@ __global__ void forwardKernel(
         const size_t sigma_size,
         const PrecisionType *cudaSigma,
         const PrecisionType iRmaxF,
+        const size_t idxY0,
+        const size_t idxZ0,
         const int *cudaVL1,
         const int *cudaVN,
         const int *cudaVL2,
@@ -437,7 +436,7 @@ __global__ void forwardKernel(
                     auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
                     auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
                     PrecisionType voxel_mV = A3D_ELEM(cudaMV, k, i, j);
-                    splattingAtPos(pos_x, pos_y, voxel_mV, mP, mW);
+                    splattingAtPos(pos_x, pos_y, voxel_mV);
                 }
             }
         }
