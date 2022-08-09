@@ -201,8 +201,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
             sigma_size,
             cudaSigma,
             iRmaxF,
-            idxY0,
-            idxZ0,
             cudaVL1,
             cudaVN,
             cudaVL2,
