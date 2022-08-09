@@ -380,6 +380,8 @@ __global__ void forwardKernel(
         const size_t sigma_size,
         const PrecisionType *cudaSigma,
         const PrecisionType iRmaxF,
+        const size_t idxY0,
+        const size_t idxZ0,
         const int *cudaVL1,
         const int *cudaVN,
         const int *cudaVL2,
