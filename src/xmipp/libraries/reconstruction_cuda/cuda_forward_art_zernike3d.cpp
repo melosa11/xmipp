@@ -351,13 +351,13 @@ namespace {
         return err;
     }
 
-    void processCudaError() {
+    /*void processCudaError() {
         cudaError_t err = cudaGetLastError();
         if (err != cudaSuccess) {
             fprintf(stderr, "Cuda error: %s\n", cudaGetErrorString(err));
             exit(err);
         }
-    }
+    }*/
 
 // Copies data from CPU to the GPU and at the same time transforms from
 // type 'U' to type 'T'. Works only for numeric types
