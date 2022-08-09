@@ -166,7 +166,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
 
     // Setup data for CUDA kernel
-    auto &cudaSphMask = sphMask;
     auto cudaVL1 = vL1.vdata;
     auto cudaVN = vN.vdata;
     auto cudaVL2 = vL2.vdata;
@@ -186,7 +185,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
             for (int j = STARTINGX(V); j <= lastX; j += step)
             {
                 PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-                if (A3D_ELEM(cudaSphMask, k, i, j) != 0)
+                if (A3D_ELEM(sphMask, k, i, j) != 0)
                 {
                     if (usesZernike)
                     {
