@@ -351,14 +351,6 @@ namespace {
         return err;
     }
 
-    void processCudaError() {
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess) {
-            fprintf(stderr, "Cuda error: %s\n", cudaGetErrorString(err));
-            exit(err);
-        }
-    }
-
 // Copies data from CPU to the GPU and at the same time transforms from
 // type 'U' to type 'T'. Works only for numeric types
     template<typename Target, typename Source>
@@ -375,11 +367,19 @@ namespace {
             processCudaError();
         }
     }
+
+    void processCudaError() {
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess) {
+            fprintf(stderr, "Cuda error: %s\n", cudaGetErrorString(err));
+            exit(err);
+        }
+    }
+
     template<typename T>
     void setupMultidimArray(MultidimArray<T>& inputArray, T** outputArrayData)
     {
         transformData(outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
-        processCudaError();
     }
 
     template<typename T>
@@ -387,28 +387,24 @@ namespace {
     {
         if (cudaMallocAndCopy(&outputVectorData, inputVector.data(), inputVector.size()) != cudaSuccess)
             processCudaError();
-        processCudaError();
     }
 
     template<typename T>
     void setupMatrix1D(Matrix1D<T>& inputVector, T** outputVector)
     {
         transformData(outputVector, inputVector.vdata, inputVector.vdim);
-        processCudaError();
     }
 
     template<typename T>
     void setupStdVector(std::vector<T>& inputVector, T** outputVector)
     {
         transformData(outputVector, inputVector.data(), inputVector.size());
-        processCudaError();
     }
 
     template<typename T>
     void setupMatrix2D(Matrix2D<T>& inputMatrix, T** outputMatrixData)
     {
         transformData(outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
-        processCudaError();
     }
 }
 
