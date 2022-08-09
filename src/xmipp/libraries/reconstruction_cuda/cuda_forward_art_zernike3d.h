@@ -58,7 +58,6 @@ public:
         struct AngleParameters angles;
     };
 
-    template<typename T>
     struct CommonKernelParameters {
         size_t idxY0, idxZ0;
         PrecisionType RmaxF, iRmaxF;
