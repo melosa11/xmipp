@@ -60,7 +60,7 @@ public:
 
     struct CommonKernelParameters {
         size_t idxY0, idxZ0;
-        PrecisionType RmaxF, iRmaxF;
+        PrecisionType iRmaxF;
         PrecisionType *cudaR, *cudaClnm;
     };
 

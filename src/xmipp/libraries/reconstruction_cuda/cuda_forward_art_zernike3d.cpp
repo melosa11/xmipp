@@ -67,7 +67,6 @@ struct CUDAForwardArtZernike3D<PrecisionType>::CommonKernelParameters CUDAForwar
     CommonKernelParameters output = {
         .idxY0 = idxY0,
         .idxZ0 = idxZ0,
-        .RmaxF = RmaxF,
         .iRmaxF = iRmaxF,
         .cudaR = cudaR,
         .cudaClnm = cudaClnm
@@ -82,13 +81,11 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     auto clnm = parameters.clnm;
     auto P = parameters.P;
     auto W = parameters.W;
-    auto angles = parameters.angles;
 
     // Common parameters
     auto commonParameters = setCommonArgumentsKernel<usesZernike>(parameters);
     auto idxY0 = commonParameters.idxY0;
     auto idxZ0 = commonParameters.idxZ0;
-    auto RmaxF = commonParameters.RmaxF;
     auto iRmaxF = commonParameters.iRmaxF;
     auto cudaR = commonParameters.cudaR;
     auto cudaClnm = commonParameters.cudaClnm;
@@ -174,14 +171,12 @@ template<typename PrecisionType>
 template<bool usesZernike>
 void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicParameters &parameters) {
     auto clnm = parameters.clnm;
-    auto angles = parameters.angles;
     auto &mId = parameters.Idiff();
 
     // Common parameters
     auto commonParameters = setCommonArgumentsKernel<usesZernike>(parameters);
     auto idxY0 = commonParameters.idxY0;
     auto idxZ0 = commonParameters.idxZ0;
-    auto RmaxF = commonParameters.RmaxF;
     auto iRmaxF = commonParameters.iRmaxF;
     auto cudaR = commonParameters.cudaR;
     auto cudaClnm = commonParameters.cudaClnm;
