@@ -351,10 +351,6 @@ namespace {
         return err;
     }
 
-    int processCudaErrorTest(int a) {
-        return a;
-    }
-
     void processCudaError() {
         cudaError_t err = cudaGetLastError();
         if (err != cudaSuccess) {
@@ -376,8 +372,9 @@ namespace {
         }
 
         if (cudaMemcpy(*dest, tmp.data(), sizeof(Target) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
-            fprintf(stderr, "Cuda error: %s\n", processCudaErrorTest(1));
+            processCudaError();
         }
+        processCudaError();
     }
     template<typename T>
     void setupMultidimArray(MultidimArray<T>& inputArray, T** outputArrayData)
