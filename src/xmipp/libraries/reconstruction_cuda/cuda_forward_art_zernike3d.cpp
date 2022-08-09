@@ -63,7 +63,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
 
     // Setup data for CUDA kernel
-    auto &cudaVRecMask = VRecMask;
     std::vector<MultidimArrayCuda<PrecisionType>> tempP;
     std::vector<MultidimArrayCuda<PrecisionType>> tempW;
     for (int m = 0; m < P.size(); m++)
@@ -76,10 +75,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     }
     auto cudaP = tempP.data();
     auto cudaW = tempW.data();
-    auto cudaVL1 = vL1.vdata;
-    auto cudaVN = vN.vdata;
-    auto cudaVL2 = vL2.vdata;
-    auto cudaVM = vM.vdata;
     auto cudaClnm = clnm.data();
     auto cudaR = R.mdata;
     auto sigma_size = sigma.size();
@@ -87,9 +82,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     auto p_busy_elem_cuda = p_busy_elem.data();
     auto w_busy_elem_cuda = w_busy_elem.data();
 
-    const auto lastZ = this->lastZ;
-    const auto lastY = this->lastY;
-    const auto lastX = this->lastX;
     const int step = loopStep;
     for (int k = STARTINGZ(V); k <= lastZ; k += step)
     {
@@ -99,12 +91,12 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
             {
                 // Future CUDA code
                 PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-                if (A3D_ELEM(cudaVRecMask, k, i, j) != 0)
+                if (A3D_ELEM(VRecMask, k, i, j) != 0)
                 {
                     int img_idx = 0;
                     if (sigma_size > 1)
                     {
-                        PrecisionType sigma_mask = A3D_ELEM(cudaVRecMask, k, i, j);
+                        PrecisionType sigma_mask = A3D_ELEM(VRecMask, k, i, j);
                         img_idx = findCuda(cudaSigma, sigma_size, sigma_mask);
                     }
                     auto &mP = cudaP[img_idx];
@@ -166,17 +158,10 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
 
     // Setup data for CUDA kernel
-    auto cudaVL1 = vL1.vdata;
-    auto cudaVN = vN.vdata;
-    auto cudaVL2 = vL2.vdata;
-    auto cudaVM = vM.vdata;
     auto cudaClnm = clnm.data();
     auto cudaR = R.mdata;
     auto cudaMId = initializeMultidimArray(mId);
 
-    const auto lastZ = this->lastZ;
-    const auto lastY = this->lastY;
-    const auto lastX = this->lastX;
     const int step = 1;
     for (int k = STARTINGZ(V); k <= lastZ; k += step)
     {
