@@ -23,10 +23,10 @@ CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
       lastY(FINISHINGY(parameters.Vrefined())),
       lastX(FINISHINGX(parameters.Vrefined())),
       loopStep(parameters.loopStep),
-      vL1(parameters.vL1),
-      vL2(parameters.vL2),
-      vN(parameters.vN),
-      vM(parameters.vM) {
+      cudaVL1(parameters.vL1.vdata),
+      cudaVL2(parameters.vL2.vdata),
+      cudaVN(parameters.vN.vdata),
+      cudaVM(parameters.vM.vdata) {
    auto Xdim = parameters.Xdim;
    p_busy_elem.resize(Xdim*Xdim);
    for (auto& p : p_busy_elem) {
