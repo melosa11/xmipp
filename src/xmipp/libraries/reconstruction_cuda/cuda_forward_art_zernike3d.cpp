@@ -327,6 +327,13 @@ PrecisionType CUDAForwardArtZernike3D<PrecisionType>::interpolatedElement2DCuda(
 }
 // Cuda memory helper function
 namespace {
+    void processCudaError() {
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess) {
+            fprintf(stderr, "Cuda error: %s\n", cudaGetErrorString(err));
+            exit(err);
+        }
+    }
 
     template<typename T>
     cudaError cudaMallocAndCopy(T **target, const T *source, size_t numberOfElements, size_t memSize = 0) {
@@ -365,14 +372,6 @@ namespace {
 
         if (cudaMemcpy(*dest, tmp.data(), sizeof(Target) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
             processCudaError();
-        }
-    }
-
-    void processCudaError() {
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess) {
-            fprintf(stderr, "Cuda error: %s\n", cudaGetErrorString(err));
-            exit(err);
         }
     }
 
