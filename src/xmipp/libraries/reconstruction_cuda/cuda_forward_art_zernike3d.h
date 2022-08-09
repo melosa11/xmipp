@@ -87,7 +87,7 @@ private:
 
     const int lastX, lastY, lastZ;
 
-    const int *cudaVL1, cudaVN, cudaVL2, cudaVM;
+    const int *cudaVL1, *cudaVN, *cudaVL2, *cudaVM;
 
     const std::vector<PrecisionType> sigma;
 
