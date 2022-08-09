@@ -341,8 +341,6 @@ __device__ void splattingAtPos(PrecisionType pos_x, PrecisionType pos_y, Precisi
     int j = round(pos_x);
     if(!IS_OUTSIDE2D(mP, i, j))
     {
-        int idy = (i)-STARTINGY(mP);
-        int idx = (j)-STARTINGX(mP);
         A2D_ELEM(mP, i, j) += weight;
         A2D_ELEM(mW, i, j) += 1.0;
     }
