@@ -51,6 +51,10 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     auto W = parameters.W;
     auto angles = parameters.angles;
     auto &mV = V;
+    const size_t idxY0 = clnm.size() / 3;
+    const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
+    const PrecisionType RmaxF = usesZernike ? RmaxDef : 0;
+    const PrecisionType iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
 
     // Rotation Matrix
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
@@ -75,7 +79,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     auto cudaVL2 = vL2.vdata;
     auto cudaVM = vM.vdata;
     auto cudaClnm = clnm.data();
-    auto cudaClnmSize = clnm.size();
     auto cudaR = R.mdata;
     auto sigma_size = sigma.size();
     const auto cudaSigma = sigma.data();
@@ -106,11 +109,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
                     auto &mW = cudaW[img_idx];
                     if (usesZernike)
                     {
-                        const size_t idxY0 = cudaClnmSize / 3;
-                        const size_t idxZ0 = 2 * idxY0;
-                        const PrecisionType RmaxF = RmaxDef;
-                        const PrecisionType iRmaxF = 1.0f / RmaxF;
-
                         auto k2 = k * k;
                         auto kr = k * iRmaxF;
                         auto k2i2 = k2 + i * i;
@@ -156,6 +154,10 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
     auto angles = parameters.angles;
     auto &mId = parameters.Idiff();
     auto &mV = V;
+    const size_t idxY0 = clnm.size() / 3;
+    const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
+    const PrecisionType RmaxF = usesZernike ? RmaxDef : 0;
+    const PrecisionType iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
     // Rotation Matrix
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
 
@@ -166,7 +168,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
     auto cudaVL2 = vL2.vdata;
     auto cudaVM = vM.vdata;
     auto cudaClnm = clnm.data();
-    auto cudaClnmSize = clnm.size();
     auto cudaR = R.mdata;
     auto cudaMV = mV;
     auto cudaMId = initializeMultidimArray(mId);
@@ -186,11 +187,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
                 {
                     if (usesZernike)
                     {
-                        const size_t idxY0 = cudaClnmSize / 3;
-                        const size_t idxZ0 = 2 * idxY0;
-                        const PrecisionType RmaxF = RmaxDef;
-                        const PrecisionType iRmaxF = 1.0f / RmaxF;
-
                         auto k2 = k * k;
                         auto kr = k * iRmaxF;
                         auto k2i2 = k2 + i * i;
