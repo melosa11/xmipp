@@ -351,8 +351,8 @@ namespace {
         return err;
     }
 
-    void processCudaErrorTest() {
-        cudaError_t err = cudaGetLastError();
+    int processCudaErrorTest(int a) {
+        return a;
     }
 
     void processCudaError() {
@@ -371,12 +371,12 @@ namespace {
 
         if (mallocMem) {
             if (cudaMalloc(dest, sizeof(Target) * n) != cudaSuccess) {
-                processCudaErrorTest();
+                processCudaError();
             }
         }
 
         if (cudaMemcpy(*dest, tmp.data(), sizeof(Target) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
-            processCudaErrorTest();
+            fprintf(stderr, "Cuda error: %s\n", processCudaErrorTest(1));
         }
     }
     template<typename T>
@@ -389,7 +389,7 @@ namespace {
     void setupVectorOfMultidimArray(std::vector<MultidimArrayCuda<T>>& inputVector, MultidimArrayCuda<T>** outputVectorData)
     {
         if (cudaMallocAndCopy(&outputVectorData, inputVector.data(), inputVector.size()) != cudaSuccess)
-            processCudaErrorTest();
+            processCudaError();
     }
 
     template<typename T>
