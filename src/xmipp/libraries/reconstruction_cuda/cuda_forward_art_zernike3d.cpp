@@ -144,7 +144,8 @@ struct CUDAForwardArtZernike3D<PrecisionType>::CommonKernelParameters CUDAForwar
     // Rotation Matrix (has to pass the whole Matrix2D so it is not automatically deallocated)
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
 
-    auto cudaClnm = clnm.data();
+    PrecisionType *cudaClnm;
+    setupStdVector(clnm, &cudaClnm);
 
     CommonKernelParameters output = {
         .idxY0 = idxY0,
