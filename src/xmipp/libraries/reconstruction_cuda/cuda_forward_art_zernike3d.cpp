@@ -88,7 +88,7 @@ namespace {
     }
 
     template<typename T>
-    void setupMatrix2D(Matrix2D<T>& inputMatrix, T** outputMatrixData)
+    void setupMatrix2D(const Matrix2D<T>& inputMatrix, T** outputMatrixData)
     {
         transformData(outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
     }
