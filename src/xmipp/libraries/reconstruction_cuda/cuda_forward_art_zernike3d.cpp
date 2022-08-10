@@ -143,6 +143,8 @@ struct CUDAForwardArtZernike3D<PrecisionType>::CommonKernelParameters CUDAForwar
 
     // Rotation Matrix (has to pass the whole Matrix2D so it is not automatically deallocated)
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
+    PrecisionType *cudaR;
+    setupMatrix2D(R, &cudaR);
 
     PrecisionType *cudaClnm;
     setupStdVector(clnm, &cudaClnm);
@@ -152,7 +154,7 @@ struct CUDAForwardArtZernike3D<PrecisionType>::CommonKernelParameters CUDAForwar
         .idxZ0 = idxZ0,
         .iRmaxF = iRmaxF,
         .cudaClnm = cudaClnm,
-        .R = R
+        .cudaR = cudaR
     };
 
     return output;
@@ -189,7 +191,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     auto idxY0 = commonParameters.idxY0;
     auto idxZ0 = commonParameters.idxZ0;
     auto iRmaxF = commonParameters.iRmaxF;
-    auto cudaR = commonParameters.R.mdata;
+    auto cudaR = commonParameters.cudaR;
     auto cudaClnm = commonParameters.cudaClnm;
 
     for (int k = STARTINGZ(V); k <= lastZ; k += step)
@@ -263,7 +265,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
     auto idxY0 = commonParameters.idxY0;
     auto idxZ0 = commonParameters.idxZ0;
     auto iRmaxF = commonParameters.iRmaxF;
-    auto cudaR = commonParameters.R.mdata;
+    auto cudaR = commonParameters.cudaR;
     auto cudaClnm = commonParameters.cudaClnm;
 
     for (int k = STARTINGZ(V); k <= lastZ; k += step)
