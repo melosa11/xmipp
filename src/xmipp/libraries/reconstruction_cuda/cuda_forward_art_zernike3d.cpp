@@ -173,75 +173,83 @@ MultidimArrayCuda<PrecisionType> *CUDAForwardArtZernike3D<PrecisionType>::setVec
 
 template<typename PrecisionType>
 template<bool usesZernike>
-void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicParameters &parameters)
-{
-	// Unique parameters
-	std::vector<MultidimArrayCuda<PrecisionType>> outputP;
-	std::vector<MultidimArrayCuda<PrecisionType>> outputW;
-	auto cudaP = setVectorMultidimArrayCuda(parameters.P, outputP);
-	auto cudaW = setVectorMultidimArrayCuda(parameters.W, outputW);
-	auto p_busy_elem_cuda = p_busy_elem.data();
-	auto w_busy_elem_cuda = w_busy_elem.data();
-	auto sigma_size = sigma.size();
-	const auto cudaSigma = sigma.data();
-	const int step = loopStep;
+void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicParameters &parameters) {
+    // Unique parameters 
+    std::vector<MultidimArrayCuda<PrecisionType>> outputP;
+    std::vector<MultidimArrayCuda<PrecisionType>> outputW;
+    auto cudaP = setVectorMultidimArrayCuda(parameters.P, outputP);
+    auto cudaW = setVectorMultidimArrayCuda(parameters.W, outputW);
+    auto p_busy_elem_cuda = p_busy_elem.data();
+    auto w_busy_elem_cuda = w_busy_elem.data();
+    auto sigma_size = sigma.size();
+    const PrecisionType *cudaSigma;
+    setupStdVector(sigma, &cudaSigma);
+    const int step = loopStep;
 
-	// Common parameters
-	auto commonParameters = setCommonArgumentsKernel<usesZernike>(parameters);
-	auto idxY0 = commonParameters.idxY0;
-	auto idxZ0 = commonParameters.idxZ0;
-	auto iRmaxF = commonParameters.iRmaxF;
-	auto cudaR = commonParameters.R.mdata;
-	auto cudaClnm = commonParameters.cudaClnm;
+    // Common parameters
+    auto commonParameters = setCommonArgumentsKernel<usesZernike>(parameters);
+    auto idxY0 = commonParameters.idxY0;
+    auto idxZ0 = commonParameters.idxZ0;
+    auto iRmaxF = commonParameters.iRmaxF;
+    auto cudaR = commonParameters.R.mdata;
+    auto cudaClnm = commonParameters.cudaClnm;
 
-	for (int k = STARTINGZ(V); k <= lastZ; k += step) {
-		for (int i = STARTINGY(V); i <= lastY; i += step) {
-			for (int j = STARTINGX(V); j <= lastX; j += step) {
-				// Future CUDA code
-				PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-				if (A3D_ELEM(VRecMask, k, i, j) != 0) {
-					int img_idx = 0;
-					if (sigma_size > 1) {
-						PrecisionType sigma_mask = A3D_ELEM(VRecMask, k, i, j);
-						img_idx = findCuda(cudaSigma, sigma_size, sigma_mask);
-					}
-					auto &mP = cudaP[img_idx];
-					auto &mW = cudaW[img_idx];
-					if (usesZernike) {
-						auto k2 = k * k;
-						auto kr = k * iRmaxF;
-						auto k2i2 = k2 + i * i;
-						auto ir = i * iRmaxF;
-						auto r2 = k2i2 + j * j;
-						auto jr = j * iRmaxF;
-						auto rr = SQRT(r2) * iRmaxF;
-						for (size_t idx = 0; idx < idxY0; idx++) {
-							auto l1 = cudaVL1[idx];
-							auto n = cudaVN[idx];
-							auto l2 = cudaVL2[idx];
-							auto m = cudaVM[idx];
-							if (rr > 0 || l2 == 0) {
-								PrecisionType zsph = ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-								gx += cudaClnm[idx] * (zsph);
-								gy += cudaClnm[idx + idxY0] * (zsph);
-								gz += cudaClnm[idx + idxZ0] * (zsph);
-							}
-						}
-					}
+    for (int k = STARTINGZ(V); k <= lastZ; k += step)
+    {
+        for (int i = STARTINGY(V); i <= lastY; i += step)
+        {
+            for (int j = STARTINGX(V); j <= lastX; j += step)
+            {
+                // Future CUDA code
+                PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
+                if (A3D_ELEM(VRecMask, k, i, j) != 0)
+                {
+                    int img_idx = 0;
+                    if (sigma_size > 1)
+                    {
+                        PrecisionType sigma_mask = A3D_ELEM(VRecMask, k, i, j);
+                        img_idx = findCuda(cudaSigma, sigma_size, sigma_mask);
+                    }
+                    auto &mP = cudaP[img_idx];
+                    auto &mW = cudaW[img_idx];
+                    if (usesZernike)
+                    {
+                        auto k2 = k * k;
+                        auto kr = k * iRmaxF;
+                        auto k2i2 = k2 + i * i;
+                        auto ir = i * iRmaxF;
+                        auto r2 = k2i2 + j * j;
+                        auto jr = j * iRmaxF;
+                        auto rr = SQRT(r2) * iRmaxF;
+                        for (size_t idx = 0; idx < idxY0; idx++)
+                        {
+                            auto l1 = cudaVL1[idx];
+                            auto n = cudaVN[idx];
+                            auto l2 = cudaVL2[idx];
+                            auto m = cudaVM[idx];
+                            if (rr > 0 || l2 == 0)
+                            {
+                                PrecisionType zsph = ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
+                                gx += cudaClnm[idx] * (zsph);
+                                gy += cudaClnm[idx + idxY0] * (zsph);
+                                gz += cudaClnm[idx + idxZ0] * (zsph);
+                            }
+                        }
+                    }
 
-					auto r_x = j + gx;
-					auto r_y = i + gy;
-					auto r_z = k + gz;
+                    auto r_x = j + gx;
+                    auto r_y = i + gy;
+                    auto r_z = k + gz;
 
-					auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
-					auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
-					PrecisionType voxel_mV = A3D_ELEM(V, k, i, j);
-					splattingAtPos(pos_x, pos_y, voxel_mV, mP, mW, p_busy_elem_cuda, w_busy_elem_cuda);
-				}
-				// End of future CUDA code
-			}
-		}
-	}
+                    auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
+                    auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
+                    PrecisionType voxel_mV = A3D_ELEM(V, k, i, j);
+                    splattingAtPos(pos_x, pos_y, voxel_mV, mP, mW, p_busy_elem_cuda, w_busy_elem_cuda);
+                }
+                // End of future CUDA code
+            }
+        }
+    }
 }
 
 template<typename PrecisionType>
