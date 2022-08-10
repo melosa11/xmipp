@@ -79,10 +79,10 @@ namespace {
 	}
 
 	template<typename T>
-	T **setupMatrix1D(Matrix1D<T> &inputVector)
+	T *setupMatrix1D(Matrix1D<T> &inputVector)
 	{
-		T **outputVector;
-		transformData(outputVector, inputVector.vdata, inputVector.vdim);
+		T *outputVector;
+		transformData(&outputVector, inputVector.vdata, inputVector.vdim);
 		return outputVector;
 	}
 
