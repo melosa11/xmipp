@@ -159,11 +159,13 @@ struct CUDAForwardArtZernike3D<PrecisionType>::CommonKernelParameters CUDAForwar
 
 template<typename PrecisionType>
 MultidimArrayCuda<PrecisionType> *CUDAForwardArtZernike3D<PrecisionType>::setVectorMultidimArrayCuda(std::vector<Image<PrecisionType>> &image, std::vector<MultidimArrayCuda<PrecisionType>> &output) {
+    MultidimArrayCuda<PrecisionType> *gpuVector;
     for (int m = 0; m < image.size(); m++)
     {
         output.push_back(initializeMultidimArray(image[m]()));
     }   
-    return output.data();
+    setupVectorOfMultidimArray(output, &gpuVector);
+    return gpuVector;
 }
 
 template<typename PrecisionType>
