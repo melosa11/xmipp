@@ -86,10 +86,16 @@ MultidimArrayCuda<PrecisionType> *CUDAForwardArtZernike3D<PrecisionType>::setVec
 template<typename PrecisionType>
 template<bool usesZernike>
 void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicParameters &parameters) {
+    // Unique parameters 
     std::vector<MultidimArrayCuda<PrecisionType>> outputP;
     std::vector<MultidimArrayCuda<PrecisionType>> outputW;
     auto cudaP = setVectorMultidimArrayCuda(parameters.P, outputP);
     auto cudaW = setVectorMultidimArrayCuda(parameters.W, outputW);
+    auto p_busy_elem_cuda = p_busy_elem.data();
+    auto w_busy_elem_cuda = w_busy_elem.data();
+    auto sigma_size = sigma.size();
+    const auto cudaSigma = sigma.data();
+    const int step = loopStep;
 
     // Common parameters
     auto commonParameters = setCommonArgumentsKernel<usesZernike>(parameters);
@@ -99,13 +105,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     auto cudaR = commonParameters.R.mdata;
     auto cudaClnm = commonParameters.cudaClnm;
 
-    // Setup data for CUDA kernel
-    auto sigma_size = sigma.size();
-    const auto cudaSigma = sigma.data();
-    auto p_busy_elem_cuda = p_busy_elem.data();
-    auto w_busy_elem_cuda = w_busy_elem.data();
-
-    const int step = loopStep;
     for (int k = STARTINGZ(V); k <= lastZ; k += step)
     {
         for (int i = STARTINGY(V); i <= lastY; i += step)
@@ -167,7 +166,10 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
 template<typename PrecisionType>
 template<bool usesZernike>
 void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicParameters &parameters) {
+    // Unique parameters
     auto &mId = parameters.Idiff();
+    auto cudaMId = initializeMultidimArray(mId);
+    const int step = 1;
 
     // Common parameters
     auto commonParameters = setCommonArgumentsKernel<usesZernike>(parameters);
@@ -177,10 +179,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
     auto cudaR = commonParameters.R.mdata;
     auto cudaClnm = commonParameters.cudaClnm;
 
-    // Setup data for CUDA kernel
-    auto cudaMId = initializeMultidimArray(mId);
-
-    const int step = 1;
     for (int k = STARTINGZ(V); k <= lastZ; k += step)
     {
         for (int i = STARTINGY(V); i <= lastY; i += step)
