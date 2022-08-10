@@ -63,7 +63,7 @@ namespace {
     }
 
     template<typename T>
-    void setupMultidimArray(MultidimArray<T>& inputArray, T** outputArrayData)
+    void setupMultidimArray(const MultidimArray<T>& inputArray, T** outputArrayData)
     {
         transformData(outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
     }
