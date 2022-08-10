@@ -124,9 +124,9 @@ CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
 
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::~CUDAForwardArtZernike3D() {
-    cudaFree(V);
-    cudaFree(VRecMask);
-    cudaFree(sphMask);
+    cudaFree(V.data);
+    cudaFree(VRecMask.data);
+    cudaFree(sphMask.data);
 
     cudaFree(cudaVL1);
     cudaFree(cudaVL2);
