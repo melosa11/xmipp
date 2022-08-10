@@ -75,19 +75,25 @@ struct CUDAForwardArtZernike3D<PrecisionType>::CommonKernelParameters CUDAForwar
 }
 
 template<typename PrecisionType>
-void CUDAForwardArtZernike3D<PrecisionType>::setVectorMultidimArrayCuda(std::vector<Image<PrecisionType>> &image, std::vector<MultidimArrayCuda<PrecisionType>> *output) {
+MultidimArrayCuda<PrecisionType> *CUDAForwardArtZernike3D<PrecisionType>::setVectorMultidimArrayCuda(std::vector<Image<PrecisionType>> &image, std::vector<MultidimArrayCuda<PrecisionType>> &output) {
     for (int m = 0; m < image.size(); m++)
     {
-        (*output).push_back(initializeMultidimArray(image[m]()));
+        output.push_back(initializeMultidimArray(image[m]()));
     }   
+    return output.data();
 }
 
 template<typename PrecisionType>
 template<bool usesZernike>
 void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicParameters &parameters) {
     auto clnm = parameters.clnm;
-    auto P = parameters.P;
-    auto W = parameters.W;
+    /*auto P = parameters.P;
+    auto W = parameters.W;*/
+    
+    std::vector<MultidimArrayCuda<PrecisionType>> outputP;
+    std::vector<MultidimArrayCuda<PrecisionType>> outputW;
+    auto cudaP = setVectorMultidimArrayCuda(parameters.P, outputP);
+    auto cudaW = setVectorMultidimArrayCuda(parameters.W, outputW);
 
     // Common parameters
     auto commonParameters = setCommonArgumentsKernel<usesZernike>(parameters);
@@ -98,12 +104,6 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     auto cudaClnm = commonParameters.cudaClnm;
 
     // Setup data for CUDA kernel
-    std::vector<MultidimArrayCuda<PrecisionType>> outputP;
-    std::vector<MultidimArrayCuda<PrecisionType>> outputW;
-    setVectorMultidimArrayCuda(P, &outputP);
-    setVectorMultidimArrayCuda(W, &outputW);
-    auto cudaP = outputP.data();
-    auto cudaW = outputW.data();
     /*std::vector<MultidimArrayCuda<PrecisionType>> tempP;
     std::vector<MultidimArrayCuda<PrecisionType>> tempW;
     for (int m = 0; m < P.size(); m++)
