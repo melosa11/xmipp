@@ -7,8 +7,92 @@
 // Macros
 #define SQRT sqrtf
 
-#define IS_OUTSIDE2D(ImD, i, j) \
-	((j) < STARTINGX((ImD)) || (j) > FINISHINGX((ImD)) || (i) < STARTINGY((ImD)) || (i) > FINISHINGY((ImD)))
+#define IS_OUTSIDE2D(ImD,i,j) \
+    ((j) < STARTINGX((ImD)) || (j) > FINISHINGX((ImD)) || \
+     (i) < STARTINGY((ImD)) || (i) > FINISHINGY((ImD)))
+
+// Cuda memory helper function
+namespace {
+
+    template<typename T>
+    cudaError cudaMallocAndCopy(T **target, const T *source, size_t numberOfElements, size_t memSize = 0) {
+        size_t elemSize = numberOfElements * sizeof(T);
+        memSize = memSize == 0 ? elemSize : memSize * sizeof(T);
+
+        cudaError err = cudaSuccess;
+        if ((err = cudaMalloc(target, memSize)) != cudaSuccess) {
+            *target = NULL;
+            return err;
+        }
+
+        if ((err = cudaMemcpy(*target, source, elemSize, cudaMemcpyHostToDevice)) != cudaSuccess) {
+            cudaFree(*target);
+            *target = NULL;
+        }
+
+        if (memSize > elemSize) {
+            cudaMemset((*target) + numberOfElements, 0, memSize - elemSize);
+        }
+
+        return err;
+    }
+
+    void processCudaError() {
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess) {
+            fprintf(stderr, "Cuda error: %s\n", cudaGetErrorString(err));
+            exit(err);
+        }
+    }
+
+// Copies data from CPU to the GPU and at the same time transforms from
+// type 'U' to type 'T'. Works only for numeric types
+    template<typename Target, typename Source>
+    void transformData(Target **dest, Source *source, size_t n, bool mallocMem = true) {
+        std::vector <Target> tmp(source, source + n);
+
+        if (mallocMem) {
+            if (cudaMalloc(dest, sizeof(Target) * n) != cudaSuccess) {
+                processCudaError();
+            }
+        }
+
+        if (cudaMemcpy(*dest, tmp.data(), sizeof(Target) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
+            processCudaError();
+        }
+    }
+
+    template<typename T>
+    void setupMultidimArray(MultidimArray<T>& inputArray, T** outputArrayData)
+    {
+        transformData(outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
+    }
+
+    template<typename T>
+    void setupVectorOfMultidimArray(std::vector<MultidimArrayCuda<T>>& inputVector, MultidimArrayCuda<T>** outputVectorData)
+    {
+        if (cudaMallocAndCopy(&outputVectorData, inputVector.data(), inputVector.size()) != cudaSuccess)
+            processCudaError();
+    }
+
+    template<typename T>
+    void setupMatrix1D(Matrix1D<T>& inputVector, T** outputVector)
+    {
+        transformData(outputVector, inputVector.vdata, inputVector.vdim);
+    }
+
+    template<typename T>
+    void setupStdVector(std::vector<T>& inputVector, T** outputVector)
+    {
+        transformData(outputVector, inputVector.data(), inputVector.size());
+    }
+
+    template<typename T>
+    void setupMatrix2D(Matrix2D<T>& inputMatrix, T** outputMatrixData)
+    {
+        transformData(outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
+    }
+}     
 
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
@@ -326,93 +410,6 @@ PrecisionType CUDAForwardArtZernike3D<PrecisionType>::interpolatedElement2DCuda(
 	PrecisionType d1 = LIN_INTERP(fx, d10, d11);
 	return LIN_INTERP(fy, d0, d1);
 }
-
-// Cuda memory helper function
-namespace {
-
-	template<typename T>
-	cudaError cudaMallocAndCopy(T **target, const T *source, size_t numberOfElements, size_t memSize = 0)
-	{
-		size_t elemSize = numberOfElements * sizeof(T);
-		memSize = memSize == 0 ? elemSize : memSize * sizeof(T);
-
-		cudaError err = cudaSuccess;
-		if ((err = cudaMalloc(target, memSize)) != cudaSuccess) {
-			*target = NULL;
-			return err;
-		}
-
-		if ((err = cudaMemcpy(*target, source, elemSize, cudaMemcpyHostToDevice)) != cudaSuccess) {
-			cudaFree(*target);
-			*target = NULL;
-		}
-
-		if (memSize > elemSize) {
-			cudaMemset((*target) + numberOfElements, 0, memSize - elemSize);
-		}
-
-		return err;
-	}
-
-	void processCudaError()
-	{
-		cudaError_t err = cudaGetLastError();
-		if (err != cudaSuccess) {
-			fprintf(stderr, "Cuda error: %s\n", cudaGetErrorString(err));
-			exit(err);
-		}
-	}
-
-	// Copies data from CPU to the GPU and at the same time transforms from
-	// type 'U' to type 'T'. Works only for numeric types
-	template<typename Target, typename Source>
-	void transformData(Target **dest, Source *source, size_t n, bool mallocMem = true)
-	{
-		std::vector<Target> tmp(source, source + n);
-
-		if (mallocMem) {
-			if (cudaMalloc(dest, sizeof(Target) * n) != cudaSuccess) {
-				processCudaError();
-			}
-		}
-
-		if (cudaMemcpy(*dest, tmp.data(), sizeof(Target) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
-			processCudaError();
-		}
-	}
-
-	template<typename T>
-	void setupMultidimArray(MultidimArray<T> &inputArray, T **outputArrayData)
-	{
-		transformData(outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
-	}
-
-	template<typename T>
-	void setupVectorOfMultidimArray(std::vector<MultidimArrayCuda<T>> &inputVector,
-									MultidimArrayCuda<T> **outputVectorData)
-	{
-		if (cudaMallocAndCopy(&outputVectorData, inputVector.data(), inputVector.size()) != cudaSuccess)
-			processCudaError();
-	}
-
-	template<typename T>
-	void setupMatrix1D(Matrix1D<T> &inputVector, T **outputVector)
-	{
-		transformData(outputVector, inputVector.vdata, inputVector.vdim);
-	}
-
-	template<typename T>
-	void setupStdVector(std::vector<T> &inputVector, T **outputVector)
-	{
-		transformData(outputVector, inputVector.data(), inputVector.size());
-	}
-
-	template<typename T>
-	void setupMatrix2D(Matrix2D<T> &inputMatrix, T **outputMatrixData)
-	{
-		transformData(outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
-	}
-}  // namespace
 
 // explicit template instantiation
 template class CUDAForwardArtZernike3D<float>;
