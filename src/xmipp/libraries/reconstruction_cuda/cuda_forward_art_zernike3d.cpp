@@ -69,7 +69,8 @@ struct CUDAForwardArtZernike3D<PrecisionType>::CommonKernelParameters CUDAForwar
         .idxZ0 = idxZ0,
         .iRmaxF = iRmaxF,
         .cudaR = cudaR,
-        .cudaClnm = cudaClnm
+        .cudaClnm = cudaClnm,
+        .R = R
     };
 
     return output;
@@ -87,12 +88,12 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     auto idxY0 = commonParameters.idxY0;
     auto idxZ0 = commonParameters.idxZ0;
     auto iRmaxF = commonParameters.iRmaxF;
-    //auto cudaR = commonParameters.cudaR;
+    auto cudaR = commonParameters.R.mdata;
     auto cudaClnm = commonParameters.cudaClnm;
 
-    auto angles = parameters.angles;
+    /*auto angles = parameters.angles;
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
-    auto cudaR = R.mdata;
+    auto cudaR = R.mdata;*/
 
     // Setup data for CUDA kernel
     std::vector<MultidimArrayCuda<PrecisionType>> tempP;
@@ -182,12 +183,12 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
     auto idxY0 = commonParameters.idxY0;
     auto idxZ0 = commonParameters.idxZ0;
     auto iRmaxF = commonParameters.iRmaxF;
-    //auto cudaR = commonParameters.cudaR;
+    auto cudaR = commonParameters.R.mdata;
     auto cudaClnm = commonParameters.cudaClnm;
 
-    auto angles = parameters.angles;
+    /*auto angles = parameters.angles;
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
-    auto cudaR = R.mdata;
+    auto cudaR = R.mdata;*/
 
     // Setup data for CUDA kernel
     auto cudaMId = initializeMultidimArray(mId);

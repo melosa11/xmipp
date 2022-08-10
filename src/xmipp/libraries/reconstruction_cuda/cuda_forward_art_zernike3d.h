@@ -62,6 +62,7 @@ public:
         size_t idxY0, idxZ0;
         PrecisionType iRmaxF;
         PrecisionType *cudaR, *cudaClnm;
+        Matrix2D<PrecisionType> R;
     };
 
 public:
