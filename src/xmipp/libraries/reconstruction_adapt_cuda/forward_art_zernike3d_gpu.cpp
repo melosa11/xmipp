@@ -130,9 +130,14 @@ void ProgForwardArtZernike3DGPU::defineParams()
 	addParamsLine("  [--regularization <l=0.01>]  : ART regularization weight");
 	addParamsLine("  [--niter <n=1>]              : Number of ART iterations");
 	addParamsLine("  [--save_iter <s=0>]          : Save intermidiate volume after #save_iter iterations");
-	addParamsLine("  [--sort_last <N=2>]          : The algorithm sorts projections in the most orthogonally possible way. ");
-	addParamsLine("                               : The most orthogonal way is defined as choosing the projection which maximizes the ");
-	addParamsLine("                               : dot product with the N previous inserted projections. Use -1 to sort with all  ");
+	addParamsLine(
+		"  [--sort_last <N=2>]          : The algorithm sorts projections in the most orthogonally possible way. ");
+	addParamsLine(
+		"                               : The most orthogonal way is defined as choosing the projection which "
+		"maximizes the ");
+	addParamsLine(
+		"                               : dot product with the N previous inserted projections. Use -1 to sort with "
+		"all  ");
 	addParamsLine("                               : previous projections");
 	addParamsLine("  [--resume]                   : Resume processing");
 	addExampleLine("A typical use is:", false);
@@ -568,7 +573,7 @@ MultidimArray<PrecisionType> ProgForwardArtZernike3DGPU::useFilterPrecision(Four
 	return outputImage;
 }
 
-template <ProgForwardArtZernike3DGPU::Direction DIRECTION>
+template<ProgForwardArtZernike3DGPU::Direction DIRECTION>
 void ProgForwardArtZernike3DGPU::artModel()
 {
 	if (DIRECTION == Direction::Forward) {
@@ -667,7 +672,7 @@ void ProgForwardArtZernike3DGPU::artModel()
 	}
 }
 
-template <bool USESZERNIKE, ProgForwardArtZernike3DGPU::Direction DIRECTION>
+template<bool USESZERNIKE, ProgForwardArtZernike3DGPU::Direction DIRECTION>
 void ProgForwardArtZernike3DGPU::zernikeModel()
 {
 	CUDAForwardArtZernike3D<PrecisionType>::AngleParameters angles = {

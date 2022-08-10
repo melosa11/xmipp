@@ -204,11 +204,11 @@ class ProgForwardArtZernike3DGPU : public XmippMetadataProgram {
 	MultidimArray<PrecisionType> useFilterPrecision(FourierFilter &filter, MultidimArray<PrecisionType> precisionImage);
 
 	// ART algorithm
-	template <Direction DIRECTION>
+	template<Direction DIRECTION>
 	void artModel();
 
 	// Apply Zernike codeformation
-	template <bool USESZERNIKE, Direction DIRECTION>
+	template<bool USESZERNIKE, Direction DIRECTION>
 	void zernikeModel();
 
 	virtual void run();
@@ -217,7 +217,7 @@ class ProgForwardArtZernike3DGPU : public XmippMetadataProgram {
 	void sortOrthogonal();
 
 	/// Move data from MultidimArray to struct usable by CUDA kernel
-	template <typename T>
+	template<typename T>
 	MultidimArrayCuda<T> initializeMultidimArray(MultidimArray<T> &multidimArray);
 
 	// Spaltting at position r

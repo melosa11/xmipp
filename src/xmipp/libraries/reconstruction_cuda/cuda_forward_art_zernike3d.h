@@ -14,7 +14,7 @@
 struct float3;
 struct double3;
 
-template <typename T>
+template<typename T>
 struct MultidimArrayCuda {
 	size_t xdim;
 	size_t ydim;
@@ -25,7 +25,7 @@ struct MultidimArrayCuda {
 	T *data;
 };
 
-template <typename PrecisionType = float>
+template<typename PrecisionType = float>
 class CUDAForwardArtZernike3D {
 	static_assert(std::is_floating_point<PrecisionType>::value, "Floating point type is required.");
 
@@ -63,10 +63,10 @@ class CUDAForwardArtZernike3D {
 	};
 
    public:
-	template <bool usesZernike>
+	template<bool usesZernike>
 	void runForwardKernel(struct DynamicParameters &parameters);
 
-	template <bool usesZernike>
+	template<bool usesZernike>
 	void runBackwardKernel(struct DynamicParameters &parameters);
 
 	explicit CUDAForwardArtZernike3D(const ConstantParameters parameters) noexcept;
@@ -92,14 +92,14 @@ class CUDAForwardArtZernike3D {
 	std::vector<std::unique_ptr<std::atomic<PrecisionType *>>> w_busy_elem;
 
    private:
-	template <bool usesZernike>
+	template<bool usesZernike>
 	struct CommonKernelParameters setCommonArgumentsKernel(struct DynamicParameters &parameters);
 
 	MultidimArrayCuda<PrecisionType> *setVectorMultidimArrayCuda(std::vector<Image<PrecisionType>> &image,
 																 std::vector<MultidimArrayCuda<PrecisionType>> &output);
 
 	/// Move data from MultidimArray to struct usable by CUDA kernel
-	template <typename T>
+	template<typename T>
 	MultidimArrayCuda<T> initializeMultidimArray(const MultidimArray<T> &multidimArray) const;
 
 	/// Function inspired by std::find with support for CUDA allowed data types
