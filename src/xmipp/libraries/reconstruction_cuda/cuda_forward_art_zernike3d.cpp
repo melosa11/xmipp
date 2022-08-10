@@ -58,7 +58,7 @@ struct CUDAForwardArtZernike3D<PrecisionType>::CommonKernelParameters CUDAForwar
     const PrecisionType RmaxF = usesZernike ? RmaxDef : 0;
     const PrecisionType iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
 
-    // Rotation Matrix
+    // Rotation Matrix (has to pass the whole Matrix2D so it is not automatically deallocated)
     const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
 
     auto cudaClnm = clnm.data();
