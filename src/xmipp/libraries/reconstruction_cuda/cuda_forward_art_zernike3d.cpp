@@ -79,9 +79,11 @@ namespace {
 	}
 
 	template<typename T>
-	void setupMatrix1D(Matrix1D<T> &inputVector, T **outputVector)
+	T **setupMatrix1D(Matrix1D<T> &inputVector)
 	{
+		T **outputVector;
 		transformData(outputVector, inputVector.vdata, inputVector.vdim);
+		return outputVector;
 	}
 
 	template<typename T>
@@ -108,12 +110,12 @@ CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
 	  lastZ(FINISHINGZ(parameters.Vrefined())),
 	  lastY(FINISHINGY(parameters.Vrefined())),
 	  lastX(FINISHINGX(parameters.Vrefined())),
-	  loopStep(parameters.loopStep)
+	  loopStep(parameters.loopStep),
+	  cudaVL1(setupMatrix1D(parameters.vL1)),
+	  cudaVL2(setupMatrix1D(parameters.vL2)),
+	  cudaVN(setupMatrix1D(parameters.vN)),
+	  cudaVM(setupMatrix1D(parameters.vM))
 {
-	setupMatrix1D(parameters.vL1, &cudaVL1);
-	setupMatrix1D(parameters.vL2, &cudaVL2);
-	setupMatrix1D(parameters.vN, &cudaVN);
-	setupMatrix1D(parameters.vM, &cudaVM);
 	auto Xdim = parameters.Xdim;
 	p_busy_elem.resize(Xdim * Xdim);
 	for (auto &p : p_busy_elem) {

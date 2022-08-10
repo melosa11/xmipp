@@ -82,7 +82,7 @@ class CUDAForwardArtZernike3D {
 
 	const int lastX, lastY, lastZ;
 
-	int *cudaVL1, *cudaVN, *cudaVL2, *cudaVM;
+	const int *cudaVL1, *cudaVN, *cudaVL2, *cudaVM;
 
 	const std::vector<PrecisionType> sigma;
 
