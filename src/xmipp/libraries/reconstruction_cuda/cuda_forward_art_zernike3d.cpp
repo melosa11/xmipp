@@ -82,7 +82,7 @@ namespace {
     }
 
     template<typename T>
-    void setupStdVector(std::vector<T>& inputVector, T** outputVector)
+    void setupStdVector(const std::vector<T>& inputVector, T** outputVector)
     {
         transformData(outputVector, inputVector.data(), inputVector.size());
     }
@@ -182,7 +182,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
     auto p_busy_elem_cuda = p_busy_elem.data();
     auto w_busy_elem_cuda = w_busy_elem.data();
     auto sigma_size = sigma.size();
-    const PrecisionType *cudaSigma;
+    PrecisionType *cudaSigma;
     setupStdVector(sigma, &cudaSigma);
     const int step = loopStep;
 
