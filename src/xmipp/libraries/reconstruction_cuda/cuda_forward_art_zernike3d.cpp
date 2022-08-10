@@ -76,7 +76,7 @@ namespace {
     }
 
     template<typename T>
-    void setupMatrix1D(const Matrix1D<T>& inputVector, T** outputVector)
+    void setupMatrix1D(Matrix1D<T>& inputVector, T** outputVector)
     {
         transformData(outputVector, inputVector.vdata, inputVector.vdim);
     }
