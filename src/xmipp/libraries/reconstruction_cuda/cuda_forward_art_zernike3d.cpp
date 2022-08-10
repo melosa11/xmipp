@@ -78,7 +78,7 @@ template<typename PrecisionType>
 void CUDAForwardArtZernike3D<PrecisionType>::setVectorMultidimArrayCuda(std::vector<Image<PrecisionType>> &image, std::vector<MultidimArrayCuda<PrecisionType>> *output) {
     for (int m = 0; m < image.size(); m++)
     {
-        output.push_back(initializeMultidimArray(image[m]()));
+        (*output).push_back(initializeMultidimArray(image[m]()));
     }   
 }
 
