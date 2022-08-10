@@ -51,7 +51,7 @@ struct CUDAForwardArtZernike3D<PrecisionType>::CommonKernelParameters CUDAForwar
     auto angles = parameters.angles;
 
     // We can't set idxY0 to 0 because the compiler
-    // would give irrelevant warnings.  
+    // would give irrelevant warnings.
     assert(usesZernike || clnm.size() == 0);
     const size_t idxY0 = clnm.size() / 3;
     const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
