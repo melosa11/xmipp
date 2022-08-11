@@ -75,6 +75,17 @@ namespace {
 		transportData(&outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
 		return outputMatrixData;
 	}
+
+	template<typename T>
+	MultidimArrayCuda<T> *tranportVectorMultidimArrayToGpu(std::vector<Image<T>> &image)
+	{
+		std::vector<MultidimArrayCuda<T>> output;
+		for (int m = 0; m < image.size(); m++) {
+			output.push_back(initializeMultidimArray(image[m]()));
+		}
+		return tranportVectorOfMultidimArrayToGpu(output);
+	}
+
 }  // namespace
 
 template<typename PrecisionType>
@@ -150,26 +161,13 @@ CUDAForwardArtZernike3D<PrecisionType>::setCommonArgumentsKernel(struct DynamicP
 }
 
 template<typename PrecisionType>
-MultidimArrayCuda<PrecisionType> *CUDAForwardArtZernike3D<PrecisionType>::setVectorMultidimArrayCuda(
-	std::vector<Image<PrecisionType>> &image,
-	std::vector<MultidimArrayCuda<PrecisionType>> &output)
-
-{
-	for (int m = 0; m < image.size(); m++) {
-		output.push_back(initializeMultidimArray(image[m]()));
-	}
-	return tranportVectorOfMultidimArrayToGpu(output);
-}
-
-template<typename PrecisionType>
 template<bool usesZernike>
 void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicParameters &parameters)
+
 {
 	// Unique parameters
-	std::vector<MultidimArrayCuda<PrecisionType>> outputP;
-	std::vector<MultidimArrayCuda<PrecisionType>> outputW;
-	auto cudaP = setVectorMultidimArrayCuda(parameters.P, outputP);
-	auto cudaW = setVectorMultidimArrayCuda(parameters.W, outputW);
+	auto cudaP = tranportVectorMultidimArrayToGpu(parameters.P);
+	auto cudaW = tranportVectorMultidimArrayToGpu(parameters.W);
 	auto p_busy_elem_cuda = p_busy_elem.data();
 	auto w_busy_elem_cuda = w_busy_elem.data();
 	auto sigma_size = sigma.size();

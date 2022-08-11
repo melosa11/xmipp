@@ -94,9 +94,6 @@ class CUDAForwardArtZernike3D {
 	template<bool usesZernike>
 	struct CommonKernelParameters setCommonArgumentsKernel(struct DynamicParameters &parameters);
 
-	MultidimArrayCuda<PrecisionType> *setVectorMultidimArrayCuda(std::vector<Image<PrecisionType>> &image,
-																 std::vector<MultidimArrayCuda<PrecisionType>> &output);
-
 	/// Move data from MultidimArray to struct usable by CUDA kernel
 	template<typename T>
 	MultidimArrayCuda<T> initializeMultidimArray(const MultidimArray<T> &multidimArray) const;
