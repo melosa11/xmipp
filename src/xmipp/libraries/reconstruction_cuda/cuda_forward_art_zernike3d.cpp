@@ -96,9 +96,11 @@ namespace {
 	}
 
 	template<typename T>
-	void setupMatrix2D(const Matrix2D<T> &inputMatrix, T **outputMatrixData)
+	T *setupMatrix2D(const Matrix2D<T> &inputMatrix)
 	{
-		transformData(outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
+		T *outputMatrixData;
+		transformData(&outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
+		return outputMatrixData;
 	}
 }  // namespace
 
@@ -161,16 +163,12 @@ CUDAForwardArtZernike3D<PrecisionType>::setCommonArgumentsKernel(struct DynamicP
 
 	// Rotation Matrix (has to pass the whole Matrix2D so it is not automatically deallocated)
 	const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
-	PrecisionType *cudaR;
-	setupMatrix2D(R, &cudaR);
-
-	auto cudaClnm = setupStdVector(clnm);
 
 	CommonKernelParameters output = {.idxY0 = idxY0,
 									 .idxZ0 = idxZ0,
 									 .iRmaxF = iRmaxF,
-									 .cudaClnm = cudaClnm,
-									 .cudaR = cudaR};
+									 .cudaClnm = setupStdVector(clnm),
+									 .cudaR = setupMatrix2D(R)};
 
 	return output;
 
