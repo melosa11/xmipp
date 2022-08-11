@@ -18,8 +18,7 @@ namespace {
 	{
 		cudaError_t err = cudaGetLastError();
 		if (err != cudaSuccess) {
-			//fprintf(stderr, "Cuda error: %s\n", cudaGetErrorString(err));
-			throw(std::runtime_error(cudaGetErrorString(err)));
+			throw std::runtime_error(cudaGetErrorString(err));
 		}
 	}
 
