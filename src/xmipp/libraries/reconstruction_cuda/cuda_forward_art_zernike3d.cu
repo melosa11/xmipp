@@ -328,6 +328,41 @@ namespace device {
 		}
 		return size - 1;
 	}
+
+	template<typename PrecisionType>
+	PrecisionType interpolatedElement2DCuda(PrecisionType x,
+											PrecisionType y,
+											MultidimArrayCuda<PrecisionType> &diffImage)
+	{
+		int x0 = floor(x);
+		PrecisionType fx = x - x0;
+		int x1 = x0 + 1;
+		int y0 = floor(y);
+		PrecisionType fy = y - y0;
+		int y1 = y0 + 1;
+
+		int i0 = STARTINGY(diffImage);
+		int j0 = STARTINGX(diffImage);
+		int iF = FINISHINGY(diffImage);
+		int jF = FINISHINGX(diffImage);
+
+#define ASSIGNVAL2DCUDA(d, i, j)                      \
+	if ((j) < j0 || (j) > jF || (i) < i0 || (i) > iF) \
+		d = (PrecisionType)0;                         \
+	else                                              \
+		d = A2D_ELEM(diffImage, i, j);
+
+		PrecisionType d00, d10, d11, d01;
+		ASSIGNVAL2DCUDA(d00, y0, x0);
+		ASSIGNVAL2DCUDA(d01, y0, x1);
+		ASSIGNVAL2DCUDA(d10, y1, x0);
+		ASSIGNVAL2DCUDA(d11, y1, x1);
+
+		PrecisionType d0 = LIN_INTERP(fx, d00, d01);
+		PrecisionType d1 = LIN_INTERP(fx, d10, d11);
+		return LIN_INTERP(fy, d0, d1);
+	}
+
 }  // namespace device
 
 /*
@@ -403,4 +438,65 @@ __global__ void forwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	}
 }
 
+/*
+ * The second beast
+ */
+template<typename PrecisionType, bool usesZernike>
+__global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
+							   MultidimArrayCuda<PrecisionType> cudaMId,
+							   MultidimArrayCuda<int> sphMask,
+							   const int lastZ,
+							   const int lastY,
+							   const int lastX,
+							   const int step,
+							   const PrecisionType iRmaxF,
+							   const size_t idxY0,
+							   const size_t idxZ0,
+							   const int *cudaVL1,
+							   const int *cudaVN,
+							   const int *cudaVL2,
+							   const int *cudaVM,
+							   const PrecisionType *cudaClnm,
+							   const PrecisionType *cudaR)
+{
+	for (int k = STARTINGZ(cudaMV); k <= lastZ; k += step) {
+		for (int i = STARTINGY(cudaMV); i <= lastY; i += step) {
+			for (int j = STARTINGX(cudaMV); j <= lastX; j += step) {
+				PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
+				if (A3D_ELEM(sphMask, k, i, j) != 0) {
+					if (usesZernike) {
+						auto k2 = k * k;
+						auto kr = k * iRmaxF;
+						auto k2i2 = k2 + i * i;
+						auto ir = i * iRmaxF;
+						auto r2 = k2i2 + j * j;
+						auto jr = j * iRmaxF;
+						auto rr = SQRT(r2) * iRmaxF;
+						for (size_t idx = 0; idx < idxY0; idx++) {
+							auto l1 = cudaVL1[idx];
+							auto n = cudaVN[idx];
+							auto l2 = cudaVL2[idx];
+							auto m = cudaVM[idx];
+							if (rr > 0 || l2 == 0) {
+								PrecisionType zsph = device::ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
+								gx += cudaClnm[idx] * (zsph);
+								gy += cudaClnm[idx + idxY0] * (zsph);
+								gz += cudaClnm[idx + idxZ0] * (zsph);
+							}
+						}
+					}
+
+					auto r_x = j + gx;
+					auto r_y = i + gy;
+					auto r_z = k + gz;
+
+					auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
+					auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
+					PrecisionType voxel = device::interpolatedElement2DCuda(pos_x, pos_y, cudaMId);
+					A3D_ELEM(cudaMV, k, i, j) += voxel;
+				}
+			}
+		}
+	}
+}
 #endif	//CUDA_FORWARD_ART_ZERNIKE3D_CU
