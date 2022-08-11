@@ -77,7 +77,7 @@ namespace {
 	}
 
 	template<typename T>
-	MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray) const
+	MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray)
 	{
 		struct MultidimArrayCuda<T> cudaArray = {
 			.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
