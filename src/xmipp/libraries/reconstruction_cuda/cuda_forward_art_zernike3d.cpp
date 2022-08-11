@@ -71,7 +71,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *setupVectorOfMultidimArray(std::vector<MultidimArrayCuda<T>> &inputVector)
+	MultidimArrayCuda<T> *setupVectorOfMultidimArray(std::vector<MultidimArrayCuda<T>> &inputVector)
 	{
 		MultidimArrayCuda<T> *outputVectorData;
 		if (cudaMallocAndCopy(&outputVectorData, inputVector.data(), inputVector.size()) != cudaSuccess)
