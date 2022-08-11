@@ -94,10 +94,6 @@ class CUDAForwardArtZernike3D {
 	template<bool usesZernike>
 	struct CommonKernelParameters setCommonArgumentsKernel(struct DynamicParameters &parameters);
 
-	/// Move data from MultidimArray to struct usable by CUDA kernel
-	template<typename T>
-	MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray) const;
-
 	/// Function inspired by std::find with support for CUDA allowed data types
 	size_t findCuda(const PrecisionType *begin, size_t size, PrecisionType value) const;
 
