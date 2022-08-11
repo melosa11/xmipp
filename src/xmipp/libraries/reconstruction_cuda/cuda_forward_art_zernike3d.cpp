@@ -65,7 +65,7 @@ namespace {
 	T *tranportStdVectorToGpu(const std::vector<T> &inputVector)
 	{
 		T *outputVector;
-		transportData(&outputVector, const_cast<T *> inputVector.data(), inputVector.size());
+		transportData(&outputVector, const_cast<T *>(inputVector.data()), inputVector.size());
 		return outputVector;
 	}
 
