@@ -68,7 +68,7 @@ class CUDAForwardArtZernike3D {
 	template<bool usesZernike>
 	void runBackwardKernel(struct DynamicParameters &parameters);
 
-	explicit CUDAForwardArtZernike3D(const ConstantParameters parameters) noexcept;
+	explicit CUDAForwardArtZernike3D(const ConstantParameters parameters);
 	~CUDAForwardArtZernike3D();
 
    private:
