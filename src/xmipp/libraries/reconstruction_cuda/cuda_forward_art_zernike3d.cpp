@@ -77,11 +77,11 @@ namespace {
 	}
 
 	template<typename T>
-	MultidimArrayCuda<T> *tranportVectorMultidimArrayToGpu(std::vector<Image<T>> &image)
+	MultidimArrayCuda<T> *convertToMultidimArrayCuda(std::vector<Image<T>> &image)
 	{
 		std::vector<MultidimArrayCuda<T>> output;
 		for (int m = 0; m < image.size(); m++) {
-			output.push_back(initializeMultidimArray(image[m]()));
+			output.push_back(initializeMultidimArrayCuda(image[m]()));
 		}
 		return tranportVectorOfMultidimArrayToGpu(output);
 	}
@@ -91,9 +91,9 @@ namespace {
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
 	const CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters)
-	: V(initializeMultidimArray(parameters.Vrefined())),
-	  VRecMask(initializeMultidimArray(parameters.VRecMask)),
-	  sphMask(initializeMultidimArray(parameters.sphMask)),
+	: V(initializeMultidimArrayCuda(parameters.Vrefined())),
+	  VRecMask(initializeMultidimArrayCuda(parameters.VRecMask)),
+	  sphMask(initializeMultidimArrayCuda(parameters.sphMask)),
 	  sigma(parameters.sigma),
 	  RmaxDef(parameters.RmaxDef),
 	  lastZ(FINISHINGZ(parameters.Vrefined())),
@@ -166,8 +166,8 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
 
 {
 	// Unique parameters
-	auto cudaP = tranportVectorMultidimArrayToGpu(parameters.P);
-	auto cudaW = tranportVectorMultidimArrayToGpu(parameters.W);
+	auto cudaP = convertToMultidimArrayCuda(parameters.P);
+	auto cudaW = convertToMultidimArrayCuda(parameters.W);
 	auto p_busy_elem_cuda = p_busy_elem.data();
 	auto w_busy_elem_cuda = w_busy_elem.data();
 	auto sigma_size = sigma.size();
@@ -238,7 +238,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
 {
 	// Unique parameters
 	auto &mId = parameters.Idiff();
-	auto cudaMId = initializeMultidimArray(mId);
+	auto cudaMId = initializeMultidimArrayCuda(mId);
 	const int step = 1;
 
 	// Common parameters
@@ -292,7 +292,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runBackwardKernel(struct DynamicPar
 
 template<typename PrecisionType>
 template<typename T>
-MultidimArrayCuda<T> CUDAForwardArtZernike3D<PrecisionType>::initializeMultidimArray(
+MultidimArrayCuda<T> CUDAForwardArtZernike3D<PrecisionType>::initializeMultidimArrayCuda(
 	const MultidimArray<T> &multidimArray) const
 {
 	struct MultidimArrayCuda<T> cudaArray = {
