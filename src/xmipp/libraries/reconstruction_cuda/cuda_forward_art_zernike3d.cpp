@@ -62,7 +62,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *tranportStdVectorToGpu(const std::vector<T> &inputVector)
+	T *tranportStdVectorToGpu(std::vector<T> &inputVector)
 	{
 		T *outputVector;
 		transportData(&outputVector, inputVector.data(), inputVector.size());
