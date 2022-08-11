@@ -65,9 +65,11 @@ namespace {
 	}
 
 	template<typename T>
-	void setupMultidimArray(const MultidimArray<T> &inputArray, T **outputArrayData)
+	T *setupMultidimArray(const MultidimArray<T> &inputArray)
 	{
+		T *outputArrayData;
 		transformData(outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
+		return outputArrayData;
 	}
 
 	template<typename T>
@@ -325,10 +327,9 @@ MultidimArrayCuda<T> CUDAForwardArtZernike3D<PrecisionType>::initializeMultidimA
 	struct MultidimArrayCuda<T> cudaArray = {
 		.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
 		.xinit = multidimArray.xinit, .yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
-		.data = multidimArray.data
+		.data = setupMultidimArray(multidimArray)
 	};
 
-	setupMultidimArray(multidimArray, &cudaArray.data);
 	return cudaArray;
 }
 
