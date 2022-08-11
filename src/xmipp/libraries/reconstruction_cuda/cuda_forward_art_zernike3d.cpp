@@ -2,6 +2,7 @@
 #include "cuda_forward_art_zernike3d.h"
 #include <core/geometry.h>
 #include <cassert>
+#include <stdexcept>
 #include "data/numerical_tools.h"
 
 // Macros
@@ -13,51 +14,25 @@
 // Cuda memory helper function
 namespace {
 
-	template<typename T>
-	cudaError cudaMallocAndCopy(T **target, const T *source, size_t numberOfElements, size_t memSize = 0)
-	{
-		size_t elemSize = numberOfElements * sizeof(T);
-		memSize = memSize == 0 ? elemSize : memSize * sizeof(T);
-
-		cudaError err = cudaSuccess;
-		if ((err = cudaMalloc(target, memSize)) != cudaSuccess) {
-			*target = NULL;
-			return err;
-		}
-
-		if ((err = cudaMemcpy(*target, source, elemSize, cudaMemcpyHostToDevice)) != cudaSuccess) {
-			cudaFree(*target);
-			*target = NULL;
-		}
-
-		if (memSize > elemSize) {
-			cudaMemset((*target) + numberOfElements, 0, memSize - elemSize);
-		}
-
-		return err;
-	}
-
 	void processCudaError()
 	{
 		cudaError_t err = cudaGetLastError();
 		if (err != cudaSuccess) {
-			fprintf(stderr, "Cuda error: %s\n", cudaGetErrorString(err));
-			exit(err);
+			//fprintf(stderr, "Cuda error: %s\n", cudaGetErrorString(err));
+			throw(std::runtime_error(cudaGetErrorString(err)));
 		}
 	}
 
-	// Copies data from CPU to the GPU and at the same time transforms from
-	// type 'U' to type 'T'. Works only for numeric types
-	template<typename Target, typename Source>
-	void transformData(Target **dest, Source *source, size_t n)
+	// Copies data from CPU to the GPU
+	template<typename T>
+	void transportData(T **dest, T *source, size_t n)
 	{
-		std::vector<Target> tmp(source, source + n);
-
-		if (cudaMalloc(dest, sizeof(Target) * n) != cudaSuccess) {
+		if (cudaMalloc(dest, sizeof(T) * n) != cudaSuccess) {
 			processCudaError();
 		}
 
-		if (cudaMemcpy(*dest, tmp.data(), sizeof(Target) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
+		if (cudaMemcpy(*dest, source, sizeof(T) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
+			cudaFree(*dest);
 			processCudaError();
 		}
 	}
@@ -66,7 +41,7 @@ namespace {
 	T *tranportMultidimArrayToGpu(const MultidimArray<T> &inputArray)
 	{
 		T *outputArrayData;
-		transformData(&outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
+		transportData(&outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
 		return outputArrayData;
 	}
 
@@ -74,8 +49,7 @@ namespace {
 	MultidimArrayCuda<T> *tranportVectorOfMultidimArrayToGpu(std::vector<MultidimArrayCuda<T>> &inputVector)
 	{
 		MultidimArrayCuda<T> *outputVectorData;
-		if (cudaMallocAndCopy(&outputVectorData, inputVector.data(), inputVector.size()) != cudaSuccess)
-			processCudaError();
+		transportData(&outputVectorData, inputVector.data(), inputVector.size());
 		return outputVectorData;
 	}
 
@@ -83,7 +57,7 @@ namespace {
 	T *tranportMatrix1DToGpu(Matrix1D<T> &inputVector)
 	{
 		T *outputVector;
-		transformData(&outputVector, inputVector.vdata, inputVector.vdim);
+		transportData(&outputVector, inputVector.vdata, inputVector.vdim);
 		return outputVector;
 	}
 
@@ -91,7 +65,7 @@ namespace {
 	T *tranportStdVectorToGpu(const std::vector<T> &inputVector)
 	{
 		T *outputVector;
-		transformData(&outputVector, inputVector.data(), inputVector.size());
+		transportData(&outputVector, inputVector.data(), inputVector.size());
 		return outputVector;
 	}
 
@@ -99,14 +73,14 @@ namespace {
 	T *tranportMatrix2DToGpu(const Matrix2D<T> &inputMatrix)
 	{
 		T *outputMatrixData;
-		transformData(&outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
+		transportData(&outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
 		return outputMatrixData;
 	}
 }  // namespace
 
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
-	const CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters) noexcept
+	const CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters)
 	: V(initializeMultidimArray(parameters.Vrefined())),
 	  VRecMask(initializeMultidimArray(parameters.VRecMask)),
 	  sphMask(initializeMultidimArray(parameters.sphMask)),
