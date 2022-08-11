@@ -7,7 +7,7 @@
 // Compilation settings
 
 // Constants
-static constexpr float PI = 3.1415926535897f;
+static const float PI = 3.1415926535897f;
 // Functions
 #define SQRT sqrtf
 #define ATAN2 atan2f
