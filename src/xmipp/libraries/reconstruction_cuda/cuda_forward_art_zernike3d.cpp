@@ -71,11 +71,12 @@ namespace {
 	}
 
 	template<typename T>
-	void setupVectorOfMultidimArray(std::vector<MultidimArrayCuda<T>> &inputVector,
-									MultidimArrayCuda<T> **outputVectorData)
+	T *setupVectorOfMultidimArray(std::vector<MultidimArrayCuda<T>> &inputVector)
 	{
-		if (cudaMallocAndCopy(outputVectorData, inputVector.data(), inputVector.size()) != cudaSuccess)
+		MultidimArrayCuda<T> *outputVectorData;
+		if (cudaMallocAndCopy(&outputVectorData, inputVector.data(), inputVector.size()) != cudaSuccess)
 			processCudaError();
+		return outputVectorData;
 	}
 
 	template<typename T>
@@ -180,12 +181,10 @@ MultidimArrayCuda<PrecisionType> *CUDAForwardArtZernike3D<PrecisionType>::setVec
 	std::vector<MultidimArrayCuda<PrecisionType>> &output)
 
 {
-	MultidimArrayCuda<PrecisionType> *gpuVector;
 	for (int m = 0; m < image.size(); m++) {
 		output.push_back(initializeMultidimArray(image[m]()));
 	}
-	setupVectorOfMultidimArray(output, &gpuVector);
-	return gpuVector;
+	return setupVectorOfMultidimArray(output);
 }
 
 template<typename PrecisionType>
