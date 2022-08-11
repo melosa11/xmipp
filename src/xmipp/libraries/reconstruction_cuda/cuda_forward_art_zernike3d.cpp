@@ -88,9 +88,11 @@ namespace {
 	}
 
 	template<typename T>
-	void setupStdVector(const std::vector<T> &inputVector, T **outputVector)
+	T *setupStdVector(const std::vector<T> &inputVector)
 	{
-		transformData(outputVector, inputVector.data(), inputVector.size());
+		T *outputVector;
+		transformData(&outputVector, inputVector.data(), inputVector.size());
+		return outputVector;
 	}
 
 	template<typename T>
@@ -162,8 +164,7 @@ CUDAForwardArtZernike3D<PrecisionType>::setCommonArgumentsKernel(struct DynamicP
 	PrecisionType *cudaR;
 	setupMatrix2D(R, &cudaR);
 
-	PrecisionType *cudaClnm;
-	setupStdVector(clnm, &cudaClnm);
+	auto cudaClnm = setupStdVector(clnm);
 
 	CommonKernelParameters output = {.idxY0 = idxY0,
 									 .idxZ0 = idxZ0,
@@ -199,8 +200,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
 	auto p_busy_elem_cuda = p_busy_elem.data();
 	auto w_busy_elem_cuda = w_busy_elem.data();
 	auto sigma_size = sigma.size();
-	PrecisionType *cudaSigma;
-	setupStdVector(sigma, &cudaSigma);
+	auto cudaSigma = setupStdVector(sigma);
 	const int step = loopStep;
 
 	// Common parameters
