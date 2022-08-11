@@ -68,7 +68,7 @@ namespace {
 	T *setupMultidimArray(const MultidimArray<T> &inputArray)
 	{
 		T *outputArrayData;
-		transformData(outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
+		transformData(&outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
 		return outputArrayData;
 	}
 
