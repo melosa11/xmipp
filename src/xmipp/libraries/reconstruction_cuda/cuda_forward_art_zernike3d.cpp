@@ -76,6 +76,7 @@ namespace {
 		return outputMatrixData;
 	}
 
+	template<typename T>
 	MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray) const
 	{
 		struct MultidimArrayCuda<T> cudaArray = {
