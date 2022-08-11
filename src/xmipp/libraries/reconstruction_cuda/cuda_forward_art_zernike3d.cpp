@@ -49,14 +49,12 @@ namespace {
 	// Copies data from CPU to the GPU and at the same time transforms from
 	// type 'U' to type 'T'. Works only for numeric types
 	template<typename Target, typename Source>
-	void transformData(Target **dest, Source *source, size_t n, bool mallocMem = true)
+	void transformData(Target **dest, Source *source, size_t n)
 	{
 		std::vector<Target> tmp(source, source + n);
 
-		if (mallocMem) {
-			if (cudaMalloc(dest, sizeof(Target) * n) != cudaSuccess) {
-				processCudaError();
-			}
+		if (cudaMalloc(dest, sizeof(Target) * n) != cudaSuccess) {
+			processCudaError();
 		}
 
 		if (cudaMemcpy(*dest, tmp.data(), sizeof(Target) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
@@ -65,7 +63,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *setupMultidimArray(const MultidimArray<T> &inputArray)
+	T *tranportMultidimArrayToGpu(const MultidimArray<T> &inputArray)
 	{
 		T *outputArrayData;
 		transformData(&outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
@@ -73,7 +71,7 @@ namespace {
 	}
 
 	template<typename T>
-	MultidimArrayCuda<T> *setupVectorOfMultidimArray(std::vector<MultidimArrayCuda<T>> &inputVector)
+	MultidimArrayCuda<T> *tranportVectorOfMultidimArrayToGpu(std::vector<MultidimArrayCuda<T>> &inputVector)
 	{
 		MultidimArrayCuda<T> *outputVectorData;
 		if (cudaMallocAndCopy(&outputVectorData, inputVector.data(), inputVector.size()) != cudaSuccess)
@@ -82,7 +80,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *setupMatrix1D(Matrix1D<T> &inputVector)
+	T *tranportMatrix1DToGpu(Matrix1D<T> &inputVector)
 	{
 		T *outputVector;
 		transformData(&outputVector, inputVector.vdata, inputVector.vdim);
@@ -90,7 +88,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *setupStdVector(const std::vector<T> &inputVector)
+	T *tranportStdVectorToGpu(const std::vector<T> &inputVector)
 	{
 		T *outputVector;
 		transformData(&outputVector, inputVector.data(), inputVector.size());
@@ -98,7 +96,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *setupMatrix2D(const Matrix2D<T> &inputMatrix)
+	T *tranportMatrix2DToGpu(const Matrix2D<T> &inputMatrix)
 	{
 		T *outputMatrixData;
 		transformData(&outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
@@ -118,10 +116,10 @@ CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
 	  lastY(FINISHINGY(parameters.Vrefined())),
 	  lastX(FINISHINGX(parameters.Vrefined())),
 	  loopStep(parameters.loopStep),
-	  cudaVL1(setupMatrix1D(parameters.vL1)),
-	  cudaVL2(setupMatrix1D(parameters.vL2)),
-	  cudaVN(setupMatrix1D(parameters.vN)),
-	  cudaVM(setupMatrix1D(parameters.vM))
+	  cudaVL1(tranportMatrix1DToGpu(parameters.vL1)),
+	  cudaVL2(tranportMatrix1DToGpu(parameters.vL2)),
+	  cudaVN(tranportMatrix1DToGpu(parameters.vN)),
+	  cudaVM(tranportMatrix1DToGpu(parameters.vM))
 {
 	auto Xdim = parameters.Xdim;
 	p_busy_elem.resize(Xdim * Xdim);
@@ -166,11 +164,13 @@ CUDAForwardArtZernike3D<PrecisionType>::setCommonArgumentsKernel(struct DynamicP
 	// Rotation Matrix (has to pass the whole Matrix2D so it is not automatically deallocated)
 	const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
 
-	CommonKernelParameters output = {.idxY0 = idxY0,
-									 .idxZ0 = idxZ0,
-									 .iRmaxF = iRmaxF,
-									 .cudaClnm = setupStdVector(clnm),
-									 .cudaR = setupMatrix2D(R)};
+	CommonKernelParameters output = {
+		.idxY0 = idxY0,
+		.idxZ0 = idxZ0,
+		.iRmaxF = iRmaxF,
+		.cudaClnm = tranportStdVectorToGpu(clnm),
+		.cudaR = tranportMatrix2DToGpu(R),
+	};
 
 	return output;
 
@@ -185,7 +185,7 @@ MultidimArrayCuda<PrecisionType> *CUDAForwardArtZernike3D<PrecisionType>::setVec
 	for (int m = 0; m < image.size(); m++) {
 		output.push_back(initializeMultidimArray(image[m]()));
 	}
-	return setupVectorOfMultidimArray(output);
+	return tranportVectorOfMultidimArrayToGpu(output);
 }
 
 template<typename PrecisionType>
@@ -200,7 +200,7 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
 	auto p_busy_elem_cuda = p_busy_elem.data();
 	auto w_busy_elem_cuda = w_busy_elem.data();
 	auto sigma_size = sigma.size();
-	auto cudaSigma = setupStdVector(sigma);
+	auto cudaSigma = tranportStdVectorToGpu(sigma);
 	const int step = loopStep;
 
 	// Common parameters
@@ -327,7 +327,7 @@ MultidimArrayCuda<T> CUDAForwardArtZernike3D<PrecisionType>::initializeMultidimA
 	struct MultidimArrayCuda<T> cudaArray = {
 		.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
 		.xinit = multidimArray.xinit, .yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
-		.data = setupMultidimArray(multidimArray)
+		.data = tranportMultidimArrayToGpu(multidimArray)
 	};
 
 	return cudaArray;
