@@ -24,7 +24,7 @@ namespace {
 
 	// Copies data from CPU to the GPU
 	template<typename T>
-	void transportData(T **dest, T *source, size_t n)
+	void transportData(T **dest, const T *source, size_t n)
 	{
 		if (cudaMalloc(dest, sizeof(T) * n) != cudaSuccess) {
 			processCudaError();
@@ -45,7 +45,7 @@ namespace {
 	}
 
 	template<typename T>
-	MultidimArrayCuda<T> *tranportVectorOfMultidimArrayToGpu(std::vector<MultidimArrayCuda<T>> &inputVector)
+	MultidimArrayCuda<T> *tranportVectorOfMultidimArrayToGpu(const std::vector<MultidimArrayCuda<T>> &inputVector)
 	{
 		MultidimArrayCuda<T> *outputVectorData;
 		transportData(&outputVectorData, inputVector.data(), inputVector.size());
@@ -53,7 +53,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *tranportMatrix1DToGpu(Matrix1D<T> &inputVector)
+	T *tranportMatrix1DToGpu(const Matrix1D<T> &inputVector)
 	{
 		T *outputVector;
 		transportData(&outputVector, inputVector.vdata, inputVector.vdim);
@@ -64,7 +64,7 @@ namespace {
 	T *tranportStdVectorToGpu(const std::vector<T> &inputVector)
 	{
 		T *outputVector;
-		transportData(&outputVector, const_cast<T *>(inputVector.data()), inputVector.size());
+		transportData(&outputVector, inputVector.data(), inputVector.size());
 		return outputVector;
 	}
 
