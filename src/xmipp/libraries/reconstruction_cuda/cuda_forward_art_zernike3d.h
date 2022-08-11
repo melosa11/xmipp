@@ -7,8 +7,6 @@
 #include <core/multidim_array.h>
 #include <core/xmipp_image.h>
 // Standard includes
-#include <atomic>
-#include <memory>
 #include <vector>
 
 struct float3;
@@ -40,7 +38,6 @@ class CUDAForwardArtZernike3D {
 		std::vector<PrecisionType> &sigma;
 		int RmaxDef;
 		int loopStep;
-		size_t Xdim;
 	};
 
 	struct AngleParameters {
@@ -85,10 +82,6 @@ class CUDAForwardArtZernike3D {
 	const int *cudaVL1, *cudaVN, *cudaVL2, *cudaVM;
 
 	const std::vector<PrecisionType> sigma;
-
-	// Atomic mutex
-	std::vector<std::unique_ptr<std::atomic<PrecisionType *>>> p_busy_elem;
-	std::vector<std::unique_ptr<std::atomic<PrecisionType *>>> w_busy_elem;
 
    private:
 	template<bool usesZernike>

@@ -1,8 +1,8 @@
 // Xmipp includes
 #include "cuda_forward_art_zernike3d.h"
+#include <core/geometry.h>
 #include "cuda_forward_art_zernike3d.cu"
 #include "data/numerical_tools.h"
-#include <core/geometry.h>
 
 #include <cassert>
 #include <stdexcept>
@@ -113,18 +113,7 @@ CUDAForwardArtZernike3D<PrecisionType>::CUDAForwardArtZernike3D(
 	  cudaVL2(tranportMatrix1DToGpu(parameters.vL2)),
 	  cudaVN(tranportMatrix1DToGpu(parameters.vN)),
 	  cudaVM(tranportMatrix1DToGpu(parameters.vM))
-{
-	auto Xdim = parameters.Xdim;
-	p_busy_elem.resize(Xdim * Xdim);
-	for (auto &p : p_busy_elem) {
-		p = std::unique_ptr<std::atomic<PrecisionType *>>(new std::atomic<PrecisionType *>(nullptr));
-	}
-
-	w_busy_elem.resize(Xdim * Xdim);
-	for (auto &p : w_busy_elem) {
-		p = std::unique_ptr<std::atomic<PrecisionType *>>(new std::atomic<PrecisionType *>(nullptr));
-	}
-}
+{}
 
 template<typename PrecisionType>
 CUDAForwardArtZernike3D<PrecisionType>::~CUDAForwardArtZernike3D()
@@ -189,27 +178,25 @@ void CUDAForwardArtZernike3D<PrecisionType>::runForwardKernel(struct DynamicPara
 	auto cudaR = commonParameters.cudaR;
 	auto cudaClnm = commonParameters.cudaClnm;
 
-    forwardKernel<PrecisionType, usesZernike><<<1,1>>>(
-            V,
-            VRecMask,
-            cudaP,
-            cudaW,
-            lastZ,
-            lastY,
-            lastX,
-            step,
-            sigma_size,
-            cudaSigma,
-            iRmaxF,
-            idxY0,
-            idxZ0,
-            cudaVL1,
-            cudaVN,
-            cudaVL2,
-            cudaVM,
-            cudaClnm,
-            cudaR
-    );
+	forwardKernel<PrecisionType, usesZernike><<<1, 1>>>(V,
+														VRecMask,
+														cudaP,
+														cudaW,
+														lastZ,
+														lastY,
+														lastX,
+														step,
+														sigma_size,
+														cudaSigma,
+														iRmaxF,
+														idxY0,
+														idxZ0,
+														cudaVL1,
+														cudaVN,
+														cudaVL2,
+														cudaVM,
+														cudaClnm,
+														cudaR);
 }
 
 template<typename PrecisionType>
