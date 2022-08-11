@@ -330,9 +330,9 @@ namespace device {
 	}
 
 	template<typename PrecisionType>
-	PrecisionType interpolatedElement2DCuda(PrecisionType x,
-											PrecisionType y,
-											MultidimArrayCuda<PrecisionType> &diffImage)
+	__device__ PrecisionType interpolatedElement2DCuda(PrecisionType x,
+													   PrecisionType y,
+													   MultidimArrayCuda<PrecisionType> &diffImage)
 	{
 		int x0 = floor(x);
 		PrecisionType fx = x - x0;
