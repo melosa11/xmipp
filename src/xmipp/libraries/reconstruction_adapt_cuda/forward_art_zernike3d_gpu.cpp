@@ -273,7 +273,7 @@ void ProgForwardArtZernike3DGPU::preProcess()
 	filter2.FilterShape = REALGAUSSIANZ2;
 
 	// Create GPU interface
-	const CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters = {
+	const cuda_forward_art_zernike3D::CUDAForwardArtZernike3D<PrecisionType>::ConstantParameters parameters = {
 		.Vrefined = Vrefined,
 		.VRecMaskF = VRecMaskF,
 		.VRecMaskB = VRecMaskB,
@@ -286,7 +286,8 @@ void ProgForwardArtZernike3DGPU::preProcess()
 		.loopStep = loop_step,
 	};
 	try {
-		cudaForwardArtZernike3D = std::make_unique<CUDAForwardArtZernike3D<PrecisionType>>(parameters);
+		cudaForwardArtZernike3D =
+			std::make_unique<cuda_forward_art_zernike3D::CUDAForwardArtZernike3D<PrecisionType>>(parameters);
 	} catch (const std::runtime_error &e) {
 		std::cerr << e.what() << '\n';
 		std::exit(EXIT_FAILURE);
@@ -676,13 +677,13 @@ void ProgForwardArtZernike3DGPU::artModel()
 template<bool USESZERNIKE, ProgForwardArtZernike3DGPU::Direction DIRECTION>
 void ProgForwardArtZernike3DGPU::zernikeModel()
 {
-	CUDAForwardArtZernike3D<PrecisionType>::AngleParameters angles = {
+	cuda_forward_art_zernike3D::CUDAForwardArtZernike3D<PrecisionType>::AngleParameters angles = {
 		.rot = rot,
 		.tilt = tilt,
 		.psi = psi,
 	};
 
-	CUDAForwardArtZernike3D<PrecisionType>::DynamicParameters parameters = {
+	cuda_forward_art_zernike3D::CUDAForwardArtZernike3D<PrecisionType>::DynamicParameters parameters = {
 		.clnm = clnm,
 		.P = P,
 		.W = W,
