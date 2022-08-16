@@ -691,7 +691,7 @@ void ProgForwardArtZernike3DGPU::zernikeModel()
 	};
 
 	if (DIRECTION == Direction::Forward)
-		cudaForwardArtZernike3D->runForwardKernel<USESZERNIKE>(parameters);
+		cudaProgram->runForwardKernel<USESZERNIKE>(parameters);
 	else if (DIRECTION == Direction::Backward)
-		cudaForwardArtZernike3D->runBackwardKernel<USESZERNIKE>(parameters);
+		cudaProgram->runBackwardKernel<USESZERNIKE>(parameters);
 }
