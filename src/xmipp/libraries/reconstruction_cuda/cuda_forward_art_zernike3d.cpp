@@ -149,9 +149,9 @@ struct Program<PrecisionType>::CommonKernelParameters Program<PrecisionType>::se
 		.cudaMV = initializeMultidimArrayCuda(parameters.Vrefined()),
 		.cudaClnm = tranportStdVectorToGpu(clnm),
 		.cudaR = tranportMatrix2DToGpu(R),
-		.lastZ = FINISHINGZ(parameters.Vrefined()),
-		.lastY = FINISHINGY(parameters.Vrefined()),
 		.lastX = FINISHINGX(parameters.Vrefined()),
+		.lastY = FINISHINGY(parameters.Vrefined()),
+		.lastZ = FINISHINGZ(parameters.Vrefined()),
 	};
 
 	return output;
