@@ -34,7 +34,6 @@ class Program {
    public:
 	/// Constant parameters for the computation
 	struct ConstantParameters {
-		Image<PrecisionType> &Vrefined;
 		MultidimArray<int> &VRecMaskF, &VRecMaskB;
 		Matrix1D<int> &vL1, &vN, &vL2, &vM;
 		std::vector<PrecisionType> &sigma;
@@ -48,6 +47,7 @@ class Program {
 
 	struct DynamicParameters {
 		const std::vector<PrecisionType> &clnm;
+		Image<PrecisionType> &Vrefined;
 		std::vector<Image<PrecisionType>> &P;
 		std::vector<Image<PrecisionType>> &W;
 		const Image<PrecisionType> &Idiff;
@@ -57,6 +57,7 @@ class Program {
 	struct CommonKernelParameters {
 		size_t idxY0, idxZ0;
 		PrecisionType iRmaxF;
+		MultidimArrayCuda<PrecisionType> cudaMV;
 		PrecisionType *cudaClnm, *cudaR;
 	};
 
@@ -71,8 +72,6 @@ class Program {
 	~Program();
 
    private:
-	const MultidimArrayCuda<PrecisionType> V;
-
 	const MultidimArrayCuda<int> VRecMaskF, VRecMaskB;
 
 	const int RmaxDef;
