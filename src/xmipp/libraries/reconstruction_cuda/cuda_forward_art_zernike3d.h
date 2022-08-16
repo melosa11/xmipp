@@ -9,6 +9,8 @@
 // Standard includes
 #include <vector>
 
+namespace cuda_forward_art_zernike3D {
+
 struct float3;
 struct double3;
 
@@ -90,4 +92,5 @@ class CUDAForwardArtZernike3D {
 	Matrix2D<PrecisionType> createRotationMatrix(struct AngleParameters angles) const;
 };
 
+}  // namespace cuda_forward_art_zernike3D
 #endif	// CUDA_FORWARD_ART_ZERNIKE3D_H
