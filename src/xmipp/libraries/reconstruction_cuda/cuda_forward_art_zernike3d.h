@@ -59,6 +59,7 @@ class Program {
 		PrecisionType iRmaxF;
 		MultidimArrayCuda<PrecisionType> cudaMV;
 		PrecisionType *cudaClnm, *cudaR;
+		const int lastX, lastY, lastZ;
 	};
 
    public:
@@ -77,8 +78,6 @@ class Program {
 	const int RmaxDef;
 
 	const int loopStep;
-
-	const int lastX, lastY, lastZ;
 
 	const int *cudaVL1, *cudaVN, *cudaVL2, *cudaVM;
 
