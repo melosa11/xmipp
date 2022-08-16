@@ -99,6 +99,8 @@ namespace {
 	template<typename T>
 	void updateMultidimArrayWithGPUData(MultidimArray<T> &multidimArray, const MultidimArrayCuda<T> &multidimArrayCuda)
 	{
+		assert(multidimArray.xdim * multidimArray.ydim * multidimArray.zdim
+			   == multidimArrayCuda.xdim * multidimArrayCuda.ydim * multidimArrayCuda.zdim);
 		transportDataFromGPU(
 			multidimArray.data, multidimArrayCuda.data, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim);
 	}
