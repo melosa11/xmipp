@@ -144,8 +144,7 @@ class ProgForwardArtZernike3DGPU : public XmippMetadataProgram {
 	FourierFilter filter, filter2;
 
 	// GPU interface
-	std::unique_ptr<cuda_forward_art_zernike3D::CUDAForwardArtZernike3D<PrecisionType>> cudaForwardArtZernike3D =
-		nullptr;
+	std::unique_ptr<cuda_forward_art_zernike3D::Program<PrecisionType>> cudaProgram = nullptr;
 
    public:
 	enum class Mode { Proj, Vol };

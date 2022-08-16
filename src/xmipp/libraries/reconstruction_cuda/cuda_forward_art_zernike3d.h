@@ -26,7 +26,7 @@ struct MultidimArrayCuda {
 };
 
 template<typename PrecisionType = float>
-class CUDAForwardArtZernike3D {
+class Program {
 	static_assert(std::is_floating_point<PrecisionType>::value, "Floating point type is required.");
 
 	using PrecisionType3 = std::conditional<std::is_same<PrecisionType, float>::value, float3, double3>;
@@ -67,8 +67,8 @@ class CUDAForwardArtZernike3D {
 	template<bool usesZernike>
 	void runBackwardKernel(struct DynamicParameters &parameters);
 
-	explicit CUDAForwardArtZernike3D(const ConstantParameters parameters);
-	~CUDAForwardArtZernike3D();
+	explicit Program(const ConstantParameters parameters);
+	~Program();
 
    private:
 	const MultidimArrayCuda<PrecisionType> V;
