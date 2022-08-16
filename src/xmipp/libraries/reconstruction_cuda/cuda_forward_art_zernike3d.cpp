@@ -11,89 +11,89 @@
 // Cuda memory helper function
 namespace {
 
-	void processCudaError()
-	{
-		cudaError_t err = cudaGetLastError();
-		if (err != cudaSuccess) {
-			throw std::runtime_error(cudaGetErrorString(err));
-		}
+void processCudaError()
+{
+	cudaError_t err = cudaGetLastError();
+	if (err != cudaSuccess) {
+		throw std::runtime_error(cudaGetErrorString(err));
+	}
+}
+
+// Copies data from CPU to the GPU
+template<typename T>
+void transportData(T **dest, const T *source, size_t n)
+{
+	if (cudaMalloc(dest, sizeof(T) * n) != cudaSuccess) {
+		processCudaError();
 	}
 
-	// Copies data from CPU to the GPU
-	template<typename T>
-	void transportData(T **dest, const T *source, size_t n)
-	{
-		if (cudaMalloc(dest, sizeof(T) * n) != cudaSuccess) {
-			processCudaError();
-		}
-
-		if (cudaMemcpy(*dest, source, sizeof(T) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
-			cudaFree(*dest);
-			processCudaError();
-		}
+	if (cudaMemcpy(*dest, source, sizeof(T) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
+		cudaFree(*dest);
+		processCudaError();
 	}
+}
 
-	template<typename T>
-	T *tranportMultidimArrayToGpu(const MultidimArray<T> &inputArray)
-	{
-		T *outputArrayData;
-		transportData(&outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
-		return outputArrayData;
+template<typename T>
+T *tranportMultidimArrayToGpu(const MultidimArray<T> &inputArray)
+{
+	T *outputArrayData;
+	transportData(&outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim);
+	return outputArrayData;
+}
+
+template<typename T>
+MultidimArrayCuda<T> *tranportVectorOfMultidimArrayToGpu(const std::vector<MultidimArrayCuda<T>> &inputVector)
+{
+	MultidimArrayCuda<T> *outputVectorData;
+	transportData(&outputVectorData, inputVector.data(), inputVector.size());
+	return outputVectorData;
+}
+
+template<typename T>
+T *tranportMatrix1DToGpu(const Matrix1D<T> &inputVector)
+{
+	T *outputVector;
+	transportData(&outputVector, inputVector.vdata, inputVector.vdim);
+	return outputVector;
+}
+
+template<typename T>
+T *tranportStdVectorToGpu(const std::vector<T> &inputVector)
+{
+	T *outputVector;
+	transportData(&outputVector, inputVector.data(), inputVector.size());
+	return outputVector;
+}
+
+template<typename T>
+T *tranportMatrix2DToGpu(const Matrix2D<T> &inputMatrix)
+{
+	T *outputMatrixData;
+	transportData(&outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
+	return outputMatrixData;
+}
+
+template<typename T>
+MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray)
+{
+	struct MultidimArrayCuda<T> cudaArray = {
+		.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
+		.xinit = multidimArray.xinit, .yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
+		.data = tranportMultidimArrayToGpu(multidimArray)
+	};
+
+	return cudaArray;
+}
+
+template<typename T>
+MultidimArrayCuda<T> *convertToMultidimArrayCuda(std::vector<Image<T>> &image)
+{
+	std::vector<MultidimArrayCuda<T>> output;
+	for (int m = 0; m < image.size(); m++) {
+		output.push_back(initializeMultidimArrayCuda(image[m]()));
 	}
-
-	template<typename T>
-	MultidimArrayCuda<T> *tranportVectorOfMultidimArrayToGpu(const std::vector<MultidimArrayCuda<T>> &inputVector)
-	{
-		MultidimArrayCuda<T> *outputVectorData;
-		transportData(&outputVectorData, inputVector.data(), inputVector.size());
-		return outputVectorData;
-	}
-
-	template<typename T>
-	T *tranportMatrix1DToGpu(const Matrix1D<T> &inputVector)
-	{
-		T *outputVector;
-		transportData(&outputVector, inputVector.vdata, inputVector.vdim);
-		return outputVector;
-	}
-
-	template<typename T>
-	T *tranportStdVectorToGpu(const std::vector<T> &inputVector)
-	{
-		T *outputVector;
-		transportData(&outputVector, inputVector.data(), inputVector.size());
-		return outputVector;
-	}
-
-	template<typename T>
-	T *tranportMatrix2DToGpu(const Matrix2D<T> &inputMatrix)
-	{
-		T *outputMatrixData;
-		transportData(&outputMatrixData, inputMatrix.mdata, inputMatrix.mdim);
-		return outputMatrixData;
-	}
-
-	template<typename T>
-	MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray)
-	{
-		struct MultidimArrayCuda<T> cudaArray = {
-			.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
-			.xinit = multidimArray.xinit, .yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
-			.data = tranportMultidimArrayToGpu(multidimArray)
-		};
-
-		return cudaArray;
-	}
-
-	template<typename T>
-	MultidimArrayCuda<T> *convertToMultidimArrayCuda(std::vector<Image<T>> &image)
-	{
-		std::vector<MultidimArrayCuda<T>> output;
-		for (int m = 0; m < image.size(); m++) {
-			output.push_back(initializeMultidimArrayCuda(image[m]()));
-		}
-		return tranportVectorOfMultidimArrayToGpu(output);
-	}
+	return tranportVectorOfMultidimArrayToGpu(output);
+}
 
 }  // namespace
 
