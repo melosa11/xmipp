@@ -210,6 +210,11 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 														cudaVM,
 														commonParameters.cudaClnm,
 														commonParameters.cudaR);
+	cudaFree(cudaP.data);
+	cudaFree(cudaP);
+	cudaFree(cudaW.data);
+	cudaFree(cudaW);
+	cudaDree(cudaSigma);
 }
 
 template<typename PrecisionType>
@@ -240,6 +245,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 														 cudaVM,
 														 commonParameters.cudaClnm,
 														 commonParameters.cudaR);
+	cudaFree(cudaMId.data);
 }
 
 template<typename PrecisionType>
