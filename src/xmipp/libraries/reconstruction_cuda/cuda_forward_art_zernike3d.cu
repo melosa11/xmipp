@@ -287,8 +287,8 @@ namespace device {
 		int i = static_cast<int>(CUDA_ROUND(pos_y));
 		int j = static_cast<int>(CUDA_ROUND(pos_x));
 		if (!IS_OUTSIDE2D(mP, i, j)) {
-			A2D_ELEM(mP, i, j) += weight;
-			A2D_ELEM(mW, i, j) += 1.0;
+			atomicAdd(&A2D_ELEM(mP, i, j), weight);
+			atomicAdd(&A2D_ELEM(mW, i, j), 1.0);
 		}
 	}
 
