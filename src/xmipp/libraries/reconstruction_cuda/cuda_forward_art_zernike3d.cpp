@@ -153,10 +153,7 @@ namespace {
 		auto clnm = parameters.clnm;
 		auto angles = parameters.angles;
 
-		// We can't set idxY0 to 0 because the compiler
-		// would give irrelevant warnings.
-		assert(usesZernike || clnm.size() == 0);
-		const size_t idxY0 = clnm.size() / 3;
+		const size_t idxY0 = usesZernike ? (clnm.size() / 3) : 0;
 		const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
 		const T RmaxF = usesZernike ? RmaxDef : 0;
 		const T iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
