@@ -82,9 +82,6 @@ class Program {
 	const int *cudaVL1, *cudaVN, *cudaVL2, *cudaVM;
 
 	const std::vector<PrecisionType> sigma;
-
-   private:
-	Matrix2D<PrecisionType> createRotationMatrix(struct AngleParameters angles) const;
 };
 
 }  // namespace cuda_forward_art_zernike3D

@@ -133,6 +133,19 @@ namespace {
 	}
 
 	template<typename T>
+	Matrix2D<T> createRotationMatrix(struct Program<T>::AngleParameters angles) const
+	{
+		auto rot = angles.rot;
+		auto tilt = angles.tilt;
+		auto psi = angles.psi;
+		constexpr size_t matrixSize = 3;
+		auto tmp = Matrix2D<T>();
+		tmp.initIdentity(matrixSize);
+		Euler_angles2matrix(rot, tilt, psi, tmp, false);
+		return tmp;
+	}
+
+	template<typename T>
 	struct Program<T>::CommonKernelParameters getCommonArgumentsKernel(struct Program<T>::DynamicParameters &parameters,
 																	   const bool usesZernike,
 																	   const int RmaxDef) {
@@ -257,19 +270,6 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 														 commonParameters.cudaR);
 	cudaFree(cudaMId.data);
 	freeCommonArgumentsKernel<PrecisionType>(commonParameters);
-}
-
-template<typename PrecisionType>
-Matrix2D<PrecisionType> Program<PrecisionType>::createRotationMatrix(struct AngleParameters angles) const
-{
-	auto rot = angles.rot;
-	auto tilt = angles.tilt;
-	auto psi = angles.psi;
-	constexpr size_t matrixSize = 3;
-	auto tmp = Matrix2D<PrecisionType>();
-	tmp.initIdentity(matrixSize);
-	Euler_angles2matrix(rot, tilt, psi, tmp, false);
-	return tmp;
 }
 
 // explicit template instantiation
