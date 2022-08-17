@@ -230,7 +230,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	freeVectorOfMultidimArray(cudaP, parameters.P.size());
 	freeVectorOfMultidimArray(cudaW, parameters.W.size());
 	cudaFree(cudaSigma);
-	freeCommonArgumentsKernel(commonParameters);
+	freeCommonArgumentsKernel<PrecisionType>(commonParameters);
 }
 
 template<typename PrecisionType>
@@ -262,7 +262,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 														 commonParameters.cudaClnm,
 														 commonParameters.cudaR);
 	cudaFree(cudaMId.data);
-	freeCommonArgumentsKernel(commonParameters.cudaMV, commonParameters.cudaClnm, commonParameters.cudaR);
+	freeCommonArgumentsKernel<PrecisionType>(commonParameters);
 }
 
 template<typename PrecisionType>
