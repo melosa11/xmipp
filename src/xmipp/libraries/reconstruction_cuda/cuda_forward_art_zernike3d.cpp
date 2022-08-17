@@ -123,6 +123,15 @@ namespace {
 		cudaFree(cudaR);
 	}
 
+	template<typename T>
+	void freeVectorOfMultidimArray(MultidimArrayCuda<T> *vector, size_t length)
+	{
+		for (int m = 0; m < length; m++) {
+			cudaFree(vector[m].data);
+		}
+		cudaFree(vector);
+	}
+
 }  // namespace
 
 template<typename PrecisionType>
@@ -218,10 +227,8 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 														cudaVM,
 														commonParameters.cudaClnm,
 														commonParameters.cudaR);
-	cudaFree(cudaP->data);
-	cudaFree(cudaP);
-	cudaFree(cudaW->data);
-	cudaFree(cudaW);
+	freeVectorOfMultidimArray(cudaP, parameters.P.size());
+	freeVectorOfMultidimArray(cudaW, parameters.W.size());
 	cudaFree(cudaSigma);
 	freeCommonArgumentsKernel(commonParameters.cudaMV, commonParameters.cudaClnm, commonParameters.cudaR);
 }
