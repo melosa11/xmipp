@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <tuple>
 #include <utility>
 #include "data/numerical_tools.h"
 
@@ -122,7 +123,7 @@ namespace {
 		for (int m = 0; m < image.size(); m++) {
 			output.push_back(initializeMultidimArrayCuda(image[m]()));
 		}
-		return tranportVectorOfMultidimArrayToGpu(output);
+		return std::make_pair(tranportVectorOfMultidimArrayToGpu(output), output);
 	}
 
 	template<typename T>
