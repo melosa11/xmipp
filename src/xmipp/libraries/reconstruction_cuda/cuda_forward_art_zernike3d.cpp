@@ -151,16 +151,11 @@ namespace {
 		// Rotation Matrix (has to pass the whole Matrix2D so it is not automatically deallocated)
 		const Matrix2D<T> R = createRotationMatrix(angles);
 
-		Program<T>::CommonKernelParameters output = {
-			.idxY0 = idxY0,
-			.idxZ0 = idxZ0,
-			.iRmaxF = iRmaxF,
-			.cudaMV = initializeMultidimArrayCuda(parameters.Vrefined()),
-			.cudaClnm = tranportStdVectorToGpu(clnm),
-			.cudaR = tranportMatrix2DToGpu(R),
-			.lastX = FINISHINGX(parameters.Vrefined()),
-			.lastY = FINISHINGY(parameters.Vrefined()),
-			.lastZ = FINISHINGZ(parameters.Vrefined()),
+		struct Program<T>::CommonKernelParameters output = {
+			.idxY0 = idxY0, .idxZ0 = idxZ0, .iRmaxF = iRmaxF,
+			.cudaMV = initializeMultidimArrayCuda(parameters.Vrefined()), .cudaClnm = tranportStdVectorToGpu(clnm),
+			.cudaR = tranportMatrix2DToGpu(R), .lastX = FINISHINGX(parameters.Vrefined()),
+			.lastY = FINISHINGY(parameters.Vrefined()), .lastZ = FINISHINGZ(parameters.Vrefined()),
 		};
 
 		return output;
@@ -206,7 +201,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	const int step = loopStep;
 
 	// Common parameters
-	auto commonParameters = getCommonArgumentsKernel(parameters, usesZernike, RmaxDef);
+	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
 
 	forwardKernel<PrecisionType, usesZernike><<<1, 1>>>(commonParameters.cudaMV,
 														VRecMaskF,
@@ -243,7 +238,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	const int step = 1;
 
 	// Common parameters
-	auto commonParameters = getCommonArgumentsKernel(parameters, usesZernike, RmaxDef);
+	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
 
 	backwardKernel<PrecisionType, usesZernike><<<1, 1>>>(commonParameters.cudaMV,
 														 cudaMId,
