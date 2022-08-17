@@ -136,7 +136,7 @@ namespace {
 	template<typename T>
 	struct Program<T>::CommonKernelParameters getCommonArgumentsKernel(struct DynamicParameters &parameters,
 																	   const bool usesZernike,
-																	   const int RmaxDef) {
+																	   const T RmaxDef) {
 		auto clnm = parameters.clnm;
 		auto angles = parameters.angles;
 
@@ -201,7 +201,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	const int step = loopStep;
 
 	// Common parameters
-	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
+	auto commonParameters = getCommonArgumentsKernel(parameters, usesZernike, PrecisionType(RmaxDef));
 
 	forwardKernel<PrecisionType, usesZernike><<<1, 1>>>(commonParameters.cudaMV,
 														VRecMaskF,
@@ -238,7 +238,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	const int step = 1;
 
 	// Common parameters
-	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
+	auto commonParameters = getCommonArgumentsKernel(parameters, usesZernike, PrecisionType(RmaxDef));
 
 	backwardKernel<PrecisionType, usesZernike><<<1, 1>>>(commonParameters.cudaMV,
 														 cudaMId,
