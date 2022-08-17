@@ -222,7 +222,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	cudaFree(cudaP);
 	cudaFree(cudaW.data);
 	cudaFree(cudaW);
-	cudaDree(cudaSigma);
+	cudaFree(cudaSigma);
 	freeCommonArgumentsKernel(commonParameters.cudaMV, commonParameters.cudaClnm, commonParameters.cudaR);
 }
 
