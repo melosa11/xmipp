@@ -115,7 +115,8 @@ namespace {
 		return tranportVectorOfMultidimArrayToGpu(output);
 	}
 
-	void freeCommonArgumentsKernel(struct Program<PrecisionType>::CommonKernelParameters commonParameters)
+	template<typename T>
+	void freeCommonArgumentsKernel(struct Program<T>::CommonKernelParameters commonParameters)
 	{
 		cudaFree(commonParameters.cudaMV.data);
 		cudaFree(commonParameters.cudaClnm);
