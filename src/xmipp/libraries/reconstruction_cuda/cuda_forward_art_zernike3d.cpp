@@ -158,7 +158,6 @@ namespace {
 		const T RmaxF = usesZernike ? RmaxDef : 0;
 		const T iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
 
-		// Rotation Matrix (has to pass the whole Matrix2D so it is not automatically deallocated)
 		const Matrix2D<T> R = createRotationMatrix<T>(angles);
 
 		struct Program<T>::CommonKernelParameters output = {
