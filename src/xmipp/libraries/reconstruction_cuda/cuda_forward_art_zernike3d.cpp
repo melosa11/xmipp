@@ -150,7 +150,7 @@ namespace {
 		// Rotation Matrix (has to pass the whole Matrix2D so it is not automatically deallocated)
 		const Matrix2D<T> R = createRotationMatrix(angles);
 
-		CommonKernelParameters output = {
+		Program<T>::CommonKernelParameters output = {
 			.idxY0 = idxY0,
 			.idxZ0 = idxZ0,
 			.iRmaxF = iRmaxF,
