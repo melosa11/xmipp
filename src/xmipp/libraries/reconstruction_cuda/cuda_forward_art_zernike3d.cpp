@@ -116,6 +116,7 @@ namespace {
 	}
 
 	template<typename T>
+<<<<<<< HEAD
 	void freeCommonArgumentsKernel(struct Program<T>::CommonKernelParameters &commonParameters)
 	{
 		cudaFree(commonParameters.cudaMV.data);
@@ -133,7 +134,7 @@ namespace {
 	}
 
 	template<typename T>
-	Matrix2D<T> createRotationMatrix(struct Program<T>::AngleParameters angles) const
+	Matrix2D<T> createRotationMatrix(struct Program<T>::AngleParameters angles)
 	{
 		auto rot = angles.rot;
 		auto tilt = angles.tilt;
