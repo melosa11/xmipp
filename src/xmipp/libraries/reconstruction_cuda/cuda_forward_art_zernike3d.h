@@ -84,9 +84,6 @@ class Program {
 	const std::vector<PrecisionType> sigma;
 
    private:
-	template<bool usesZernike>
-	struct CommonKernelParameters setCommonArgumentsKernel(struct DynamicParameters &parameters);
-
 	Matrix2D<PrecisionType> createRotationMatrix(struct AngleParameters angles) const;
 };
 

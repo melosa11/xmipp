@@ -132,6 +132,39 @@ namespace {
 		cudaFree(vector);
 	}
 
+	template<typename T>
+	struct Program<T>::CommonKernelParameters setCommonArgumentsKernel(struct DynamicParameters &parameters,
+																	   const bool usesZernike,
+																	   const int RmaxDef) {
+		auto clnm = parameters.clnm;
+		auto angles = parameters.angles;
+
+		// We can't set idxY0 to 0 because the compiler
+		// would give irrelevant warnings.
+		assert(usesZernike || clnm.size() == 0);
+		const size_t idxY0 = clnm.size() / 3;
+		const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
+		const T RmaxF = usesZernike ? RmaxDef : 0;
+		const T iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
+
+		// Rotation Matrix (has to pass the whole Matrix2D so it is not automatically deallocated)
+		const Matrix2D<T> R = createRotationMatrix(angles);
+
+		CommonKernelParameters output = {
+			.idxY0 = idxY0,
+			.idxZ0 = idxZ0,
+			.iRmaxF = iRmaxF,
+			.cudaMV = initializeMultidimArrayCuda(parameters.Vrefined()),
+			.cudaClnm = tranportStdVectorToGpu(clnm),
+			.cudaR = tranportMatrix2DToGpu(R),
+			.lastX = FINISHINGX(parameters.Vrefined()),
+			.lastY = FINISHINGY(parameters.Vrefined()),
+			.lastZ = FINISHINGZ(parameters.Vrefined()),
+		};
+
+		return output;
+	}
+
 }  // namespace
 
 template<typename PrecisionType>
@@ -161,40 +194,6 @@ Program<PrecisionType>::~Program()
 
 template<typename PrecisionType>
 template<bool usesZernike>
-struct Program<PrecisionType>::CommonKernelParameters Program<PrecisionType>::setCommonArgumentsKernel(
-	struct DynamicParameters &parameters) {
-	auto clnm = parameters.clnm;
-	auto angles = parameters.angles;
-
-	// We can't set idxY0 to 0 because the compiler
-	// would give irrelevant warnings.
-	assert(usesZernike || clnm.size() == 0);
-	const size_t idxY0 = clnm.size() / 3;
-	const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
-	const PrecisionType RmaxF = usesZernike ? RmaxDef : 0;
-	const PrecisionType iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
-
-	// Rotation Matrix (has to pass the whole Matrix2D so it is not automatically deallocated)
-	const Matrix2D<PrecisionType> R = createRotationMatrix(angles);
-
-	CommonKernelParameters output = {
-		.idxY0 = idxY0,
-		.idxZ0 = idxZ0,
-		.iRmaxF = iRmaxF,
-		.cudaMV = initializeMultidimArrayCuda(parameters.Vrefined()),
-		.cudaClnm = tranportStdVectorToGpu(clnm),
-		.cudaR = tranportMatrix2DToGpu(R),
-		.lastX = FINISHINGX(parameters.Vrefined()),
-		.lastY = FINISHINGY(parameters.Vrefined()),
-		.lastZ = FINISHINGZ(parameters.Vrefined()),
-	};
-
-	return output;
-
-}
-
-template<typename PrecisionType>
-template<bool usesZernike>
 void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &parameters)
 
 {
@@ -206,7 +205,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	const int step = loopStep;
 
 	// Common parameters
-	auto commonParameters = setCommonArgumentsKernel<usesZernike>(parameters);
+	auto commonParameters = setCommonArgumentsKernel(parameters, usesZernike, RmaxDef);
 
 	forwardKernel<PrecisionType, usesZernike><<<1, 1>>>(commonParameters.cudaMV,
 														VRecMaskF,
@@ -243,7 +242,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	const int step = 1;
 
 	// Common parameters
-	auto commonParameters = setCommonArgumentsKernel<usesZernike>(parameters);
+	auto commonParameters = setCommonArgumentsKernel(parameters, usesZernike, RmaxDef);
 
 	backwardKernel<PrecisionType, usesZernike><<<1, 1>>>(commonParameters.cudaMV,
 														 cudaMId,
