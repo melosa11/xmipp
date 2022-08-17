@@ -218,9 +218,9 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 														cudaVM,
 														commonParameters.cudaClnm,
 														commonParameters.cudaR);
-	cudaFree(cudaP.data);
+	cudaFree(cudaP->data);
 	cudaFree(cudaP);
-	cudaFree(cudaW.data);
+	cudaFree(cudaW->data);
 	cudaFree(cudaW);
 	cudaFree(cudaSigma);
 	freeCommonArgumentsKernel(commonParameters.cudaMV, commonParameters.cudaClnm, commonParameters.cudaR);
