@@ -388,7 +388,10 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 							  const PrecisionType *cudaClnm,
 							  const PrecisionType *cudaR)
 {
-	for (int k = STARTINGZ(cudaMV); k <= lastZ; k += step) {
+	int k = STARTINGZ(cudaMV) + threadIdx.x;
+	if (threadIdx.x % step != 0) {
+		return;
+	}
 		for (int i = STARTINGY(cudaMV); i <= lastY; i += step) {
 			for (int j = STARTINGX(cudaMV); j <= lastX; j += step) {
 				PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
@@ -433,7 +436,7 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 				}
 			}
 		}
-	}
+	
 }
 
 /*
@@ -457,7 +460,10 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const PrecisionType *cudaClnm,
 							   const PrecisionType *cudaR)
 {
-	for (int k = STARTINGZ(cudaMV); k <= lastZ; k += step) {
+	int k = STARTINGZ(cudaMV) + threadIdx.x;
+	if (threadIdx.x % step != 0) {
+		return;
+	}
 		for (int i = STARTINGY(cudaMV); i <= lastY; i += step) {
 			for (int j = STARTINGX(cudaMV); j <= lastX; j += step) {
 				PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
@@ -495,7 +501,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 				}
 			}
 		}
-	}
+	
 }
 }  // namespace cuda_forward_art_zernike3D
 #endif	//CUDA_FORWARD_ART_ZERNIKE3D_CU

@@ -7,6 +7,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <tuple>
+#include <iostream>
 #include <utility>
 #include "data/numerical_tools.h"
 
@@ -224,7 +225,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
 
-	forwardKernel<PrecisionType, usesZernike><<<1, 1>>>(commonParameters.cudaMV,
+	forwardKernel<PrecisionType, usesZernike><<<1, 128>>>(commonParameters.cudaMV,
 														VRecMaskF,
 														cudaP,
 														cudaW,
@@ -269,7 +270,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
 
-	backwardKernel<PrecisionType, usesZernike><<<1, 1>>>(commonParameters.cudaMV,
+	backwardKernel<PrecisionType, usesZernike><<<1, 128>>>(commonParameters.cudaMV,
 														 cudaMId,
 														 VRecMaskB,
 														 commonParameters.lastZ,
