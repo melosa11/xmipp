@@ -225,7 +225,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
 
-	forwardKernel<PrecisionType, usesZernike><<<dim3(1, 16, 128), dim3(128, 8, 1)>>>(commonParameters.cudaMV,
+	forwardKernel<PrecisionType, usesZernike><<<dim3(1, 32, 128), dim3(128, 4, 1)>>>(commonParameters.cudaMV,
 																					 VRecMaskF,
 																					 cudaP,
 																					 cudaW,
