@@ -466,9 +466,6 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	int k = STARTINGZ(cudaMV) + cubeZ;
 	int i = STARTINGY(cudaMV) + cubeY;
 	int j = STARTINGX(cudaMV) + cubeX;
-	if (cubeX % step != 0 || cubeY % step != 0 || cubeZ % step != 0) {
-		return;
-	}
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
 	if (A3D_ELEM(VRecMaskB, k, i, j) != 0) {
 		if (usesZernike) {
