@@ -388,10 +388,17 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 							  const PrecisionType *cudaClnm,
 							  const PrecisionType *cudaR)
 {
-	int k = STARTINGZ(cudaMV) + threadIdx.x;
+	printf("grid: %d %d %d\nblock: %d %d %d\n\n",
+		   blockIdx.x,
+		   blockIdx.y,
+		   blockIdx.z,
+		   threadIdx.x,
+		   threadIdx.y,
+		   threadIdx.z);
+	int k = STARTINGZ(cudaMV) + threadIdx.z;
 	int i = STARTINGY(cudaMV) + blockIdx.y;
-	int j = STARTINGX(cudaMV) + blockIdx.z;
-	if (threadIdx.x % step != 0 || blockIdx.y % step != 0 || blockIdx.z % step != 0) {
+	int j = STARTINGX(cudaMV) + blockIdx.x;
+	if (threadIdx.z % step != 0 || blockIdx.y % step != 0 || blockIdx.x % step != 0) {
 		return;
 	}
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
@@ -457,10 +464,17 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const PrecisionType *cudaClnm,
 							   const PrecisionType *cudaR)
 {
-	int k = STARTINGZ(cudaMV) + threadIdx.x;
+	printf("grid: %d %d %d\nblock: %d %d %d\n\n",
+		   blockIdx.x,
+		   blockIdx.y,
+		   blockIdx.z,
+		   threadIdx.x,
+		   threadIdx.y,
+		   threadIdx.z);
+	int k = STARTINGZ(cudaMV) + threadIdx.z;
 	int i = STARTINGY(cudaMV) + blockIdx.y;
-	int j = STARTINGX(cudaMV) + blockIdx.z;
-	if (threadIdx.x % step != 0 || blockIdx.y % step != 0 || blockIdx.z % step != 0) {
+	int j = STARTINGX(cudaMV) + blockIdx.x;
+	if (threadIdx.z % step != 0 || blockIdx.y % step != 0 || blockIdx.x % step != 0) {
 		return;
 	}
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
