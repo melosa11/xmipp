@@ -129,7 +129,6 @@ namespace {
 	template<typename T>
 	void freeCommonArgumentsKernel(struct Program<T>::CommonKernelParameters &commonParameters)
 	{
-		cudaFree(commonParameters.cudaMV.data);
 		cudaFree(commonParameters.cudaClnm);
 		cudaFree(commonParameters.cudaR);
 	}
@@ -203,6 +202,7 @@ Program<PrecisionType>::~Program()
 {
 	cudaFree(VRecMaskF.data);
 	cudaFree(VRecMaskB.data);
+	cudaFree(cudaMV.data);
 
 	cudaFree(const_cast<int *>(cudaVL1));
 	cudaFree(const_cast<int *>(cudaVL2));
@@ -291,7 +291,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 
 	cudaDeviceSynchronize();
 
-	updateMultidimArrayWithGPUData(parameters.Vrefined(), commonParameters.cudaMV);
+	updateMultidimArrayWithGPUData(Vrefined(), cudaMV);
 
 	cudaFree(cudaMId.data);
 	freeCommonArgumentsKernel<PrecisionType>(commonParameters);
