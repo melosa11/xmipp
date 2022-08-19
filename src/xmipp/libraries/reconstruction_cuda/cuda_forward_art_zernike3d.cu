@@ -395,7 +395,7 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 	int i = STARTINGY(cudaMV) + cubeY;
 	int j = STARTINGX(cudaMV) + cubeX;
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-	if (A3D_ELEM(cudaVRecMaskF, k, i, j) != 0 || cubeX % step != 0 || cubeY % step != 0 || cubeZ % step != 0) {
+	if (cubeX % step == 0 && cubeY % step == 0 && cubeZ % step == 0 && A3D_ELEM(cudaVRecMaskF, k, i, j) != 0) {
 		int img_idx = 0;
 		if (sigma_size > 1) {
 			PrecisionType sigma_mask = A3D_ELEM(cudaVRecMaskF, k, i, j);
