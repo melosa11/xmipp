@@ -387,7 +387,7 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 							  const int *cudaVM,
 							  const PrecisionType *cudaClnm,
 							  const PrecisionType *cudaR,
-							  const unsigned clnm_size)
+							  const size_t clnm_size)
 {
 	int cubeX = threadIdx.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
@@ -477,7 +477,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const int *cudaVM,
 							   const PrecisionType *cudaClnm,
 							   const PrecisionType *cudaR,
-							   const unsigned clnm_size)
+							   const size_t clnm_size)
 {
 	int cubeX = threadIdx.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;

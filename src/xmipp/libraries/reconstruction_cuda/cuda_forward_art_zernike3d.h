@@ -58,7 +58,7 @@ class Program {
 		size_t idxY0, idxZ0;
 		PrecisionType iRmaxF;
 		PrecisionType *cudaClnm, *cudaR;
-		unsigned clnm_size;
+		size_t clnm_size;
 	};
 
    public:
