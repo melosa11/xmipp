@@ -170,8 +170,8 @@ namespace {
 		const Matrix2D<T> R = createRotationMatrix<T>(angles);
 
 		struct Program<T>::CommonKernelParameters output = {
-			.idxY0 = idxY0, .idxZ0 = idxZ0, .iRmaxF = iRmaxF, .cudaClnm = tranportStdVectorToGpu(clnm),
-			.cudaR = tranportMatrix2DToGpu(R),
+			.idxY0 = idxY0, .idxZ0 = idxZ0, .iRmaxF = iRmaxF, .cudaClnm = transportStdVectorToGpu(clnm),
+			.cudaR = transportMatrix2DToGpu(R),
 		};
 
 		return output;
