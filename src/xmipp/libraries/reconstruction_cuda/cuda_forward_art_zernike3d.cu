@@ -391,9 +391,9 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 	int cubeX = threadIdx.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
 	int cubeZ = blockIdx.z;
-	int k = STARTINGZ(cudaMV) + cubeX;
+	int k = STARTINGZ(cudaMV) + cubeZ;
 	int i = STARTINGY(cudaMV) + cubeY;
-	int j = STARTINGX(cudaMV) + cubeZ;
+	int j = STARTINGX(cudaMV) + cubeX;
 	if (cubeX % step != 0 || cubeY % step != 0 || cubeZ % step != 0) {
 		return;
 	}
@@ -463,9 +463,9 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	int cubeX = threadIdx.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
 	int cubeZ = blockIdx.z;
-	int k = STARTINGZ(cudaMV) + cubeX;
+	int k = STARTINGZ(cudaMV) + cubeZ;
 	int i = STARTINGY(cudaMV) + cubeY;
-	int j = STARTINGX(cudaMV) + cubeZ;
+	int j = STARTINGX(cudaMV) + cubeX;
 	if (cubeX % step != 0 || cubeY % step != 0 || cubeZ % step != 0) {
 		return;
 	}
