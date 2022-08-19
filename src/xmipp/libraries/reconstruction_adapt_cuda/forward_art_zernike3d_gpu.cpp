@@ -684,7 +684,6 @@ void ProgForwardArtZernike3DGPU::zernikeModel()
 
 	cuda_forward_art_zernike3D::Program<PrecisionType>::DynamicParameters parameters = {
 		.clnm = clnm,
-		.Vrefined = Vrefined,
 		.P = P,
 		.W = W,
 		.Idiff = Idiff,
