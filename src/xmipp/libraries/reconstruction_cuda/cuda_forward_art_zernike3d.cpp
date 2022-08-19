@@ -5,6 +5,7 @@
 #include "data/numerical_tools.h"
 
 #include <cassert>
+#include <iostream>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -162,6 +163,7 @@ namespace {
 		auto clnm = parameters.clnm;
 		auto angles = parameters.angles;
 
+		printf("clmn size %d\n", clnm.size());
 		const size_t idxY0 = usesZernike ? (clnm.size() / 3) : 0;
 		const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
 		const T RmaxF = usesZernike ? RmaxDef : 0;
