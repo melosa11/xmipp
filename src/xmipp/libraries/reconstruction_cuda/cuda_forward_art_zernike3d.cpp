@@ -270,7 +270,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
 
-	backwardKernel<PrecisionType, usesZernike><<<dim3(1, 16, 128), dim3(128, 8, 1)>>>(commonParameters.cudaMV,
+	backwardKernel<PrecisionType, usesZernike><<<dim3(1, 32, 128), dim3(128, 4, 1)>>>(commonParameters.cudaMV,
 																					  cudaMId,
 																					  VRecMaskB,
 																					  commonParameters.lastZ,
