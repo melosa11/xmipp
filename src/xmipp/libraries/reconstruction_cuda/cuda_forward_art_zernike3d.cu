@@ -405,12 +405,12 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 	__shared__ PrecisionType clnmShared[clnm_size];
 	if (clnm_size <= 256) {
 		if (tIdx < clnm_size) {
-			clnmShared[tIdx] = clnm[tIdx];
+			clnmShared[tIdx] = cudaClnm[tIdx];
 		}
 	} else {
 		if (tIdx == 0) {
 			for (unsigned idx = 0; idx < clnm_size; idx++) {
-				clnmShared[idx] = clnm[idx];
+				clnmShared[idx] = cudaClnm[idx];
 			}
 		}
 	}
