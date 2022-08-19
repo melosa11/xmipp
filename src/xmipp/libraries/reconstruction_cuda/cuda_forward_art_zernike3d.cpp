@@ -227,25 +227,25 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
 
-	forwardKernel<PrecisionType, usesZernike><<<dim3(1, 64, 128), dim3(128, 2, 1)>>>(cudaMV,
-																					 VRecMaskF,
-																					 cudaP,
-																					 cudaW,
-																					 lastZ,
-																					 lastY,
-																					 lastX,
-																					 step,
-																					 sigma_size,
-																					 cudaSigma,
-																					 commonParameters.iRmaxF,
-																					 commonParameters.idxY0,
-																					 commonParameters.idxZ0,
-																					 cudaVL1,
-																					 cudaVN,
-																					 cudaVL2,
-																					 cudaVM,
-																					 commonParameters.cudaClnm,
-																					 commonParameters.cudaR);
+	forwardKernel<PrecisionType, usesZernike><<<dim3(1, 128, 128), dim3(128, 1, 1)>>>(cudaMV,
+																					  VRecMaskF,
+																					  cudaP,
+																					  cudaW,
+																					  lastZ,
+																					  lastY,
+																					  lastX,
+																					  step,
+																					  sigma_size,
+																					  cudaSigma,
+																					  commonParameters.iRmaxF,
+																					  commonParameters.idxY0,
+																					  commonParameters.idxZ0,
+																					  cudaVL1,
+																					  cudaVN,
+																					  cudaVL2,
+																					  cudaVM,
+																					  commonParameters.cudaClnm,
+																					  commonParameters.cudaR);
 
 	cudaDeviceSynchronize();
 
@@ -272,22 +272,22 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
 
-	backwardKernel<PrecisionType, usesZernike><<<dim3(1, 64, 128), dim3(128, 2, 1)>>>(cudaMV,
-																					  cudaMId,
-																					  VRecMaskB,
-																					  lastZ,
-																					  lastY,
-																					  lastX,
-																					  step,
-																					  commonParameters.iRmaxF,
-																					  commonParameters.idxY0,
-																					  commonParameters.idxZ0,
-																					  cudaVL1,
-																					  cudaVN,
-																					  cudaVL2,
-																					  cudaVM,
-																					  commonParameters.cudaClnm,
-																					  commonParameters.cudaR);
+	backwardKernel<PrecisionType, usesZernike><<<dim3(1, 128, 128), dim3(128, 1, 1)>>>(cudaMV,
+																					   cudaMId,
+																					   VRecMaskB,
+																					   lastZ,
+																					   lastY,
+																					   lastX,
+																					   step,
+																					   commonParameters.iRmaxF,
+																					   commonParameters.idxY0,
+																					   commonParameters.idxZ0,
+																					   cudaVL1,
+																					   cudaVN,
+																					   cudaVL2,
+																					   cudaVM,
+																					   commonParameters.cudaClnm,
+																					   commonParameters.cudaR);
 
 	cudaDeviceSynchronize();
 
