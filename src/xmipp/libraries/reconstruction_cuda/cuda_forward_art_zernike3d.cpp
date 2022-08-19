@@ -5,7 +5,6 @@
 #include "data/numerical_tools.h"
 
 #include <cassert>
-#include <iostream>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
