@@ -276,6 +276,7 @@ void ProgForwardArtZernike3DGPU::preProcess()
 	const cuda_forward_art_zernike3D::Program<PrecisionType>::ConstantParameters parameters = {
 		.VRecMaskF = VRecMaskF,
 		.VRecMaskB = VRecMaskB,
+		.Vrefined = Vrefined,
 		.vL1 = vL1,
 		.vN = vN,
 		.vL2 = vL2,
