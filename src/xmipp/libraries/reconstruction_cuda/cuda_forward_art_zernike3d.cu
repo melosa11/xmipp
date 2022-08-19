@@ -386,7 +386,8 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 							  const int *cudaVL2,
 							  const int *cudaVM,
 							  const PrecisionType *cudaClnm,
-							  const PrecisionType *cudaR)
+							  const PrecisionType *cudaR,
+							  const unsigned clnm_size)
 {
 	int cubeX = threadIdx.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
@@ -398,6 +399,20 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 	__shared__ PrecisionType sharedR[6];
 	if (threadIdx.x < 6 && threadIdx.y == 0) {
 		sharedR[threadIdx.x] = cudaR[threadIdx.x];
+	}
+
+	int tIdx = threadIdx.x + blockDim.x * threadIdx.y;
+	__shared__ PrecisionType clnmShared[clnm_size];
+	if (clnm_size <= 256) {
+		if (tIdx < clnm_size) {
+			clnmShared[tIdx] = clnm[tIdx];
+		}
+	} else {
+		if (tIdx == 0) {
+			for (unsigned idx = 0; idx < clnm_size; idx++) {
+				clnmShared[idx] = clnm[idx];
+			}
+		}
 	}
 
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
@@ -424,9 +439,9 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 				auto m = cudaVM[idx];
 				if (rr > 0 || l2 == 0) {
 					PrecisionType zsph = device::ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-					gx += cudaClnm[idx] * (zsph);
-					gy += cudaClnm[idx + idxY0] * (zsph);
-					gz += cudaClnm[idx + idxZ0] * (zsph);
+					gx += clnmShared[idx] * (zsph);
+					gy += clnmShared[idx + idxY0] * (zsph);
+					gz += clnmShared[idx + idxZ0] * (zsph);
 				}
 			}
 		}
@@ -461,7 +476,8 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const int *cudaVL2,
 							   const int *cudaVM,
 							   const PrecisionType *cudaClnm,
-							   const PrecisionType *cudaR)
+							   const PrecisionType *cudaR,
+							   const unsigned clnm_size)
 {
 	int cubeX = threadIdx.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
@@ -473,6 +489,20 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	__shared__ PrecisionType sharedR[6];
 	if (threadIdx.x < 6 && threadIdx.y == 0) {
 		sharedR[threadIdx.x] = cudaR[threadIdx.x];
+	}
+
+	int tIdx = threadIdx.x + blockDim.x * threadIdx.y;
+	__shared__ PrecisionType clnmShared[clnm_size];
+	if (clnm_size <= 256) {
+		if (tIdx < clnm_size) {
+			clnmShared[tIdx] = clnm[tIdx];
+		}
+	} else {
+		if (tIdx == 0) {
+			for (unsigned idx = 0; idx < clnm_size; idx++) {
+				clnmShared[idx] = clnm[idx];
+			}
+		}
 	}
 
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
@@ -492,9 +522,9 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 				auto m = cudaVM[idx];
 				if (rr > 0 || l2 == 0) {
 					PrecisionType zsph = device::ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-					gx += cudaClnm[idx] * (zsph);
-					gy += cudaClnm[idx + idxY0] * (zsph);
-					gz += cudaClnm[idx + idxZ0] * (zsph);
+					gx += clnmShared[idx] * (zsph);
+					gy += clnmShared[idx + idxY0] * (zsph);
+					gz += clnmShared[idx + idxZ0] * (zsph);
 				}
 			}
 		}
