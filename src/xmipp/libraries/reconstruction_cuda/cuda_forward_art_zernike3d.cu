@@ -394,6 +394,12 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 	int k = STARTINGZ(cudaMV) + cubeZ;
 	int i = STARTINGY(cudaMV) + cubeY;
 	int j = STARTINGX(cudaMV) + cubeX;
+
+	__shared__ PrecisionType sharedR[6];
+	if (threadIdx.x < 6 && threadIdx.y == 0) {
+		sharedR[threadIdx.x] = cudaR[threadIdx.x];
+	}
+
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
 	if (cubeX % step == 0 && cubeY % step == 0 && cubeZ % step == 0 && A3D_ELEM(cudaVRecMaskF, k, i, j) != 0) {
 		int img_idx = 0;
@@ -429,8 +435,8 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 		auto r_y = i + gy;
 		auto r_z = k + gz;
 
-		auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
-		auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
+		auto pos_x = sharedR[0] * r_x + sharedR[1] * r_y + sharedR[2] * r_z;
+		auto pos_y = sharedR[3] * r_x + sharedR[4] * r_y + sharedR[5] * r_z;
 		PrecisionType voxel_mV = A3D_ELEM(cudaMV, k, i, j);
 		device::splattingAtPos(pos_x, pos_y, voxel_mV, mP, mW);
 	}
@@ -463,6 +469,12 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	int k = STARTINGZ(cudaMV) + cubeZ;
 	int i = STARTINGY(cudaMV) + cubeY;
 	int j = STARTINGX(cudaMV) + cubeX;
+
+	__shared__ PrecisionType sharedR[6];
+	if (threadIdx.x < 6 && threadIdx.y == 0) {
+		sharedR[threadIdx.x] = cudaR[threadIdx.x];
+	}
+
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
 	if (A3D_ELEM(VRecMaskB, k, i, j) != 0) {
 		if (usesZernike) {
@@ -491,8 +503,8 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 		auto r_y = i + gy;
 		auto r_z = k + gz;
 
-		auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
-		auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
+		auto pos_x = sharedR[0] * r_x + sharedR[1] * r_y + sharedR[2] * r_z;
+		auto pos_y = sharedR[3] * r_x + sharedR[4] * r_y + sharedR[5] * r_z;
 		PrecisionType voxel = device::interpolatedElement2DCuda(pos_x, pos_y, cudaMId);
 		A3D_ELEM(cudaMV, k, i, j) += voxel;
 	}
