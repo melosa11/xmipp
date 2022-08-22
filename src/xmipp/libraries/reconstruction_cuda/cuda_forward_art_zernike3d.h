@@ -7,6 +7,7 @@
 #include <core/multidim_array.h>
 #include <core/xmipp_image.h>
 // Standard includes
+#include <tuple>
 #include <vector>
 
 namespace cuda_forward_art_zernike3D {
@@ -18,6 +19,7 @@ template<typename T>
 struct MultidimArrayCuda {
 	size_t xdim;
 	size_t ydim;
+	size_t zdim;
 	size_t yxdim;
 	int xinit;
 	int yinit;
@@ -58,6 +60,7 @@ class Program {
 		size_t idxY0, idxZ0;
 		PrecisionType iRmaxF;
 		PrecisionType *cudaClnm, *cudaR;
+		std::tuple<size_t, size_t, size_t> block, grid;
 	};
 
    public:
