@@ -160,7 +160,7 @@ namespace {
 		const struct Program<T>::DynamicParameters &parameters,
 		const bool usesZernike,
 		const int RmaxDef,
-		MultidimArrayCuda<PrecisionType> &cudaMV) {
+		MultidimArrayCuda<T> &cudaMV) {
 		auto clnm = parameters.clnm;
 		auto angles = parameters.angles;
 
