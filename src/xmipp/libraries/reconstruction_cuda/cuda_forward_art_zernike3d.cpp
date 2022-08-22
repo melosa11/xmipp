@@ -4,8 +4,8 @@
 #include "cuda_forward_art_zernike3d.cu"
 #include "data/numerical_tools.h"
 
-#include <algorithm>
 #include <cassert>
+#include <numeric>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -171,7 +171,7 @@ namespace {
 
 		const Matrix2D<T> R = createRotationMatrix<T>(angles);
 
-		size_t block_x = __gcd(THREADS_IN_BLOCK, cudaMV.xdim);
+		size_t block_x = gcd(THREADS_IN_BLOCK, cudaMV.xdim);
 		size_t block_y = THREADS_IN_BLOCK / block_x < cudaMV.ydim ? THREADS_IN_BLOCK / block_x : cudaMV.ydim;
 		size_t block_z =
 			THREADS_IN_BLOCK / (block_x * block_y) < cudaMV.zdim ? THREADS_IN_BLOCK / (block_x * block_y) : cudaMV.zdim;
