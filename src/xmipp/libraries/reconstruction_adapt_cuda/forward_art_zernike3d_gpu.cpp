@@ -397,7 +397,7 @@ void ProgForwardArtZernike3DGPU::fillVectorTerms(int l1,
 
 void ProgForwardArtZernike3DGPU::recoverVol()
 {
-	cudaProgam->recoverVolumeFromGPU(Vrefined);
+	cudaProgram->recoverVolumeFromGPU(Vrefined);
 	// Find the part of the volume that must be updated
 	auto &mVout = Vout();
 	const auto &mV = Vrefined();
