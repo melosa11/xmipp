@@ -19,7 +19,6 @@ template<typename T>
 struct MultidimArrayCuda {
 	size_t xdim;
 	size_t ydim;
-	size_t zdim;
 	size_t yxdim;
 	int xinit;
 	int yinit;
@@ -60,7 +59,6 @@ class Program {
 		size_t idxY0, idxZ0;
 		PrecisionType iRmaxF;
 		PrecisionType *cudaClnm, *cudaR;
-		std::tuple<size_t, size_t, size_t> block, grid;
 	};
 
    public:
@@ -89,6 +87,8 @@ class Program {
 	const int *cudaVL1, *cudaVN, *cudaVL2, *cudaVM;
 
 	const std::vector<PrecisionType> sigma;
+
+	const size_t block_x, block_y, block_z, grid_x, grid_y, grid_z;
 };
 
 }  // namespace cuda_forward_art_zernike3D
