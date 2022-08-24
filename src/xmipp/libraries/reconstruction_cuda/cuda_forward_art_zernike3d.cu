@@ -332,7 +332,7 @@ namespace device {
 	__device__ PrecisionType interpolatedElement2DCuda(PrecisionType x,
 													   PrecisionType y,
 													   const MultidimArrayCuda<PrecisionType> &diffImage,
-													   const cudaTextureObject_t &texObj)
+													   cudaTextureObject_t &texObj)
 	{
 		int x0 = CUDA_FLOOR(x);
 		PrecisionType fx = x - x0;
@@ -460,7 +460,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const int *cudaVM,
 							   const PrecisionType *cudaClnm,
 							   const PrecisionType *cudaR,
-							   const cudaTextureObject_t texObj)
+							   cudaTextureObject_t texObj)
 {
 	int cubeX = threadIdx.x + blockIdx.x * blockDim.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
