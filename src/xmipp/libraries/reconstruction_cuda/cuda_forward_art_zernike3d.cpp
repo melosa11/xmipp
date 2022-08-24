@@ -300,10 +300,14 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 
 	cudaDeviceSynchronize();
 
-	updateMultidimArrayWithGPUData(Vrefined(), cudaMV);
-
 	cudaFree(cudaMId.data);
 	freeCommonArgumentsKernel<PrecisionType>(commonParameters);
+}
+
+template<typename PrecisionType>
+void Program<PrecisionType>::recoverVolumeFromGPU(Image<PrecisionType> &Vrefined)
+{
+	updateMultidimArrayWithGPUData(Vrefined(), cudaMV);
 }
 
 // explicit template instantiation
