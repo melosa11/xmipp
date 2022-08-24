@@ -273,7 +273,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 {
 	// Unique parameters
 	auto &mId = parameters.Idiff();
-	auto cudaMId = initializeMultidimArrayCuda(mId);
+	//auto cudaMId = initializeMultidimArrayCuda(mId);
 	const int step = 1;
 
 	cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
@@ -309,7 +309,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	cudaTextureObject_t texObj = 0;
 	cudaCreateTextureObject(&texObj, &resDesc, &texDesc, NULL);
 
-	struct MultidimArrayCuda<T> cudaMId = {
+	struct MultidimArrayCuda<PrecisionType> cudaMId = {
 		.xdim = mId.xdim, .ydim = mId.ydim, .yxdim = mId.yxdim, .xinit = mId.xinit, .yinit = mId.yinit,
 		.zinit = mId.zinit,
 	};
