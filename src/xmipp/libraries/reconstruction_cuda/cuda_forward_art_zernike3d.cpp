@@ -199,9 +199,9 @@ Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters
 	  block_x(std::__gcd(static_cast<size_t>(THREADS_IN_BLOCK), parameters.Vrefined().xdim)),
 	  block_y(std::__gcd(static_cast<size_t>(THREADS_IN_BLOCK) / block_x, parameters.Vrefined().ydim)),
 	  block_z(std::__gcd(static_cast<size_t>(THREADS_IN_BLOCK) / (block_x * block_y), parameters.Vrefined().zdim)),
-	  grid_x(cudaMV.xdim / block_x),
-	  grid_y(cudaMV.ydim / block_y),
-	  grid_z(cudaMV.zdim / block_z)
+	  grid_x(parameters.Vrefined().xdim / block_x),
+	  grid_y(parameters.Vrefined().ydim / block_y),
+	  grid_z(parameters.Vrefined().zdim / block_z)
 {}
 
 template<typename PrecisionType>
