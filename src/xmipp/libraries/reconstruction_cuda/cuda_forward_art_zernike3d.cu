@@ -350,7 +350,7 @@ namespace device {
 	if ((j) < j0 || (j) > jF || (i) < i0 || (i) > iF) \
 		d = (PrecisionType)0;                         \
 	else                                              \
-		d = tex2D<PrecisionType>(texObj, i, j);
+		d = tex2D<PrecisionType>(texObj, i, j)
 
 		PrecisionType d00, d10, d11, d01;
 		ASSIGNVAL2DCUDA(d00, y0, x0);
