@@ -284,7 +284,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	cudaMemcpy2DToArray(cuArray,
 						0,
 						0,
-						mId.data(),
+						mId.data,
 						mId.xdim * sizeof(PrecisionType),
 						mId.xdim * sizeof(PrecisionType),
 						mId.ydim,
