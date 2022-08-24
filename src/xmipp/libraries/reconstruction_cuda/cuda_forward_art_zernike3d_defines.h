@@ -24,7 +24,7 @@
 // Set ARCH to the architecture of your GPU for better performance
 #define ARCH PASCAL
 
-#define THREADS_IN_BLOCK 1024u
+constexpr size_t THREADS_IN_BLOCK = 1024;
 
 #if ARCH == MAXWELL
 #define BLOCK_X_DIM 16
