@@ -172,9 +172,8 @@ namespace {
 		const Matrix2D<T> R = createRotationMatrix<T>(angles);
 
 		size_t block_x = std::__gcd(static_cast<size_t>(THREADS_IN_BLOCK), cudaMV.xdim);
-		size_t block_y = THREADS_IN_BLOCK / block_x < cudaMV.ydim ? THREADS_IN_BLOCK / block_x : cudaMV.ydim;
-		size_t block_z =
-			THREADS_IN_BLOCK / (block_x * block_y) < cudaMV.zdim ? THREADS_IN_BLOCK / (block_x * block_y) : cudaMV.zdim;
+		size_t block_y = std::__gcd(static_cast<size_t>(THREADS_IN_BLOCK) / block_x, cudaMV.ydim);
+		size_t block_z = std::__gcd(static_cast<size_t>(THREADS_IN_BLOCK) / (block_x * block_y), cudaMV.zdim);
 
 		size_t grid_x = cudaMV.xdim / block_x;
 		size_t grid_y = cudaMV.ydim / block_y;
