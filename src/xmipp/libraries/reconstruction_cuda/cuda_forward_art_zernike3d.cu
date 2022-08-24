@@ -331,7 +331,8 @@ namespace device {
 	template<typename PrecisionType>
 	__device__ PrecisionType interpolatedElement2DCuda(PrecisionType x,
 													   PrecisionType y,
-													   const MultidimArrayCuda<PrecisionType> &diffImage)
+													   const MultidimArrayCuda<PrecisionType> &diffImage,
+													   const cudaTextureObject_t &texObj)
 	{
 		int x0 = CUDA_FLOOR(x);
 		PrecisionType fx = x - x0;
@@ -349,7 +350,7 @@ namespace device {
 	if ((j) < j0 || (j) > jF || (i) < i0 || (i) > iF) \
 		d = (PrecisionType)0;                         \
 	else                                              \
-		d = A2D_ELEM(diffImage, i, j);
+		d = tex2D<PrecisionType>(texObj, i, j);
 
 		PrecisionType d00, d10, d11, d01;
 		ASSIGNVAL2DCUDA(d00, y0, x0);
@@ -458,7 +459,8 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const int *cudaVL2,
 							   const int *cudaVM,
 							   const PrecisionType *cudaClnm,
-							   const PrecisionType *cudaR)
+							   const PrecisionType *cudaR,
+							   const cudaTextureObject_t texObj)
 {
 	int cubeX = threadIdx.x + blockIdx.x * blockDim.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
@@ -496,7 +498,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 
 		auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
 		auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
-		PrecisionType voxel = device::interpolatedElement2DCuda(pos_x, pos_y, cudaMId);
+		PrecisionType voxel = device::interpolatedElement2DCuda(pos_x, pos_y, cudaMId, texObj);
 		A3D_ELEM(cudaMV, k, i, j) += voxel;
 	}
 }
