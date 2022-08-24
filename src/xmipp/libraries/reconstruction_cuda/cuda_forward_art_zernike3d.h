@@ -77,8 +77,6 @@ class Program {
    private:
 	const MultidimArrayCuda<int> VRecMaskF, VRecMaskB;
 
-	Image<PrecisionType> &Vrefined;
-
 	const MultidimArrayCuda<PrecisionType> cudaMV;
 
 	const int lastX, lastY, lastZ;
