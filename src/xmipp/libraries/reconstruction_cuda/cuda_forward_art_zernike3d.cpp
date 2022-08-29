@@ -186,52 +186,30 @@ namespace {
 	{
 		cudaDeviceProp prop;
 		cudaGetDeviceProperties(&prop, 0);
-		printf("Compute capability %d.%d\n", prop.major, prop.minor);
 		struct BlockSizes output;
 		switch (prop.major * 10 + prop.minor) {
+			// 3.0 - 3.7 Kepler
 			case 30 ... 37:
-				output = {
-					.x = 16,
-					.y = 4,
-					.z = 2,
-				};
-				printf("Case 30 ... 37");
+				output = {16, 4, 2};
 				break;
 
+			// 6.0 - 6.2 Pascal
 			case 60 ... 62:
-				output = {
-					.x = 16,
-					.y = 8,
-					.z = 1,
-				};
-				printf("Case 60 ... 62");
+				output = {16, 8, 1};
 				break;
 
+			// 7.5 Turing
 			case 75:
-				output = {
-					.x = 16,
-					.y = 8,
-					.z = 1,
-				};
-				printf("Case 75");
+				output = {16, 8, 1};
 				break;
 
+			// 8.0 - 8.7 Ampere
 			case 80 ... 87:
-				output = {
-					.x = 32,
-					.y = 1,
-					.z = 4,
-				};
-				printf("Case 80 ... 87");
+				output = {32, 1, 4};
 				break;
 
 			default:
-				output = {
-					.x = 8,
-					.y = 4,
-					.z = 4,
-				};
-				printf("Case default");
+				output = {8, 4, 4};
 				break;
 		}
 		return output;
