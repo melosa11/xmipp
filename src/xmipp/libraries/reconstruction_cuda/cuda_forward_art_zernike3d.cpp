@@ -26,7 +26,7 @@ namespace {
 
 	// Copies data from CPU to the GPU
 	template<typename T>
-	void transportData(T **dest, const T *source, size_t n, cudaStream_t stream)
+	void transportData(T **dest, const T *source, size_t n, cudaStream_t &stream)
 	{
 		if (cudaMalloc(dest, sizeof(T) * n) != cudaSuccess) {
 			processCudaError();
@@ -40,7 +40,7 @@ namespace {
 
 	// Copies data from GPU to the CPU
 	template<typename T>
-	void transportDataFromGPU(T *dest, const T *source, size_t n, cudaStream_t stream)
+	void transportDataFromGPU(T *dest, const T *source, size_t n, cudaStream_t &stream)
 	{
 		if (cudaMemcpyAsync(dest, source, sizeof(T) * n, cudaMemcpyDeviceToHost, stream) != cudaSuccess) {
 			processCudaError();
@@ -48,7 +48,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *transportMultidimArrayToGpu(const MultidimArray<T> &inputArray, cudaStream_t stream)
+	T *transportMultidimArrayToGpu(const MultidimArray<T> &inputArray, cudaStream_t &stream)
 	{
 		T *outputArrayData;
 		transportData(&outputArrayData, inputArray.data, inputArray.xdim * inputArray.ydim * inputArray.zdim, stream);
@@ -57,7 +57,7 @@ namespace {
 
 	template<typename T>
 	MultidimArrayCuda<T> *transportVectorOfMultidimArrayToGpu(const std::vector<MultidimArrayCuda<T>> &inputVector,
-															  cudaStream_t stream)
+															  cudaStream_t &stream)
 	{
 		MultidimArrayCuda<T> *outputVectorData;
 		transportData(&outputVectorData, inputVector.data(), inputVector.size(), stream);
@@ -65,7 +65,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *transportMatrix1DToGpu(const Matrix1D<T> &inputVector, cudaStream_t stream)
+	T *transportMatrix1DToGpu(const Matrix1D<T> &inputVector, cudaStream_t &stream)
 	{
 		T *outputVector;
 		transportData(&outputVector, inputVector.vdata, inputVector.vdim, stream);
@@ -73,7 +73,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *transportStdVectorToGpu(const std::vector<T> &inputVector, cudaStream_t stream)
+	T *transportStdVectorToGpu(const std::vector<T> &inputVector, cudaStream_t &stream)
 	{
 		T *outputVector;
 		transportData(&outputVector, inputVector.data(), inputVector.size(), stream);
@@ -81,7 +81,7 @@ namespace {
 	}
 
 	template<typename T>
-	T *transportMatrix2DToGpu(const Matrix2D<T> &inputMatrix, cudaStream_t stream)
+	T *transportMatrix2DToGpu(const Matrix2D<T> &inputMatrix, cudaStream_t &stream)
 	{
 		T *outputMatrixData;
 		transportData(&outputMatrixData, inputMatrix.mdata, inputMatrix.mdim, stream);
@@ -89,7 +89,7 @@ namespace {
 	}
 
 	template<typename T>
-	MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray, cudaStream_t stream)
+	MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray, cudaStream_t &stream)
 	{
 		struct MultidimArrayCuda<T> cudaArray = {
 			.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
@@ -103,7 +103,7 @@ namespace {
 	template<typename T>
 	void updateMultidimArrayWithGPUData(MultidimArray<T> &multidimArray,
 										const MultidimArrayCuda<T> &multidimArrayCuda,
-										cudaStream_t stream)
+										cudaStream_t &stream)
 	{
 		transportDataFromGPU(multidimArray.data,
 							 multidimArrayCuda.data,
@@ -114,7 +114,7 @@ namespace {
 	template<typename T>
 	void updateVectorOfMultidimArrayWithGPUData(std::vector<Image<T>> &image,
 												const std::vector<MultidimArrayCuda<T>> vectorMultidimArray,
-												cudaStream_t stream)
+												cudaStream_t &stream)
 	{
 		assert(image.size() == vectorMultidimArray.size());
 		for (int m = 0; m < image.size(); m++) {
@@ -125,7 +125,7 @@ namespace {
 	template<typename T>
 	std::pair<MultidimArrayCuda<T> *, std::vector<MultidimArrayCuda<T>>> convertToMultidimArrayCuda(
 		std::vector<Image<T>> &image,
-		cudaStream_t stream)
+		cudaStream_t &stream)
 	{
 		std::vector<MultidimArrayCuda<T>> output;
 		for (int m = 0; m < image.size(); m++) {
@@ -167,7 +167,7 @@ namespace {
 		const struct Program<T>::DynamicParameters &parameters,
 		const bool usesZernike,
 		const int RmaxDef,
-		cudaStream_t stream) {
+		cudaStream_t &stream) {
 		auto clnm = parameters.clnm;
 		auto angles = parameters.angles;
 
