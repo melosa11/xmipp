@@ -185,22 +185,49 @@ namespace {
 	{
 		cudaDeviceProp prop;
 		cudaGetDeviceProperties(&prop, 0);
+		struct BlockSizes output;
 		switch (prop.major * 10 + prop.minor) {
 			case 30 ... 37:
-				return struct BlockSizes(16, 4, 2);
+				output = {
+					.x = 16,
+					.y = 4,
+					.z = 2,
+				};
+				break;
 
 			case 60 ... 62:
-				return struct BlockSizes(16, 8, 1);
+				output = {
+					.x = 16,
+					.y = 8,
+					.z = 1,
+				};
+				break;
 
 			case 75:
-				return struct BlockSizes(16, 8, 1);
+				output = {
+					.x = 16,
+					.y = 8,
+					.z = 1,
+				};
+				break;
 
 			case 80 ... 87:
-				return struct BlockSizes(32, 1, 4);
+				output = {
+					.x = 32,
+					.y = 1,
+					.z = 4,
+				};
+				break;
 
 			default:
-				return struct BlockSizes(8, 4, 4);
+				output = {
+					.x = 8,
+					.y = 4,
+					.z = 4,
+				};
+				break;
 		}
+		return output;
 	}
 
 }  // namespace
