@@ -25,6 +25,10 @@ struct MultidimArrayCuda {
 	T *data;
 };
 
+struct BlockSizes {
+	size_t x, y, z;
+};
+
 template<typename PrecisionType = float>
 class Program {
 	static_assert(std::is_floating_point<PrecisionType>::value, "Floating point type is required.");
@@ -44,10 +48,6 @@ class Program {
 
 	struct AngleParameters {
 		PrecisionType rot, tilt, psi;
-	};
-
-	struct BlockSizes {
-		size_t x, y, z;
 	};
 
 	struct DynamicParameters {
