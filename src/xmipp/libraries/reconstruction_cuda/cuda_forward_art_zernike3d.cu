@@ -315,12 +315,12 @@ namespace device {
 	}
 
 	template<typename PrecisionType>
-	__device__ size_t findCuda(const PrecisionType *begin, size_t size, PrecisionType value)
+	__device__ unsigned findCuda(const PrecisionType *begin, unsigned size, PrecisionType value)
 	{
 		if (size <= 0) {
 			return 0;
 		}
-		for (size_t i = 0; i < size; i++) {
+		for (unsigned i = 0; i < size; i++) {
 			if (begin[i] == value) {
 				return i;
 			}
@@ -376,11 +376,11 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 							  const int lastY,
 							  const int lastX,
 							  const int step,
-							  const size_t sigma_size,
+							  const unsigned sigma_size,
 							  const PrecisionType *cudaSigma,
 							  const PrecisionType iRmaxF,
-							  const size_t idxY0,
-							  const size_t idxZ0,
+							  const unsigned idxY0,
+							  const unsigned idxZ0,
 							  const int *cudaVL1,
 							  const int *cudaVN,
 							  const int *cudaVL2,
@@ -414,7 +414,7 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 			auto r2 = k2i2 + j * j;
 			auto jr = j * iRmaxF;
 			auto rr = SQRT(r2) * iRmaxF;
-			for (size_t idx = 0; idx < idxY0; idx++) {
+			for (unsigned idx = 0; idx < idxY0; idx++) {
 				auto l1 = cudaVL1[idx];
 				auto n = cudaVN[idx];
 				auto l2 = cudaVL2[idx];
@@ -451,8 +451,8 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const int lastX,
 							   const int step,
 							   const PrecisionType iRmaxF,
-							   const size_t idxY0,
-							   const size_t idxZ0,
+							   const unsigned idxY0,
+							   const unsigned idxZ0,
 							   const int *cudaVL1,
 							   const int *cudaVN,
 							   const int *cudaVL2,
@@ -476,7 +476,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 			auto r2 = k2i2 + j * j;
 			auto jr = j * iRmaxF;
 			auto rr = SQRT(r2) * iRmaxF;
-			for (size_t idx = 0; idx < idxY0; idx++) {
+			for (unsigned idx = 0; idx < idxY0; idx++) {
 				auto l1 = cudaVL1[idx];
 				auto n = cudaVN[idx];
 				auto l2 = cudaVL2[idx];

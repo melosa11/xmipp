@@ -91,8 +91,9 @@ namespace {
 	MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray)
 	{
 		struct MultidimArrayCuda<T> cudaArray = {
-			.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
-			.xinit = multidimArray.xinit, .yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
+			.xdim = const_cast<unsigned> multidimArray.xdim, .ydim = const_cast<unsigned> multidimArray.ydim,
+			.yxdim = const_cast<unsigned> multidimArray.yxdim, .xinit = multidimArray.xinit,
+			.yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
 			.data = transportMultidimArrayToGpu(multidimArray)
 		};
 
@@ -163,8 +164,8 @@ namespace {
 		auto clnm = parameters.clnm;
 		auto angles = parameters.angles;
 
-		const size_t idxY0 = usesZernike ? (clnm.size() / 3) : 0;
-		const size_t idxZ0 = usesZernike ? (2 * idxY0) : 0;
+		const unsigned idxY0 = usesZernike ? (clnm.size() / 3) : 0;
+		const unsigned idxZ0 = usesZernike ? (2 * idxY0) : 0;
 		const T RmaxF = usesZernike ? RmaxDef : 0;
 		const T iRmaxF = usesZernike ? (1.0f / RmaxF) : 0;
 
@@ -242,7 +243,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 																	  lastY,
 																	  lastX,
 																	  step,
-																	  sigma_size,
+																	  const_cast<unsigned> sigma_size,
 																	  cudaSigma,
 																	  commonParameters.iRmaxF,
 																	  commonParameters.idxY0,

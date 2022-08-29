@@ -16,9 +16,9 @@ struct double3;
 
 template<typename T>
 struct MultidimArrayCuda {
-	size_t xdim;
-	size_t ydim;
-	size_t yxdim;
+	unsigned xdim;
+	unsigned ydim;
+	unsigned yxdim;
 	int xinit;
 	int yinit;
 	int zinit;
@@ -55,7 +55,7 @@ class Program {
 	};
 
 	struct CommonKernelParameters {
-		size_t idxY0, idxZ0;
+		unsigned idxY0, idxZ0;
 		PrecisionType iRmaxF;
 		PrecisionType *cudaClnm, *cudaR;
 	};
