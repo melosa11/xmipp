@@ -249,7 +249,7 @@ Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters
 	  cudaVM(transportMatrix1DToGpu(parameters.vM)),
 	  blockX(std::__gcd(blockSizeArchitecture().x, parameters.Vrefined().xdim)),
 	  blockY(std::__gcd(blockSizeArchitecture().y, parameters.Vrefined().ydim)),
-	  blockZ(std::__gcd(blockSizeArchitecture()., parameters.Vrefined().zdim)),
+	  blockZ(std::__gcd(blockSizeArchitecture().z, parameters.Vrefined().zdim)),
 	  gridX(parameters.Vrefined().xdim / blockX),
 	  gridY(parameters.Vrefined().ydim / blockY),
 	  gridZ(parameters.Vrefined().zdim / blockZ)
