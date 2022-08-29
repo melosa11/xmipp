@@ -46,6 +46,10 @@ class Program {
 		PrecisionType rot, tilt, psi;
 	};
 
+	struct BlockSizes {
+		size_t x, y, z;
+	};
+
 	struct DynamicParameters {
 		const std::vector<PrecisionType> &clnm;
 		std::vector<Image<PrecisionType>> &P;
