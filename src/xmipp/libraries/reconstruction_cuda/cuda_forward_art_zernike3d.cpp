@@ -204,7 +204,7 @@ namespace {
 		cudaCreateTextureObject(&texObj, &resDesc, &texDesc, NULL);
 
 		struct Program<T>::CommonKernelParameters output = {
-			.idxY0 = idxY0, .idxZ0 = idxZ0, .iRmaxF = iRmaxF, .texObjClnm = texObj, .cudaR = transportMatrix2DToGpu(R),
+			.idxY0 = idxY0, .idxZ0 = idxZ0, .iRmaxF = iRmaxF, .cudaR = transportMatrix2DToGpu(R), .texObjClnm = texObj,
 		};
 
 		return output;
