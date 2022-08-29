@@ -236,10 +236,10 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	// Unique parameters
 	MultidimArrayCuda<PrecisionType> *cudaP, *cudaW;
 	std::vector<MultidimArrayCuda<PrecisionType>> pVector, wVector;
-	std::tie(cudaP, pVector) = convertToMultidimArrayCuda(parameters.P);
-	std::tie(cudaW, wVector) = convertToMultidimArrayCuda(parameters.W);
+	std::tie(cudaP, pVector) = convertToMultidimArrayCuda(parameters.P, stream);
+	std::tie(cudaW, wVector) = convertToMultidimArrayCuda(parameters.W, stream);
 	auto sigma_size = sigma.size();
-	auto cudaSigma = transportStdVectorToGpu(sigma);
+	auto cudaSigma = transportStdVectorToGpu(sigma, stream);
 	const int step = loopStep;
 
 	// Common parameters
