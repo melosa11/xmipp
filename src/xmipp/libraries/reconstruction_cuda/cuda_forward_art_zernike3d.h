@@ -7,6 +7,7 @@
 #include <core/multidim_array.h>
 #include <core/xmipp_image.h>
 // Standard includes
+#include <cuda_runtime.h>
 #include <vector>
 
 namespace cuda_forward_art_zernike3D {
