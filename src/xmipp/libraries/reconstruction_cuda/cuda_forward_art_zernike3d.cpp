@@ -32,7 +32,7 @@ namespace {
 			processCudaError();
 		}
 
-		if (cudaMemcpyAsync(*dest, source, sizeof(T) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
+		if (cudaMemcpyAsync(*dest, source, sizeof(T) * n, cudaMemcpyHostToDevice, stream) != cudaSuccess) {
 			cudaFree(*dest);
 			processCudaError();
 		}
@@ -42,7 +42,7 @@ namespace {
 	template<typename T>
 	void transportDataFromGPU(T *dest, const T *source, size_t n, cudaStream_t &stream)
 	{
-		if (cudaMemcpyAsync(dest, source, sizeof(T) * n, cudaMemcpyDeviceToHost) != cudaSuccess) {
+		if (cudaMemcpyAsync(dest, source, sizeof(T) * n, cudaMemcpyDeviceToHost, stream) != cudaSuccess) {
 			processCudaError();
 		}
 	}
@@ -210,7 +210,7 @@ Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters
 	  gridY(parameters.Vrefined().ydim / blockY),
 	  gridZ(parameters.Vrefined().zdim / blockZ)
 {
-	cudaStreamCreate(&stream);
+	cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
 }
 
 template<typename PrecisionType>
@@ -246,25 +246,25 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef, stream);
 
 	forwardKernel<PrecisionType, usesZernike>
-		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), 0>>>(cudaMV,
-																		 VRecMaskF,
-																		 cudaP,
-																		 cudaW,
-																		 lastZ,
-																		 lastY,
-																		 lastX,
-																		 step,
-																		 sigma_size,
-																		 cudaSigma,
-																		 commonParameters.iRmaxF,
-																		 commonParameters.idxY0,
-																		 commonParameters.idxZ0,
-																		 cudaVL1,
-																		 cudaVN,
-																		 cudaVL2,
-																		 cudaVM,
-																		 commonParameters.cudaClnm,
-																		 commonParameters.cudaR);
+		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), 0, stream>>>(cudaMV,
+																				 VRecMaskF,
+																				 cudaP,
+																				 cudaW,
+																				 lastZ,
+																				 lastY,
+																				 lastX,
+																				 step,
+																				 sigma_size,
+																				 cudaSigma,
+																				 commonParameters.iRmaxF,
+																				 commonParameters.idxY0,
+																				 commonParameters.idxZ0,
+																				 cudaVL1,
+																				 cudaVN,
+																				 cudaVL2,
+																				 cudaVM,
+																				 commonParameters.cudaClnm,
+																				 commonParameters.cudaR);
 
 	cudaDeviceSynchronize();
 
@@ -292,22 +292,22 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef, stream);
 
 	backwardKernel<PrecisionType, usesZernike>
-		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), 0>>>(cudaMV,
-																		 cudaMId,
-																		 VRecMaskB,
-																		 lastZ,
-																		 lastY,
-																		 lastX,
-																		 step,
-																		 commonParameters.iRmaxF,
-																		 commonParameters.idxY0,
-																		 commonParameters.idxZ0,
-																		 cudaVL1,
-																		 cudaVN,
-																		 cudaVL2,
-																		 cudaVM,
-																		 commonParameters.cudaClnm,
-																		 commonParameters.cudaR);
+		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), 0, stream>>>(cudaMV,
+																				 cudaMId,
+																				 VRecMaskB,
+																				 lastZ,
+																				 lastY,
+																				 lastX,
+																				 step,
+																				 commonParameters.iRmaxF,
+																				 commonParameters.idxY0,
+																				 commonParameters.idxZ0,
+																				 cudaVL1,
+																				 cudaVN,
+																				 cudaVL2,
+																				 cudaVM,
+																				 commonParameters.cudaClnm,
+																				 commonParameters.cudaR);
 
 	cudaDeviceSynchronize();
 
