@@ -24,40 +24,7 @@
 // Set ARCH to the architecture of your GPU for better performance
 #define ARCH PASCAL
 
-#if __CUDA_ARCH__ >= 800
-// Device code path for compute capability 8.x (Ampere)
-constexpr size_t BLOCK_X_DIM = 32;
-constexpr size_t BLOCK_Y_DIM = 1;
-constexpr size_t BLOCK_Z_DIM = 4;
-#elif __CUDA_ARCH__ >= 750
-// Device code path for compute capability 7.5 (Turing)
-constexpr size_t BLOCK_X_DIM = 16;
-constexpr size_t BLOCK_Y_DIM = 8;
-constexpr size_t BLOCK_Z_DIM = 1;
-#elif __CUDA_ARCH__ >= 700
-// Device code path for compute capability 7.0-7.2 (Volta)
-constexpr size_t BLOCK_X_DIM = 8;
-constexpr size_t BLOCK_Y_DIM = 4;
-constexpr size_t BLOCK_Z_DIM = 4;
-#elif __CUDA_ARCH__ >= 600
-// Device code path for compute capability 6.x (Pascal)
-constexpr size_t BLOCK_X_DIM = 16;
-constexpr size_t BLOCK_Y_DIM = 8;
-constexpr size_t BLOCK_Z_DIM = 1;
-#elif __CUDA_ARCH__ >= 500
-// Device code path for compute capability 5.x (Maxwell)
-constexpr size_t BLOCK_X_DIM = 16;
-constexpr size_t BLOCK_Y_DIM = 4;
-constexpr size_t BLOCK_Z_DIM = 2;
-#elif __CUDA_ARCH__ >= 300
-// Device code path for compute capability 3.x (Kepler)
-constexpr size_t BLOCK_X_DIM = 8;
-constexpr size_t BLOCK_Y_DIM = 4;
-constexpr size_t BLOCK_Z_DIM = 4;
-#endif
-//constexpr size_t THREADS_IN_BLOCK = 1024;
-
-/*#if ARCH == MAXWELL
+#if ARCH == MAXWELL
 #define BLOCK_X_DIM 16
 #define BLOCK_Y_DIM 4
 #define BLOCK_Z_DIM 2
@@ -78,6 +45,6 @@ constexpr size_t BLOCK_Z_DIM = 4;
 #define BLOCK_Y_DIM 4
 #define BLOCK_Z_DIM 4
 #endif
-// Tuning parameters*/
+// Tuning parameters
 
 #endif	// CUDA_FORWARD_ART_ZERNIKE3D_DEFINES_H
