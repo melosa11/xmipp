@@ -4,6 +4,7 @@
 #include "cuda_forward_art_zernike3d.cu"
 #include "data/numerical_tools.h"
 
+#include <stdio.h>
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
@@ -185,6 +186,7 @@ namespace {
 	{
 		cudaDeviceProp prop;
 		cudaGetDeviceProperties(&prop, 0);
+		printf("Compute capability %d.%d\n", prop.major, prop.minor);
 		struct BlockSizes output;
 		switch (prop.major * 10 + prop.minor) {
 			case 30 ... 37:
@@ -193,6 +195,7 @@ namespace {
 					.y = 4,
 					.z = 2,
 				};
+				printf("Case 30 ... 37");
 				break;
 
 			case 60 ... 62:
@@ -201,6 +204,7 @@ namespace {
 					.y = 8,
 					.z = 1,
 				};
+				printf("Case 60 ... 62");
 				break;
 
 			case 75:
@@ -209,6 +213,7 @@ namespace {
 					.y = 8,
 					.z = 1,
 				};
+				printf("Case 75");
 				break;
 
 			case 80 ... 87:
@@ -217,6 +222,7 @@ namespace {
 					.y = 1,
 					.z = 4,
 				};
+				printf("Case 80 ... 87");
 				break;
 
 			default:
@@ -225,6 +231,7 @@ namespace {
 					.y = 4,
 					.z = 4,
 				};
+				printf("Case default");
 				break;
 		}
 		return output;
