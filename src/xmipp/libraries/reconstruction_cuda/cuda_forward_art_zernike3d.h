@@ -90,6 +90,8 @@ class Program {
 	const std::vector<PrecisionType> sigma;
 
 	const size_t blockX, blockY, blockZ, gridX, gridY, gridZ;
+
+	cudaStream_t stream;
 };
 
 }  // namespace cuda_forward_art_zernike3D
