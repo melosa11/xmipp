@@ -4,7 +4,6 @@
 #include "cuda_forward_art_zernike3d.cu"
 #include "data/numerical_tools.h"
 
-#include <stdio.h>
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
