@@ -58,7 +58,7 @@ class Program {
 		size_t idxY0, idxZ0;
 		PrecisionType iRmaxF;
 		PrecisionType *cudaR;
-		cudaTextureObject_t texObjClnm;
+		unsigned long long texObjClnm;
 	};
 
    public:
