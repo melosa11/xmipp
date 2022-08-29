@@ -179,8 +179,8 @@ namespace {
 							0,
 							0,
 							clnm.data(),
-							clnm.size() * sizeof(PrecisionType),
-							clnm.size() * sizeof(PrecisionType),
+							clnm.size() * sizeof(T),
+							clnm.size() * sizeof(T),
 							1,
 							cudaMemcpyHostToDevice);
 
