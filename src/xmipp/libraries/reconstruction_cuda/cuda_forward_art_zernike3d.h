@@ -57,7 +57,8 @@ class Program {
 	struct CommonKernelParameters {
 		size_t idxY0, idxZ0;
 		PrecisionType iRmaxF;
-		PrecisionType *cudaClnm, *cudaR;
+		PrecisionType *cudaR;
+		cudaTextureObject_t texObjClnm;
 	};
 
    public:

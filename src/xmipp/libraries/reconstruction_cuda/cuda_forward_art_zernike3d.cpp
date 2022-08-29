@@ -170,9 +170,41 @@ namespace {
 
 		const Matrix2D<T> R = createRotationMatrix<T>(angles);
 
+		cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
+		cudaArray_t cuArray;
+		cudaMallocArray(&cuArray, &channelDesc, clnm.size(), 1);
+
+		// Copy data located at address h_data in host memory to device memory
+		cudaMemcpy2DToArray(cuArray,
+							0,
+							0,
+							clnm.data(),
+							clnm.size() * sizeof(PrecisionType),
+							clnm.size() * sizeof(PrecisionType),
+							1,
+							cudaMemcpyHostToDevice);
+
+		// Specify texture
+		struct cudaResourceDesc resDesc;
+		memset(&resDesc, 0, sizeof(resDesc));
+		resDesc.resType = cudaResourceTypeArray;
+		resDesc.res.array.array = cuArray;
+
+		// Specify texture object parameters
+		struct cudaTextureDesc texDesc;
+		memset(&texDesc, 0, sizeof(texDesc));
+		texDesc.addressMode[0] = cudaAddressModeWrap;
+		texDesc.addressMode[1] = cudaAddressModeWrap;
+		texDesc.filterMode = cudaFilterModeLinear;
+		texDesc.readMode = cudaReadModeElementType;
+		texDesc.normalizedCoords = 1;
+
+		// Create texture object
+		cudaTextureObject_t texObj = 0;
+		cudaCreateTextureObject(&texObj, &resDesc, &texDesc, NULL);
+
 		struct Program<T>::CommonKernelParameters output = {
-			.idxY0 = idxY0, .idxZ0 = idxZ0, .iRmaxF = iRmaxF, .cudaClnm = transportStdVectorToGpu(clnm),
-			.cudaR = transportMatrix2DToGpu(R),
+			.idxY0 = idxY0, .idxZ0 = idxZ0, .iRmaxF = iRmaxF, .texObjClnm = texObj, .cudaR = transportMatrix2DToGpu(R),
 		};
 
 		return output;
@@ -251,7 +283,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 																	  cudaVN,
 																	  cudaVL2,
 																	  cudaVM,
-																	  commonParameters.cudaClnm,
+																	  commonParameters.texObjClnm,
 																	  commonParameters.cudaR);
 
 	cudaDeviceSynchronize();
@@ -332,7 +364,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 																	  cudaVN,
 																	  cudaVL2,
 																	  cudaVM,
-																	  commonParameters.cudaClnm,
+																	  commonParameters.texObjClnm,
 																	  commonParameters.cudaR,
 																	  texObj);
 

@@ -386,7 +386,7 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 							  const int *cudaVN,
 							  const int *cudaVL2,
 							  const int *cudaVM,
-							  const PrecisionType *cudaClnm,
+							  cudaTextureObject_t texObjClnm,
 							  const PrecisionType *cudaR)
 {
 	int cubeX = threadIdx.x + blockIdx.x * blockDim.x;
@@ -422,9 +422,9 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 				auto m = cudaVM[idx];
 				if (rr > 0 || l2 == 0) {
 					PrecisionType zsph = device::ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-					gx += cudaClnm[idx] * (zsph);
-					gy += cudaClnm[idx + idxY0] * (zsph);
-					gz += cudaClnm[idx + idxZ0] * (zsph);
+					gx += tex2D<PrecisionType>(texObjClnm, idx, 1) * (zsph);
+					gy += tex2D<PrecisionType>(texObjClnm, idx + idxY0, 1) * (zsph);
+					gz += tex2D<PrecisionType>(texObjClnm, idx + idxZ0, 1) * (zsph);
 				}
 			}
 		}
@@ -458,7 +458,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const int *cudaVN,
 							   const int *cudaVL2,
 							   const int *cudaVM,
-							   const PrecisionType *cudaClnm,
+							   cudaTextureObject_t texObjClnm,
 							   const PrecisionType *cudaR,
 							   cudaTextureObject_t texObj)
 {
@@ -485,9 +485,9 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 				auto m = cudaVM[idx];
 				if (rr > 0 || l2 == 0) {
 					PrecisionType zsph = device::ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-					gx += cudaClnm[idx] * (zsph);
-					gy += cudaClnm[idx + idxY0] * (zsph);
-					gz += cudaClnm[idx + idxZ0] * (zsph);
+					gx += tex2D<PrecisionType>(texObjClnm, idx, 1) * (zsph);
+					gy += tex2D<PrecisionType>(texObjClnm, idx + idxY0, 1) * (zsph);
+					gz += tex2D<PrecisionType>(texObjClnm, idx + idxZ0, 1) * (zsph);
 				}
 			}
 		}
