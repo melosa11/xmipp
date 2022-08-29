@@ -91,8 +91,8 @@ namespace {
 	MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray)
 	{
 		struct MultidimArrayCuda<T> cudaArray = {
-			.xdim = const_cast<unsigned> multidimArray.xdim, .ydim = const_cast<unsigned> multidimArray.ydim,
-			.yxdim = const_cast<unsigned> multidimArray.yxdim, .xinit = multidimArray.xinit,
+			.xdim = const_cast<unsigned>(multidimArray.xdim), .ydim = const_cast<unsigned>(multidimArray.ydim),
+			.yxdim = const_cast<unsigned>(multidimArray.yxdim), .xinit = multidimArray.xinit,
 			.yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
 			.data = transportMultidimArrayToGpu(multidimArray)
 		};
@@ -243,7 +243,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 																	  lastY,
 																	  lastX,
 																	  step,
-																	  const_cast<unsigned> sigma_size,
+																	  const_cast<unsigned>(sigma_size),
 																	  cudaSigma,
 																	  commonParameters.iRmaxF,
 																	  commonParameters.idxY0,
