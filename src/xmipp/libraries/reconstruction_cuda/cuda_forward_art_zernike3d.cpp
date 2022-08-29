@@ -130,7 +130,7 @@ namespace {
 	template<typename T>
 	void freeCommonArgumentsKernel(struct Program<T>::CommonKernelParameters &commonParameters)
 	{
-		cudaFree(commonParameters.cudaClnm);
+		//cudaFree(commonParameters.cudaClnm);
 		cudaFree(commonParameters.cudaR);
 	}
 
