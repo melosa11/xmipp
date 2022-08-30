@@ -7,7 +7,6 @@
 #include <core/multidim_array.h>
 #include <core/xmipp_image.h>
 // Standard includes
-#include <cuda_runtime.h>
 #include <vector>
 
 namespace cuda_forward_art_zernike3D {
@@ -91,8 +90,6 @@ class Program {
 	const std::vector<PrecisionType> sigma;
 
 	const size_t blockX, blockY, blockZ, gridX, gridY, gridZ;
-
-	cudaStream_t stream;
 
 	PrecisionType *pinnedV;
 };
