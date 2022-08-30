@@ -270,25 +270,25 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef, stream);
 
 	forwardKernel<PrecisionType, usesZernike>
-		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), 0, stream>>>(cudaMV,
-																				 VRecMaskF,
-																				 cudaP,
-																				 cudaW,
-																				 lastZ,
-																				 lastY,
-																				 lastX,
-																				 step,
-																				 sigma_size,
-																				 cudaSigma,
-																				 commonParameters.iRmaxF,
-																				 commonParameters.idxY0,
-																				 commonParameters.idxZ0,
-																				 cudaVL1,
-																				 cudaVN,
-																				 cudaVL2,
-																				 cudaVM,
-																				 commonParameters.cudaClnm,
-																				 commonParameters.cudaR);
+		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), 0>>>(cudaMV,
+																		 VRecMaskF,
+																		 cudaP,
+																		 cudaW,
+																		 lastZ,
+																		 lastY,
+																		 lastX,
+																		 step,
+																		 sigma_size,
+																		 cudaSigma,
+																		 commonParameters.iRmaxF,
+																		 commonParameters.idxY0,
+																		 commonParameters.idxZ0,
+																		 cudaVL1,
+																		 cudaVN,
+																		 cudaVL2,
+																		 cudaVM,
+																		 commonParameters.cudaClnm,
+																		 commonParameters.cudaR);
 
 	cudaDeviceSynchronize();
 
@@ -316,22 +316,22 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef, stream);
 
 	backwardKernel<PrecisionType, usesZernike>
-		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), 0, stream>>>(cudaMV,
-																				 cudaMId,
-																				 VRecMaskB,
-																				 lastZ,
-																				 lastY,
-																				 lastX,
-																				 step,
-																				 commonParameters.iRmaxF,
-																				 commonParameters.idxY0,
-																				 commonParameters.idxZ0,
-																				 cudaVL1,
-																				 cudaVN,
-																				 cudaVL2,
-																				 cudaVM,
-																				 commonParameters.cudaClnm,
-																				 commonParameters.cudaR);
+		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), 0>>>(cudaMV,
+																		 cudaMId,
+																		 VRecMaskB,
+																		 lastZ,
+																		 lastY,
+																		 lastX,
+																		 step,
+																		 commonParameters.iRmaxF,
+																		 commonParameters.idxY0,
+																		 commonParameters.idxZ0,
+																		 cudaVL1,
+																		 cudaVN,
+																		 cudaVL2,
+																		 cudaVM,
+																		 commonParameters.cudaClnm,
+																		 commonParameters.cudaR);
 
 	cudaDeviceSynchronize();
 
@@ -343,8 +343,7 @@ template<typename PrecisionType>
 void Program<PrecisionType>::recoverVolumeFromGPU(Image<PrecisionType> &Vrefined)
 {
 	//updateMultidimArrayWithGPUData(Vrefined(), cudaMV, stream);
-	transportDataFromGPU(
-		pinnedV, multidimArrayCuda.data, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim, stream);
+	transportDataFromGPU(pinnedV, cudaMV.data, Vrefined().xdim * Vrefined().ydim * Vrefined().zdim, stream);
 	memcpy(
 		Vrefined.data, pinnedV, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim * sizeof(PrecisionType));
 }
