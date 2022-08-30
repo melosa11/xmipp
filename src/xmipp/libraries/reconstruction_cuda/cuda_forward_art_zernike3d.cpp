@@ -344,8 +344,7 @@ void Program<PrecisionType>::recoverVolumeFromGPU(Image<PrecisionType> &Vrefined
 {
 	//updateMultidimArrayWithGPUData(Vrefined(), cudaMV, stream);
 	transportDataFromGPU(pinnedV, cudaMV.data, Vrefined().xdim * Vrefined().ydim * Vrefined().zdim, stream);
-	memcpy(
-		Vrefined.data, pinnedV, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim * sizeof(PrecisionType));
+	memcpy(Vrefined.data, pinnedV, Vrefined().xdim * Vrefined().ydim * Vrefined().zdim * sizeof(PrecisionType));
 }
 
 // explicit template instantiation
