@@ -101,22 +101,25 @@ namespace {
 	}
 
 	template<typename T>
-	MultidimArrayCuda<T> initializePinnedMultidimArrayCuda(const MultidimArray<T> &multidimArray, cudaStream_t &stream)
+	MultidimArrayCuda<T> initializePinnedMultidimArrayCuda(const MultidimArray<T> &multidimArray,
+														   cudaStream_t &stream,
+														   T *pinnedV)
 	{
-		T *pinnedArray;
-		if (cudaMallocHost((void **)&pinnedArray,
-						   multidimArray.xdim * multidimArray.ydim * multidimArray.zdim * sizeof(T))
+		if (cudaMallocHost((void **)&pinnedV, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim * sizeof(T))
 			!= cudaSuccess) {
 			processCudaError();
 		}
+
+		memcpy(pinnedV,
+			   multidimArray.data,
+			   multidimArray.xdim * multidimArray.ydim * multidimArray.zdim * sizeof(PrecisionType));
 
 		struct MultidimArrayCuda<T> cudaArray = {
 			.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
 			.xinit = multidimArray.xinit, .yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
 		};
 
-		transportData(
-			&cudaArray.data, pinnedArray, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim, stream);
+		transportData(&cudaArray.data, pinnedV, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim, stream);
 
 		return cudaArray;
 	}
@@ -211,7 +214,7 @@ namespace {
 
 template<typename PrecisionType>
 Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters parameters)
-	: cudaMV(initializePinnedMultidimArrayCuda(parameters.Vrefined(), stream)),
+	: cudaMV(initializePinnedMultidimArrayCuda(parameters.Vrefined(), stream, pinnedV)),
 	  VRecMaskF(initializeMultidimArrayCuda(parameters.VRecMaskF, stream)),
 	  VRecMaskB(initializeMultidimArrayCuda(parameters.VRecMaskB, stream)),
 	  sigma(parameters.sigma),
@@ -339,7 +342,11 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 template<typename PrecisionType>
 void Program<PrecisionType>::recoverVolumeFromGPU(Image<PrecisionType> &Vrefined)
 {
-	updateMultidimArrayWithGPUData(Vrefined(), cudaMV, stream);
+	//updateMultidimArrayWithGPUData(Vrefined(), cudaMV, stream);
+	transportDataFromGPU(
+		pinnedV, multidimArrayCuda.data, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim, stream);
+	memcpy(
+		Vrefined.data, pinnedV, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim * sizeof(PrecisionType));
 }
 
 // explicit template instantiation

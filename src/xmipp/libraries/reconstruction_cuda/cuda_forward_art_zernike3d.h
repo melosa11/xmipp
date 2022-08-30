@@ -93,6 +93,8 @@ class Program {
 	const size_t blockX, blockY, blockZ, gridX, gridY, gridZ;
 
 	cudaStream_t stream;
+
+	PrecisionType *pinnedV;
 };
 
 }  // namespace cuda_forward_art_zernike3D
