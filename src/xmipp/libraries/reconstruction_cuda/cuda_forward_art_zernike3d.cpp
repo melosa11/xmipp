@@ -101,6 +101,27 @@ namespace {
 	}
 
 	template<typename T>
+	MultidimArrayCuda<T> initializePinnedMultidimArrayCuda(const MultidimArray<T> &multidimArray, cudaStream_t &stream)
+	{
+		T *pinnedArray;
+		if (cudaMallocHost((void **)&pinnedArray,
+						   multidimArray.xdim * multidimArray.ydim * multidimArray.zdim * sizeof(T))
+			!= cudaSuccess) {
+			processCudaError();
+		}
+
+		struct MultidimArrayCuda<T> cudaArray = {
+			.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
+			.xinit = multidimArray.xinit, .yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
+		};
+
+		transportData(
+			&cudaArray.data, pinnedArray, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim, stream);
+
+		return cudaArray;
+	}
+
+	template<typename T>
 	void updateMultidimArrayWithGPUData(MultidimArray<T> &multidimArray,
 										const MultidimArrayCuda<T> &multidimArrayCuda,
 										cudaStream_t &stream)
@@ -190,7 +211,7 @@ namespace {
 
 template<typename PrecisionType>
 Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters parameters)
-	: cudaMV(initializeMultidimArrayCuda(parameters.Vrefined(), stream)),
+	: cudaMV(initializePinnedMultidimArrayCuda(parameters.Vrefined(), stream)),
 	  VRecMaskF(initializeMultidimArrayCuda(parameters.VRecMaskF, stream)),
 	  VRecMaskB(initializeMultidimArrayCuda(parameters.VRecMaskB, stream)),
 	  sigma(parameters.sigma),
