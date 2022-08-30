@@ -32,7 +32,7 @@ namespace {
 			processCudaError();
 		}
 
-		if (cudaMemcpyAsync(*dest, source, sizeof(T) * n, cudaMemcpyHostToDevice, stream) != cudaSuccess) {
+		if (cudaMemcpyAsync(*dest, source, sizeof(T) * n, cudaMemcpyHostToDevice) != cudaSuccess) {
 			cudaFree(*dest);
 			processCudaError();
 		}
@@ -42,7 +42,7 @@ namespace {
 	template<typename T>
 	void transportDataFromGPU(T *dest, const T *source, size_t n, cudaStream_t &stream)
 	{
-		if (cudaMemcpyAsync(dest, source, sizeof(T) * n, cudaMemcpyDeviceToHost, stream) != cudaSuccess) {
+		if (cudaMemcpyAsync(dest, source, sizeof(T) * n, cudaMemcpyDeviceToHost) != cudaSuccess) {
 			processCudaError();
 		}
 	}
