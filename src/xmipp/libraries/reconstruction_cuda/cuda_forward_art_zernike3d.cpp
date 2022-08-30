@@ -4,6 +4,7 @@
 #include "cuda_forward_art_zernike3d.cu"
 #include "data/numerical_tools.h"
 
+#include <stdio.h>
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
@@ -266,6 +267,8 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef, stream);
+
+	printf("P.x %d P.y %d W.x %d W.y %d\n", cudaP->xdim, cudaP->ydim, cudaW->xdim, cudaW->ydim);
 
 	forwardKernel<PrecisionType, usesZernike>
 		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), 0>>>(cudaMV,
