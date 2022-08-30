@@ -110,9 +110,7 @@ namespace {
 			processCudaError();
 		}
 
-		memcpy(pinnedV,
-			   multidimArray.data,
-			   multidimArray.xdim * multidimArray.ydim * multidimArray.zdim * sizeof(PrecisionType));
+		memcpy(pinnedV, multidimArray.data, multidimArray.xdim * multidimArray.ydim * multidimArray.zdim * sizeof(T));
 
 		struct MultidimArrayCuda<T> cudaArray = {
 			.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
@@ -344,7 +342,7 @@ void Program<PrecisionType>::recoverVolumeFromGPU(Image<PrecisionType> &Vrefined
 {
 	//updateMultidimArrayWithGPUData(Vrefined(), cudaMV, stream);
 	transportDataFromGPU(pinnedV, cudaMV.data, Vrefined().xdim * Vrefined().ydim * Vrefined().zdim, stream);
-	memcpy(Vrefined.data, pinnedV, Vrefined().xdim * Vrefined().ydim * Vrefined().zdim * sizeof(PrecisionType));
+	memcpy(Vrefined.data.data, pinnedV, Vrefined().xdim * Vrefined().ydim * Vrefined().zdim * sizeof(PrecisionType));
 }
 
 // explicit template instantiation
