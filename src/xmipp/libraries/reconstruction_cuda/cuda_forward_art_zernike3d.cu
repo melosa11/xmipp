@@ -391,8 +391,13 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 							  const PrecisionType *cudaR)
 {
 	__shared__ PrecisionType sharedR[6];
-	if (threadIdx.x < 6) {
-		sharedR[threadIdx.x] = cudaR[threadIdx.x];
+	if (threadIdx.x == 0) {
+		sharedR[0] = cudaR[0];
+		sharedR[1] = cudaR[1];
+		sharedR[2] = cudaR[2];
+		sharedR[3] = cudaR[3];
+		sharedR[4] = cudaR[4];
+		sharedR[5] = cudaR[5];
 	}
 	__syncthreads();
 	int cubeX = (threadIdx.x + blockIdx.x * blockDim.x) * step;
@@ -466,8 +471,13 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   cudaTextureObject_t tex)
 {
 	__shared__ PrecisionType sharedR[6];
-	if (threadIdx.x < 6) {
-		sharedR[threadIdx.x] = cudaR[threadIdx.x];
+	if (threadIdx.x == 0) {
+		sharedR[0] = cudaR[0];
+		sharedR[1] = cudaR[1];
+		sharedR[2] = cudaR[2];
+		sharedR[3] = cudaR[3];
+		sharedR[4] = cudaR[4];
+		sharedR[5] = cudaR[5];
 	}
 	__syncthreads();
 	int cubeX = threadIdx.x + blockIdx.x * blockDim.x;
