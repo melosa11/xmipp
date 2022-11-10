@@ -321,6 +321,11 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
 
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
+	cudaEventRecord(start);
 	backwardKernel<PrecisionType, usesZernike>
 		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ)>>>(cudaMV,
 																	  cudaMId,
@@ -338,6 +343,15 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 																	  cudaVM,
 																	  commonParameters.cudaClnm,
 																	  commonParameters.cudaR);
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float time;
+	cudaEventElapsedTime(&time, start, stop);
+	std::cout << time << '\n';
+
+	cudaEventDestroy(stop);
+	cudaEventDestroy(start);
+
 
 	cudaDeviceSynchronize();
 
