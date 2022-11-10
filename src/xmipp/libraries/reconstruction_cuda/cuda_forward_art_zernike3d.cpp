@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <fstream>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -17,7 +18,7 @@ namespace cuda_forward_art_zernike3D {
 namespace {
 	void dumpTime(float elapsedTime)
 	{
-		std::ofstream f("backward_elapsed_times.txt");
+		std::ofstream f("backward_elapsed_times.txt", std::ios::out | std::ios::app | std::ios::ate);
 		f << elapsedTime << '\n';
 	}
 }  // namespace
