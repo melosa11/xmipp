@@ -13,6 +13,15 @@
 
 namespace cuda_forward_art_zernike3D {
 
+// Profiling utility functions
+namespace {
+	void dumpTime(float elapsedTime)
+	{
+		std::ofstream f("backward_elapsed_times.txt");
+		f << elapsedTime << '\n';
+	}
+}  // namespace
+
 // Cuda memory helper function
 namespace {
 
@@ -347,7 +356,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	cudaEventSynchronize(stop);
 	float time;
 	cudaEventElapsedTime(&time, start, stop);
-	std::cout << time << '\n';
+	dumpTime(time);
 
 	cudaEventDestroy(stop);
 	cudaEventDestroy(start);
