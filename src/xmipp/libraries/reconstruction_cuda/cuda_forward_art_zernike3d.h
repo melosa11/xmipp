@@ -62,6 +62,7 @@ class Program {
 		size_t idxY0, idxZ0;
 		PrecisionType iRmaxF;
 		PrecisionType *cudaClnm, *cudaR;
+		Matrix2D<PrecisionType> R;
 	};
 
    public:

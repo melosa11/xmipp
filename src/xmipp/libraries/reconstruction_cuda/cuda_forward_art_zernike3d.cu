@@ -455,7 +455,12 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const int *cudaVL2,
 							   const int *cudaVM,
 							   const PrecisionType *cudaClnm,
-							   const PrecisionType *cudaR)
+							   const PrecisionType r0,
+							   const PrecisionType r1,
+							   const PrecisionType r2,
+							   const PrecisionType r3,
+							   const PrecisionType r4,
+							   const PrecisionType r5)
 {
 	int cubeX = threadIdx.x + blockIdx.x * blockDim.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
@@ -491,8 +496,8 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 		auto r_y = i + gy;
 		auto r_z = k + gz;
 
-		auto pos_x = cudaR[0] * r_x + cudaR[1] * r_y + cudaR[2] * r_z;
-		auto pos_y = cudaR[3] * r_x + cudaR[4] * r_y + cudaR[5] * r_z;
+		auto pos_x = r0 * r_x + r1 * r_y + r2 * r_z;
+		auto pos_y = r3 * r_x + r4 * r_y + r5 * r_z;
 		PrecisionType voxel = device::interpolatedElement2DCuda(pos_x, pos_y, cudaMId);
 		A3D_ELEM(cudaMV, k, i, j) += voxel;
 	}

@@ -182,7 +182,7 @@ namespace {
 
 		struct Program<T>::CommonKernelParameters output = {
 			.idxY0 = idxY0, .idxZ0 = idxZ0, .iRmaxF = iRmaxF, .cudaClnm = transportStdVectorToGpu(clnm),
-			.cudaR = transportMatrix2DToGpu(R),
+			.cudaR = transportMatrix2DToGpu(R), .R = R,
 		};
 
 		return output;
@@ -352,7 +352,12 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 																	  cudaVL2,
 																	  cudaVM,
 																	  commonParameters.cudaClnm,
-																	  commonParameters.cudaR);
+																	  commonParameters.R.mdata[0],
+																	  commonParameters.R.mdata[1],
+																	  commonParameters.R.mdata[2],
+																	  commonParameters.R.mdata[3],
+																	  commonParameters.R.mdata[4],
+																	  commonParameters.R.mdata[5]);
 	cudaEventRecord(stop);
 	cudaEventSynchronize(stop);
 	float time;
