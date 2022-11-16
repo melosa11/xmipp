@@ -462,6 +462,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const PrecisionType r4,
 							   const PrecisionType r5)
 {
+	(void)VRecMaskB;
 	int cubeX = threadIdx.x + blockIdx.x * blockDim.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
 	int cubeZ = threadIdx.z + blockIdx.z * blockDim.z;
@@ -469,38 +470,36 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	int i = STARTINGY(cudaMV) + cubeY;
 	int j = STARTINGX(cudaMV) + cubeX;
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-	if (A3D_ELEM(VRecMaskB, k, i, j) != 0) {
-		if (usesZernike) {
-			auto k2 = k * k;
-			auto kr = k * iRmaxF;
-			auto k2i2 = k2 + i * i;
-			auto ir = i * iRmaxF;
-			auto r2 = k2i2 + j * j;
-			auto jr = j * iRmaxF;
-			auto rr = SQRT(r2) * iRmaxF;
-			for (size_t idx = 0; idx < idxY0; idx++) {
-				auto l1 = cudaVL1[idx];
-				auto n = cudaVN[idx];
-				auto l2 = cudaVL2[idx];
-				auto m = cudaVM[idx];
-				if (rr > 0 || l2 == 0) {
-					PrecisionType zsph = device::ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-					gx += cudaClnm[idx] * (zsph);
-					gy += cudaClnm[idx + idxY0] * (zsph);
-					gz += cudaClnm[idx + idxZ0] * (zsph);
-				}
+	if (usesZernike) {
+		auto k2 = k * k;
+		auto kr = k * iRmaxF;
+		auto k2i2 = k2 + i * i;
+		auto ir = i * iRmaxF;
+		auto r2 = k2i2 + j * j;
+		auto jr = j * iRmaxF;
+		auto rr = SQRT(r2) * iRmaxF;
+		for (size_t idx = 0; idx < idxY0; idx++) {
+			auto l1 = cudaVL1[idx];
+			auto n = cudaVN[idx];
+			auto l2 = cudaVL2[idx];
+			auto m = cudaVM[idx];
+			if (rr > 0 || l2 == 0) {
+				PrecisionType zsph = device::ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
+				gx += cudaClnm[idx] * (zsph);
+				gy += cudaClnm[idx + idxY0] * (zsph);
+				gz += cudaClnm[idx + idxZ0] * (zsph);
 			}
 		}
-
-		auto r_x = j + gx;
-		auto r_y = i + gy;
-		auto r_z = k + gz;
-
-		auto pos_x = r0 * r_x + r1 * r_y + r2 * r_z;
-		auto pos_y = r3 * r_x + r4 * r_y + r5 * r_z;
-		PrecisionType voxel = device::interpolatedElement2DCuda(pos_x, pos_y, cudaMId);
-		A3D_ELEM(cudaMV, k, i, j) += voxel;
 	}
+
+	auto r_x = j + gx;
+	auto r_y = i + gy;
+	auto r_z = k + gz;
+
+	auto pos_x = r0 * r_x + r1 * r_y + r2 * r_z;
+	auto pos_y = r3 * r_x + r4 * r_y + r5 * r_z;
+	PrecisionType voxel = device::interpolatedElement2DCuda(pos_x, pos_y, cudaMId);
+	A3D_ELEM(cudaMV, k, i, j) += voxel;
 }
 }  // namespace cuda_forward_art_zernike3D
 #endif	//CUDA_FORWARD_ART_ZERNIKE3D_CU
