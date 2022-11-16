@@ -221,7 +221,7 @@ namespace {
 				output = {8, 4, 4};
 				break;
 		}
-		return output;
+		return {8, 8, 8};
 	}
 
 }  // namespace
