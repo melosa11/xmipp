@@ -374,7 +374,7 @@ namespace device {
 		}
 		__syncthreads();
 
-		const int index = threadIdx.x + threadIdx.y * blockDim.x + theadIdx.z * blockDim.x * blockDim.y;
+		const int index = threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y;
 		if (index >= 13 * 13) {
 			return;
 		}
@@ -389,7 +389,7 @@ namespace device {
 		const int y = offset_y + index / 13;
 
 		sharedMId[index] =
-			(x < start_x || x > end_x || y < start_y || y > start_y) : CST(0.0) : A2D_ELEM(cudaMId, y, x);
+			(x < start_x || x > end_x || y < start_y || y > start_y) ? CST(0.0) : A2D_ELEM(cudaMId, y, x);
 	}
 
 }  // namespace device
