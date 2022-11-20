@@ -349,7 +349,7 @@ namespace device {
 #define ASSIGNVAL2DCUDA(d, i, j) d = sharedMId[(j) + (i)*SHARED_MID_DIM];
 
 		const int shared_pos_x0 = x0 - center_x + ((SHARED_MID_DIM - 1) / 2);
-		const int shared_pos_y0 = (SHARED_MID_SIZE - 1) + (y0 - center_y - ((SHARED_MID_DIM - 1) / 2));
+		const int shared_pos_y0 = y0 - center_y + ((SHARED_MID_DIM - 1) / 2);
 		const int shared_pos_x1 = shared_pos_x0 + 1;
 		const int shared_pos_y1 = shared_pos_y0 + 1;
 
@@ -429,7 +429,7 @@ namespace device {
 		const int end_x = FINISHINGX(cudaMId);
 
 		const int offset_x = center_x - ((SHARED_MID_DIM - 1) / 2);
-		const int offset_y = center_y + ((SHARED_MID_DIM - 1) / 2);
+		const int offset_y = center_y - ((SHARED_MID_DIM - 1) / 2);
 		const int x = offset_x + index % SHARED_MID_DIM;
 		const int y = offset_y + index / SHARED_MID_DIM;
 
