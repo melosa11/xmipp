@@ -1,6 +1,7 @@
 #ifndef CUDA_FORWARD_ART_ZERNIKE3D_CU
 #define CUDA_FORWARD_ART_ZERNIKE3D_CU
 
+#include <assert.h>
 #include "cuda_forward_art_zernike3d.h"
 #include "cuda_forward_art_zernike3d_defines.h"
 
@@ -350,6 +351,11 @@ namespace device {
 		const int shared_pos_y0 = -(y0 - center_y - 6);
 		const int shared_pos_x1 = shared_pos_x0 + 1;
 		const int shared_pos_y1 = shared_pos_y0 + 1;
+
+		assert(shared_pos_x0 > 0);
+		assert(shared_pos_x0 < SHARED_MID_DIM - 1);
+		assert(shared_pos_y0 > 0);
+		assert(shared_pos_y0 < SHARED_MID_DIM - 1);
 
 		PrecisionType d00, d10, d11, d01;
 		ASSIGNVAL2DCUDA(d00, shared_pos_y0, shared_pos_x0);
