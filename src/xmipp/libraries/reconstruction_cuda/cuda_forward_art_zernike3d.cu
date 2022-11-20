@@ -392,7 +392,7 @@ namespace device {
 		if (rel_x < SHARED_MID_DIM && rel_y < SHARED_MID_DIM) {
 			const int x = offset_x + rel_x;
 			const int y = offset_y + rel_y;
-			sharedMId[index] =
+			sharedMId[index - index / 16] =
 				(x < start_x || x > end_x || y < start_y || y > end_y) ? CST(0.0) : A2D_ELEM(cudaMId, y, x);
 		}
 	}
