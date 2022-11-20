@@ -345,7 +345,7 @@ namespace device {
 #define ASSIGNVAL2DCUDA(d, i, j) d = sharedMId[(j) + (i)*13];
 
 		const int shared_pos_x0 = x0 - center_x + 6;
-		const int shared_pos_y0 = y0 - center_y - 6;
+		const int shared_pos_y0 = -(y0 - center_y - 6);
 		const int shared_pos_x1 = shared_pos_x0 + 1;
 		const int shared_pos_y1 = shared_pos_y0 + 1;
 
