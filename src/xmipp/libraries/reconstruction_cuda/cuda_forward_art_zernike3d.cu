@@ -366,40 +366,6 @@ namespace device {
 
 #undef ASSIGNVAL2DCUDA
 
-		int i0 = STARTINGY(diffImage);
-		int j0 = STARTINGX(diffImage);
-		int iF = FINISHINGY(diffImage);
-		int jF = FINISHINGX(diffImage);
-
-#define ASSIGNVAL2DCUDA(d, i, j)                      \
-	if ((j) < j0 || (j) > jF || (i) < i0 || (i) > iF) \
-		d = (PrecisionType)0;                         \
-	else                                              \
-		d = A2D_ELEM(diffImage, i, j);
-
-		PrecisionType tmp00, tmp10, tmp11, tmp01;
-		ASSIGNVAL2DCUDA(tmp00, y0, x0);
-		ASSIGNVAL2DCUDA(tmp01, y0, x1);
-		ASSIGNVAL2DCUDA(tmp10, y1, x0);
-		ASSIGNVAL2DCUDA(tmp11, y1, x1);
-		printf(
-			"d00 = %lf  tmp00 = %lf\n"
-			"d01 = %lf  tmp01 = %lf\n"
-			"d10 = %lf  tmp10 = %lf\n"
-			"d11 = %lf  tmp11 = %lf\n",
-			d00,
-			tmp00,
-			d01,
-			tmp01,
-			d10,
-			tmp10,
-			d11,
-			tmp11);
-		assert(d00 == tmp00);
-		assert(d01 == tmp01);
-		assert(d10 == tmp10);
-		assert(d11 == tmp11);
-
 		PrecisionType d0 = LIN_INTERP(fx, d00, d01);
 		PrecisionType d1 = LIN_INTERP(fx, d10, d11);
 		return LIN_INTERP(fy, d0, d1);
