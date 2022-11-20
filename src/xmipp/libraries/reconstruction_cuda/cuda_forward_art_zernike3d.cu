@@ -331,8 +331,8 @@ namespace device {
 	template<typename PrecisionType>
 	__device__ PrecisionType interpolatedElement2DCuda(PrecisionType x,
 													   PrecisionType y,
-													   const PrecisionType center_x,
-													   const PrecisionType center_y,
+													   const int center_x,
+													   const int center_y,
 													   const PrecisionType *sharedMId)
 	{
 		int x0 = CUDA_FLOOR(x);
@@ -363,8 +363,8 @@ namespace device {
 	template<typename PrecisionType>
 	__forceinline__ __device__ void initSharedMId(PrecisionType *sharedMId,
 												  const MultidimArrayCuda<PrecisionType> &cudaMId,
-												  PrecisionType &center_x,
-												  PrecisionType &center_y,
+												  int &center_x,
+												  int &center_y,
 												  const PrecisionType pos_x,
 												  const PrecisionType pos_y)
 	{
@@ -534,7 +534,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	auto pos_y = r3 * r_x + r4 * r_y + r5 * r_z;
 	device::initSharedMId(sharedMId, cudaMId, center_x, center_y, pos_x, pos_y);
 	__syncthreads();
-	PrecisionType voxel = device::interpolatedElement2DCuda(center_x, center_y, pos_x, pos_y, sharedMID);
+	PrecisionType voxel = device::interpolatedElement2DCuda(center_x, center_y, pos_x, pos_y, sharedMId);
 	A3D_ELEM(cudaMV, k, i, j) = old_voxel + voxel;
 }
 }  // namespace cuda_forward_art_zernike3D
