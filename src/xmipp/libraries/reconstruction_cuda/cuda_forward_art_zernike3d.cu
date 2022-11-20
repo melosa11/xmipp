@@ -329,11 +329,11 @@ namespace device {
 	}
 
 	template<typename PrecisionType>
-	__device__ PrecisionType interpolatedElement2DCuda(PrecisionType x,
-													   PrecisionType y,
-													   const int center_x,
+	__device__ PrecisionType interpolatedElement2DCuda(const int center_x,
 													   const int center_y,
-													   const PrecisionType *sharedMId)
+													   PrecisionType x,
+													   PrecisionType y,
+													   PrecisionType *sharedMId)
 	{
 		int x0 = CUDA_FLOOR(x);
 		PrecisionType fx = x - x0;
