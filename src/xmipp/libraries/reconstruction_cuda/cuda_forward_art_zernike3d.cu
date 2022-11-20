@@ -388,8 +388,7 @@ namespace device {
 		const int x = offset_x + index % 13;
 		const int y = offset_y + index / 13;
 
-		sharedMId[index] =
-			(x < start_x || x > end_x || y < start_y || y > start_y) ? CST(0.0) : A2D_ELEM(cudaMId, y, x);
+		sharedMId[index] = (x < start_x || x > end_x || y < start_y || y > end_y) ? CST(0.0) : A2D_ELEM(cudaMId, y, x);
 	}
 
 }  // namespace device
