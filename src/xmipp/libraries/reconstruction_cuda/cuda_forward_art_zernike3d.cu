@@ -8,6 +8,8 @@ namespace cuda_forward_art_zernike3D {
 
 // Constants
 static constexpr float CUDA_PI = 3.1415926535897f;
+static constexpr size_t SHARED_MID_DIM = 15;
+static constexpr size_t SHARED_MID_SIZE = SHARED_MID_DIM * SHARED_MID_DIM;
 // Functions
 #define SQRT sqrtf
 #define ATAN2 atan2f
@@ -342,7 +344,7 @@ namespace device {
 		PrecisionType fy = y - y0;
 		int y1 = y0 + 1;
 
-#define ASSIGNVAL2DCUDA(d, i, j) d = sharedMId[(j) + (i)*13];
+#define ASSIGNVAL2DCUDA(d, i, j) d = sharedMId[(j) + (i)*SHARED_MID_DIM];
 
 		const int shared_pos_x0 = x0 - center_x + 6;
 		const int shared_pos_y0 = -(y0 - center_y - 6);
@@ -375,7 +377,7 @@ namespace device {
 		__syncthreads();
 
 		const int index = threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y;
-		if (index >= 13 * 13) {
+		if (index >= SHARED_MID_SIZE) {
 			return;
 		}
 		const int start_y = STARTINGY(cudaMId);
@@ -385,8 +387,8 @@ namespace device {
 
 		const int offset_x = center_x - 6;
 		const int offset_y = center_y + 6;
-		const int x = offset_x + index % 13;
-		const int y = offset_y + index / 13;
+		const int x = offset_x + index % SHARED_MID_DIM;
+		const int y = offset_y + index / SHARED_MID_DIM;
 
 		sharedMId[index] = (x < start_x || x > end_x || y < start_y || y > end_y) ? CST(0.0) : A2D_ELEM(cudaMId, y, x);
 	}
@@ -491,7 +493,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const PrecisionType r4,
 							   const PrecisionType r5)
 {
-	__shared__ PrecisionType sharedMId[13 * 13];
+	__shared__ PrecisionType sharedMId[SHARED_MID_SIZE];
 	__shared__ int center_x;
 	__shared__ int center_y;
 	(void)VRecMaskB;
