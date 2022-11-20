@@ -382,6 +382,19 @@ namespace device {
 		ASSIGNVAL2DCUDA(tmp01, y0, x1);
 		ASSIGNVAL2DCUDA(tmp10, y1, x0);
 		ASSIGNVAL2DCUDA(tmp11, y1, x1);
+		printf(
+			"d00 = %lf  tmp00 = %lf\n"
+			"d01 = %lf  tmp01 = %lf\n"
+			"d10 = %lf  tmp10 = %lf\n"
+			"d11 = %lf  tmp11 = %lf\n",
+			d00,
+			tmp00,
+			d01,
+			tmp01,
+			d10,
+			tmp10,
+			d11,
+			tmp11);
 		assert(d00 == tmp00);
 		assert(d01 == tmp01);
 		assert(d10 == tmp10);
