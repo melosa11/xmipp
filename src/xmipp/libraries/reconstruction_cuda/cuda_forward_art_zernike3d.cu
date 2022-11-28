@@ -345,7 +345,6 @@ namespace device {
 		int y1 = y0 + 1;
 
 		PrecisionType localMId[SHARED_MID_SIZE];
-#pragma unroll
 		for (int i = 0; i < SHARED_MID_DIM * SHARED_MID_DIM; ++i) {
 			localMId[i] = sharedMId[i];
 		}
