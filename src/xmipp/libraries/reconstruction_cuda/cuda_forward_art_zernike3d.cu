@@ -351,8 +351,8 @@ namespace device {
 
 		PrecisionType localMId[9 * 9];
 		for (int i = 0; i < sizeof(localMId) / sizeof(*localMId); ++i) {
-			const int x = center_x - 4 + i % 9;
-			const int y = center_y + 4 + i / 9;
+			const int x = 1 + i % 9;
+			const int y = 1 + i / 9;
 			localMId[i] = sharedMId[x + 9 * y];
 		}
 
