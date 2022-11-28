@@ -353,14 +353,14 @@ namespace device {
 		for (int i = 0; i < 9 * 9; ++i) {
 			const int x = 1 + i % 9;
 			const int y = 1 + i / 9;
-			localMId[i] = sharedMId[x + 9 * y];
+			localMId[i] = sharedMId[x + y * SHARED_MID_DIM];
 		}
 
 #define ASSIGNVAL2DCUDA(d, i, j)              \
 	if (j >= 1 && j <= 9 && i >= 1 && i <= 9) \
 		d = localMId[(j - 1) + (i - 1) * 9];  \
 	else                                      \
-		d = sharedMId[(j) + (i)*SHARED_MID_DIM]
+		d = sharedMId[(j) + (i)*SHARED_MID_DIM];
 
 		const int shared_pos_x0 = x0 - center_x + ((SHARED_MID_DIM - 1) / 2);
 		const int shared_pos_y0 = y0 - center_y + ((SHARED_MID_DIM - 1) / 2);
