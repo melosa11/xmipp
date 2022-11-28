@@ -356,10 +356,10 @@ namespace device {
 			localMId[i] = sharedMId[x + y * SHARED_MID_DIM];
 		}
 
-#define ASSIGNVAL2DCUDA(d, i, j)              \
-	if (j >= 1 && j <= 9 && i >= 1 && i <= 9) \
-		d = localMId[(j - 1) + (i - 1) * 9];  \
-	else                                      \
+#define ASSIGNVAL2DCUDA(d, i, j)                      \
+	if ((j) >= 1 && (j) <= 9 && (i) >= 1 && (i) <= 9) \
+		d = localMId[((j)-1) + ((i)-1) * 9];          \
+	else                                              \
 		d = sharedMId[(j) + (i)*SHARED_MID_DIM];
 
 		const int shared_pos_x0 = x0 - center_x + ((SHARED_MID_DIM - 1) / 2);
