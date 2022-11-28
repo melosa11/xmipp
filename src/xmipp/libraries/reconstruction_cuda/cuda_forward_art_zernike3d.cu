@@ -398,7 +398,6 @@ namespace device {
 
 		const int offset_x = center_x - ((SHARED_MID_DIM - 1) / 2);
 		const int offset_y = center_y - ((SHARED_MID_DIM - 1) / 2);
-<<<<<<< HEAD
 		const int SHARED_MID_SIZE = SHARED_MID_DIM * SHARED_MID_DIM;
 
 		for (int i = 0; i < SHARED_MID_SIZE; i += blockDim.x * blockDim.y * blockDim.z) {
