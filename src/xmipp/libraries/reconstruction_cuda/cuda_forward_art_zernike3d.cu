@@ -344,7 +344,13 @@ namespace device {
 		PrecisionType fy = y - y0;
 		int y1 = y0 + 1;
 
-#define ASSIGNVAL2DCUDA(d, i, j) d = sharedMId[(j) + (i)*SHARED_MID_DIM];
+		PrecisionType localMId[SHARED_MID_SIZE];
+		for (int i = 0; i < SHARED_MID_DIM * SHARED_MID_DIM; ++i) {
+			localMId[i] = sharedMId[i];
+		}
+
+#define ASSIGNVAL2DCUDA(d, i, j) d = localMId[(j) + (i)*SHARED_MID_DIM];
+
 
 		const int shared_pos_x0 = x0 - center_x + ((SHARED_MID_DIM - 1) / 2);
 		const int shared_pos_y0 = y0 - center_y + ((SHARED_MID_DIM - 1) / 2);
