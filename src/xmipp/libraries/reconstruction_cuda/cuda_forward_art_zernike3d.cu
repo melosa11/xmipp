@@ -8,6 +8,11 @@ namespace cuda_forward_art_zernike3D {
 
 // Constants
 static constexpr float CUDA_PI = 3.1415926535897f;
+<<<<<<< HEAD
+=======
+static constexpr size_t SHARED_MID_DIM = 11;
+static constexpr size_t SHARED_MID_SIZE = SHARED_MID_DIM * SHARED_MID_DIM;
+>>>>>>> b830ceda (Shrink sharedMId size)
 // Functions
 #define SQRT sqrtf
 #define ATAN2 atan2f
@@ -393,6 +398,7 @@ namespace device {
 
 		const int offset_x = center_x - ((SHARED_MID_DIM - 1) / 2);
 		const int offset_y = center_y - ((SHARED_MID_DIM - 1) / 2);
+<<<<<<< HEAD
 		const int SHARED_MID_SIZE = SHARED_MID_DIM * SHARED_MID_DIM;
 
 		for (int i = 0; i < SHARED_MID_SIZE; i += blockDim.x * blockDim.y * blockDim.z) {
