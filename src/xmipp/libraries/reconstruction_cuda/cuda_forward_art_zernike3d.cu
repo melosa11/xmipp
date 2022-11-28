@@ -11,6 +11,7 @@ static constexpr float CUDA_PI = 3.1415926535897f;
 <<<<<<< HEAD
 =======
 static constexpr size_t SHARED_MID_DIM = 11;
+static constexpr size_t SHARED_MID_DIM_HALVED = (SHARED_MID_DIM - 1) / 2;
 static constexpr size_t SHARED_MID_SIZE = SHARED_MID_DIM * SHARED_MID_DIM;
 >>>>>>> b830ceda (Shrink sharedMId size)
 // Functions
@@ -351,8 +352,8 @@ namespace device {
 
 		PrecisionType localMId[9 * 9];
 		for (int i = 0; i < 9 * 9; ++i) {
-			const int x = 1 + i % 9;
-			const int y = 1 + i / 9;
+			const int x = (SHARED_MID_DIM_HALVED - 4) + i % 9;
+			const int y = (SHARED_MID_DIM_HALVED - 4) + i / 9;
 			localMId[i] = sharedMId[x + y * SHARED_MID_DIM];
 		}
 
