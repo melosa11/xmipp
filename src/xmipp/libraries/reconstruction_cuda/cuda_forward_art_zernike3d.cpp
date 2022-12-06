@@ -26,7 +26,11 @@ namespace {
 	void dumpVolume(MultidimArray<T> &volume)
 	{
 		std::ofstream f("volume.txt");
-		volume.printShape(f);
+
+		FOR_ALL_ELEMENTS_IN_ARRAY3D(volume)
+		{
+			f << V(k, i, j) << "\n";
+		}
 	}
 }  // namespace
 
