@@ -234,7 +234,7 @@ namespace {
 	template<typename T>
 	MultidimArray<T> alingMask(const MultidimArray<T> &mask, struct BlockSizes threadBlockDim, int step = 1)
 	{
-		auto resizedMask = MultidimArrayCuda<int>(mask);
+		auto resizedMask = MultidimArray<int>(mask);
 
 		auto newxDim = mask.xdim + mask.xdim % (threadBlockDim.x * step);
 		auto newyDim = mask.ydim + mask.ydim % (threadBlockDim.y * step);

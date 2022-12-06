@@ -149,7 +149,7 @@ class ProgForwardArtZernike3DGPU : public XmippMetadataProgram {
 	std::unique_ptr<cuda_forward_art_zernike3D::Program<PrecisionType>> cudaProgram = nullptr;
 
 	// GPU block sizes
-	struct BlockSizes threadBlockDim;
+	struct cuda_forward_art_zernike3D::BlockSizes threadBlockDim;
 
    public:
 	enum class Mode { Proj, Vol };
