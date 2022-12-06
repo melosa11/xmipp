@@ -21,6 +21,13 @@ namespace {
 		std::ofstream f("backward_elapsed_times.txt", std::ios::out | std::ios::app | std::ios::ate);
 		f << elapsedTime << '\n';
 	}
+
+	template<typename T>
+	void dumpVolume(MultidimArray<T> &volume)
+	{
+		std::ofstream f("volume.txt");
+		volume.printShape(f);
+	}
 }  // namespace
 
 // Cuda memory helper function
@@ -393,6 +400,7 @@ template<typename PrecisionType>
 void Program<PrecisionType>::recoverVolumeFromGPU(Image<PrecisionType> &Vrefined)
 {
 	updateMultidimArrayWithGPUData(Vrefined(), cudaMV);
+	dumpVolume(Vrefined());
 }
 
 // explicit template instantiation
