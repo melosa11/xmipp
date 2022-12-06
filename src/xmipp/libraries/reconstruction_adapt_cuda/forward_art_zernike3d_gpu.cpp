@@ -143,6 +143,9 @@ void ProgForwardArtZernike3DGPU::defineParams()
 	addParamsLine("  [--regularization <l=0.01>]  : ART regularization weight");
 	addParamsLine("  [--niter <n=1>]              : Number of ART iterations");
 	addParamsLine("  [--debug_iter]               : Save volume after each ART iteration");
+	addParamsLine("  [--tx]                       : Thread block x dimension");
+	addParamsLine("  [--ty]                       : Thread block y dimension");
+	addParamsLine("  [--tz]                       : Thread block z dimension");
 	addParamsLine("  [--save_iter <s=0>]          : Save intermidiate volume after #save_iter iterations");
 	addParamsLine(
 		"  [--sort_last <N=2>]          : The algorithm sorts projections in the most orthogonally possible way. ");
