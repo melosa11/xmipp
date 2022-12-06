@@ -102,8 +102,8 @@ namespace {
 	{
 		struct MultidimArrayCuda<T> cudaArray = {
 			.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
-			.xinit = multidimArray.xinit, .yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
-			.data = transportMultidimArrayToGpu(multidimArray)
+			.zdim = multidimArray.zdim, .xinit = multidimArray.xinit, .yinit = multidimArray.yinit,
+			.zinit = multidimArray.zinit, .data = transportMultidimArrayToGpu(multidimArray)
 		};
 
 		return cudaArray;
@@ -224,13 +224,28 @@ namespace {
 		return output;
 	}
 
+	template<typename T>
+	MultidimArray<T> alingMask(const MultidimArray<T> &mask, struct BlockSizes threadBlockDim, int step = 1)
+	{
+		auto resizedMask = MultidimArrayCuda<int>(mask);
+
+		auto newxDim = mask.xdim + mask.xdim % (threadBlockDim.x * step);
+		auto newyDim = mask.ydim + mask.ydim % (threadBlockDim.y * step);
+		auto newzDim = mask.zdim + mask.zdim % (threadBlockDim.z * step);
+
+		// the padding will fill with zeroes
+		resizedMask.resize(newzDim, newyDim, newxDim);
+		return resizedMask;
+	}
+
 }  // namespace
 
 template<typename PrecisionType>
 Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters parameters)
 	: cudaMV(initializeMultidimArrayCuda(parameters.Vrefined())),
-	  VRecMaskF(initializeMultidimArrayCuda(parameters.VRecMaskF)),
-	  VRecMaskB(initializeMultidimArrayCuda(parameters.VRecMaskB)),
+	  VRecMaskF(
+		  initializeMultidimArrayCuda(alingMask(parameters.VRecMaskF, parameters.threadBlockDim, parameters.loopStep))),
+	  VRecMaskB(initializeMultidimArrayCuda(alingMask(parameters.VRecMaskB, parameters.threadBlockDim))),
 	  sigma(parameters.sigma),
 	  RmaxDef(parameters.RmaxDef),
 	  lastX(FINISHINGX(parameters.Vrefined())),
@@ -241,18 +256,18 @@ Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters
 	  cudaVL2(transportMatrix1DToGpu(parameters.vL2)),
 	  cudaVN(transportMatrix1DToGpu(parameters.vN)),
 	  cudaVM(transportMatrix1DToGpu(parameters.vM)),
-	  blockX(std::__gcd(blockSizeArchitecture().x, parameters.Vrefined().xdim)),
-	  blockY(std::__gcd(blockSizeArchitecture().y, parameters.Vrefined().ydim)),
-	  blockZ(std::__gcd(blockSizeArchitecture().z, parameters.Vrefined().zdim)),
-	  gridX(parameters.Vrefined().xdim / blockX),
-	  gridY(parameters.Vrefined().ydim / blockY),
-	  gridZ(parameters.Vrefined().zdim / blockZ),
-	  blockXStep(std::__gcd(blockSizeArchitecture().x, parameters.Vrefined().xdim / loopStep)),
-	  blockYStep(std::__gcd(blockSizeArchitecture().y, parameters.Vrefined().ydim / loopStep)),
-	  blockZStep(std::__gcd(blockSizeArchitecture().z, parameters.Vrefined().zdim / loopStep)),
-	  gridXStep(parameters.Vrefined().xdim / loopStep / blockXStep),
-	  gridYStep(parameters.Vrefined().ydim / loopStep / blockYStep),
-	  gridZStep(parameters.Vrefined().zdim / loopStep / blockZStep)
+	  blockX(parameters.threadBlockDim.x),
+	  blockY(parameters.threadBlockDim.y),
+	  blockZ(parameters.threadBlockDim.z),
+	  gridX(VRecMaskB.xdim / blockX),
+	  gridY(VRecMaskB.ydim / blockY),
+	  gridZ(VRecMaskB.zdim / blockZ),
+	  blockXStep(parameters.threadBlockDim.x),
+	  blockYStep(parameters.threadBlockDim.y),
+	  blockZStep(parameters.threadBlockDim.z),
+	  gridXStep(VRecMaskF.xdim / loopStep / blockXStep),
+	  gridYStep(VRecMaskF.ydim / loopStep / blockYStep),
+	  gridZStep(VRecMaskF.zdim / loopStep / blockZStep)
 {}
 
 template<typename PrecisionType>

@@ -83,6 +83,15 @@ void ProgForwardArtZernike3DGPU::readParams()
 	sigma.resize(vstrings.size());
 	std::transform(
 		vstrings.begin(), vstrings.end(), sigma.begin(), [](const std::string &val) { return std::stod(val); });
+
+	int dimX = getIntParam("--tx");
+	int dimY = getIntParam("--ty");
+	int dimZ = getIntParam("--tz");
+	threadBlockDim = {
+		.x = dimX,
+		.y = dimY,
+		.z = dimZ,
+	};
 }
 
 // Show ====================================================================
@@ -286,6 +295,7 @@ void ProgForwardArtZernike3DGPU::preProcess()
 		.sigma = sigma,
 		.RmaxDef = RmaxDef,
 		.loopStep = loop_step,
+		.threadBlockDim = threadBlockDim,
 	};
 	try {
 		cudaProgram = std::make_unique<cuda_forward_art_zernike3D::Program<PrecisionType>>(parameters);

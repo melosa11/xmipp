@@ -19,6 +19,7 @@ struct MultidimArrayCuda {
 	size_t xdim;
 	size_t ydim;
 	size_t yxdim;
+	size_t zdim;
 	int xinit;
 	int yinit;
 	int zinit;
@@ -44,6 +45,7 @@ class Program {
 		std::vector<PrecisionType> &sigma;
 		int RmaxDef;
 		int loopStep;
+		struct BlockSizes threadBlockDim;
 	};
 
 	struct AngleParameters {
