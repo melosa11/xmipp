@@ -29,7 +29,7 @@ namespace {
 
 		FOR_ALL_ELEMENTS_IN_ARRAY3D(volume)
 		{
-			f << V(k, i, j) << "\n";
+			f << volume(k, i, j) << "\n";
 		}
 	}
 }  // namespace
