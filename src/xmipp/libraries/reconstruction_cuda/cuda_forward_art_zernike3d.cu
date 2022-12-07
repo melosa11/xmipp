@@ -442,7 +442,7 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 template<typename PrecisionType, bool usesZernike>
 __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const MultidimArrayCuda<PrecisionType> cudaMId,
-							   const MultidimArrayCuda<int> VRecMaskB,
+							   const int RmaxDef,
 							   const int lastZ,
 							   const int lastY,
 							   const int lastX,
@@ -469,7 +469,9 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	int i = STARTINGY(cudaMV) + cubeY;
 	int j = STARTINGX(cudaMV) + cubeX;
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-	if (A3D_ELEM(VRecMaskB, k, i, j) != 0) {
+	const int radius2 = k * k + i * i + j * j;
+	const int radiusMax2 = RmaxDef * RmaxDef;
+	if (radius2 < radiusMax2) {
 		if (usesZernike) {
 			auto k2 = k * k;
 			auto kr = k * iRmaxF;

@@ -365,7 +365,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	backwardKernel<PrecisionType, usesZernike>
 		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ)>>>(cudaMV,
 																	  cudaMId,
-																	  VRecMaskB,
+																	  RmaxDef,
 																	  lastZ,
 																	  lastY,
 																	  lastX,
