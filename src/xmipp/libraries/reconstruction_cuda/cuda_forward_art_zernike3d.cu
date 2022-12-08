@@ -8,8 +8,6 @@ namespace cuda_forward_art_zernike3D {
 
 // Constants
 static constexpr float CUDA_PI = 3.1415926535897f;
-static constexpr size_t SHARED_MID_DIM = 15;
-static constexpr size_t SHARED_MID_SIZE = SHARED_MID_DIM * SHARED_MID_DIM;
 // Functions
 #define SQRT sqrtf
 #define ATAN2 atan2f
@@ -335,6 +333,7 @@ namespace device {
 													   const int center_y,
 													   PrecisionType x,
 													   PrecisionType y,
+													   const int SHARED_MID_DIM,
 													   PrecisionType *sharedMId,
 													   const MultidimArrayCuda<PrecisionType> &diffImage)
 	{
@@ -366,7 +365,8 @@ namespace device {
 	}
 
 	template<typename PrecisionType>
-	__forceinline__ __device__ void initSharedMId(PrecisionType *sharedMId,
+	__forceinline__ __device__ void initSharedMId(const int SHARED_MID_DIM,
+												  PrecisionType *sharedMId,
 												  const MultidimArrayCuda<PrecisionType> &cudaMId,
 												  int &center_x,
 												  int &center_y,
@@ -387,6 +387,7 @@ namespace device {
 
 		const int offset_x = center_x - ((SHARED_MID_DIM - 1) / 2);
 		const int offset_y = center_y - ((SHARED_MID_DIM - 1) / 2);
+		const int SHARED_MID_SIZE = SHARED_MID_DIM * SHARED_MID_DIM;
 
 		for (int i = 0; i < SHARED_MID_SIZE; i += blockDim.x * blockDim.y * blockDim.z) {
 
@@ -504,9 +505,10 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const PrecisionType r2,
 							   const PrecisionType r3,
 							   const PrecisionType r4,
-							   const PrecisionType r5)
+							   const PrecisionType r5,
+							   const int SHARED_MID_SIZE)
 {
-	__shared__ PrecisionType sharedMId[SHARED_MID_SIZE];
+	extern __shared__ PrecisionType sharedMId[];
 	__shared__ int center_x;
 	__shared__ int center_y;
 	(void)VRecMaskB;
@@ -546,9 +548,10 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 
 	auto pos_x = r0 * r_x + r1 * r_y + r2 * r_z;
 	auto pos_y = r3 * r_x + r4 * r_y + r5 * r_z;
-	device::initSharedMId(sharedMId, cudaMId, center_x, center_y, pos_x, pos_y);
+	device::initSharedMId(SHARED_MID_DIM, sharedMId, cudaMId, center_x, center_y, pos_x, pos_y);
 	__syncthreads();
-	PrecisionType voxel = device::interpolatedElement2DCuda(center_x, center_y, pos_x, pos_y, sharedMId, cudaMId);
+	PrecisionType voxel =
+		device::interpolatedElement2DCuda(center_x, center_y, pos_x, pos_y, SHARED_MID_DIM, sharedMId, cudaMId);
 	A3D_ELEM(cudaMV, k, i, j) = old_voxel + voxel;
 }
 }  // namespace cuda_forward_art_zernike3D

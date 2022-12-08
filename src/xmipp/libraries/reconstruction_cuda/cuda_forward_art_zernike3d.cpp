@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <fstream>
 #include <stdexcept>
 #include <tuple>
@@ -330,34 +331,37 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
-
+	const int diagonal = static_cast<int>(std::ceil(std::sqrt(blockX * blockX + blockY * blockY + blockZ * blockZ)));
+	const int sharedMIdDim = 2 * ((diagonal / 2) + 1) + 1;
+	const int sharedMemorySize = sharedMIdDim * sharedMIdDim * sizeof(PrecisionType);
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
 
 	cudaEventRecord(start);
 	backwardKernel<PrecisionType, usesZernike>
-		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ)>>>(cudaMV,
-																	  cudaMId,
-																	  VRecMaskB,
-																	  lastZ,
-																	  lastY,
-																	  lastX,
-																	  step,
-																	  commonParameters.iRmaxF,
-																	  commonParameters.idxY0,
-																	  commonParameters.idxZ0,
-																	  cudaVL1,
-																	  cudaVN,
-																	  cudaVL2,
-																	  cudaVM,
-																	  commonParameters.cudaClnm,
-																	  commonParameters.R.mdata[0],
-																	  commonParameters.R.mdata[1],
-																	  commonParameters.R.mdata[2],
-																	  commonParameters.R.mdata[3],
-																	  commonParameters.R.mdata[4],
-																	  commonParameters.R.mdata[5]);
+		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), sharedMemorySize>>>(cudaMV,
+																						cudaMId,
+																						VRecMaskB,
+																						lastZ,
+																						lastY,
+																						lastX,
+																						step,
+																						commonParameters.iRmaxF,
+																						commonParameters.idxY0,
+																						commonParameters.idxZ0,
+																						cudaVL1,
+																						cudaVN,
+																						cudaVL2,
+																						cudaVM,
+																						commonParameters.cudaClnm,
+																						commonParameters.R.mdata[0],
+																						commonParameters.R.mdata[1],
+																						commonParameters.R.mdata[2],
+																						commonParameters.R.mdata[3],
+																						commonParameters.R.mdata[4],
+																						commonParameters.R.mdata[5],
+																						sharedMIdDim);
 	cudaEventRecord(stop);
 	cudaEventSynchronize(stop);
 	float time;
