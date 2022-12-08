@@ -506,7 +506,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const PrecisionType r3,
 							   const PrecisionType r4,
 							   const PrecisionType r5,
-							   const int SHARED_MID_SIZE)
+							   const int SHARED_MID_DIM)
 {
 	extern __shared__ PrecisionType sharedMId[];
 	__shared__ int center_x;
