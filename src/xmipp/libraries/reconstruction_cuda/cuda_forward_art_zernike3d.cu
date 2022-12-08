@@ -373,7 +373,7 @@ namespace device {
 												  const PrecisionType pos_x,
 												  const PrecisionType pos_y)
 	{
-		if (threadIdx.x == 3 && threadIdx.y == 3 && threadIdx.z == 1) {
+		if (threadIdx.x == blockDim.x / 2 && threadIdx.y == blockDim.y / 2 && threadIdx.z == blockDim.z / 2) {
 			center_x = CUDA_FLOOR(pos_x);
 			center_y = CUDA_FLOOR(pos_y);
 		}
