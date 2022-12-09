@@ -8,12 +8,6 @@ namespace cuda_forward_art_zernike3D {
 
 // Constants
 static constexpr float CUDA_PI = 3.1415926535897f;
-<<<<<<< HEAD
-=======
-static constexpr size_t SHARED_MID_DIM = 11;
-static constexpr size_t SHARED_MID_DIM_HALVED = (SHARED_MID_DIM - 1) / 2;
-static constexpr size_t SHARED_MID_SIZE = SHARED_MID_DIM * SHARED_MID_DIM;
->>>>>>> b830ceda (Shrink sharedMId size)
 // Functions
 #define SQRT sqrtf
 #define ATAN2 atan2f
@@ -350,17 +344,23 @@ namespace device {
 		PrecisionType fy = y - y0;
 		int y1 = y0 + 1;
 
-		PrecisionType localMId[9 * 9];
-		for (int i = 0; i < 9 * 9; ++i) {
-			const int x = (SHARED_MID_DIM_HALVED - 4) + i % 9;
-			const int y = (SHARED_MID_DIM_HALVED - 4) + i / 9;
+		constexpr int LOCAL_RADIUS = 3;
+		constexpr int LOCAL_DIM = 2 * LOCAL_RADIUS
+								  + 1
+
+								  PrecisionType localMId[LOCAL_DIM * LOCAL_DIM];
+		const int shared_center = (SHARED_MID_DIM - 1) / 2;
+		const int offset = shared_center - LOCAL_RADIUS for (int i = 0; i < LOCAL_DIM * LOCAL_DIM; ++i)
+		{
+			const int x = offset + (i % LOCAL_DIM);
+			const int y = offset + (i / LOCAL_DIM);
 			localMId[i] = sharedMId[x + y * SHARED_MID_DIM];
 		}
 
-#define ASSIGNVAL2DCUDA(d, i, j)                      \
-	if ((j) >= 1 && (j) <= 9 && (i) >= 1 && (i) <= 9) \
-		d = localMId[((j)-1) + ((i)-1) * 9];          \
-	else                                              \
+#define ASSIGNVAL2DCUDA(d, i, j)                                                                \
+	if ((j) >= offset && (j) < offset + LOCAL_DIM && (i) >= offset && (i) < offset + LOCAL_DIM) \
+		d = localMId[((j)-offset) + ((i)-offset) * LOCAL_DIM];                                  \
+	else                                                                                        \
 		d = sharedMId[(j) + (i)*SHARED_MID_DIM];
 
 		const int shared_pos_x0 = x0 - center_x + ((SHARED_MID_DIM - 1) / 2);
