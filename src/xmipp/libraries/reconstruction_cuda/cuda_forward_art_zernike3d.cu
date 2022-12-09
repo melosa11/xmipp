@@ -487,7 +487,7 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 template<typename PrecisionType, bool usesZernike>
 __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const MultidimArrayCuda<PrecisionType> cudaMId,
-							   const MultidimArrayCuda<int> VRecMaskB,
+							   const int *cudaMaskB,
 							   const int lastZ,
 							   const int lastY,
 							   const int lastX,
@@ -511,7 +511,11 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	extern __shared__ PrecisionType sharedMId[];
 	__shared__ int center_x;
 	__shared__ int center_y;
-	(void)VRecMaskB;
+
+	if (cudaMaskB[blockIdx.x + blockIdx.y * gridDim.x + blockIdx.z * gridDim.x * gridDim.y] == 0) {
+		return;
+	}
+
 	int cubeX = threadIdx.x + blockIdx.x * blockDim.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
 	int cubeZ = threadIdx.z + blockIdx.z * blockDim.z;

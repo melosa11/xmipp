@@ -279,8 +279,35 @@ Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters
 	  blockZStep(parameters.threadBlockDim.z),
 	  gridXStep(VRecMaskF.xdim / loopStep / blockXStep),
 	  gridYStep(VRecMaskF.ydim / loopStep / blockYStep),
-	  gridZStep(VRecMaskF.zdim / loopStep / blockZStep)
-{}
+	  gridZStep(VRecMaskF.zdim / loopStep / blockZStep),
+	  cudaMaskB(nullptr)
+{
+	std::vector<int> v(gridZ * gridY * gridX, 0);
+	auto resizedBackwardMask = alingMask(parameters.VRecMaskB, parameters.threadBlockDim);
+	for (int k = 0; k < gridZ; ++k) {
+		for (int j = 0; j < gridY; ++j) {
+			for (int i = 0; i < gridX; ++i) {
+
+				int count = 0;
+				for (int l = 0; l < blockZ; ++l) {
+					for (int m = 0; m < blockY; ++m) {
+						for (int n = 0; n < blockX; ++n) {
+							int z = STARTINGZ(cudaMV) + l + k * blockZ;
+							int y = STARTINGY(cudaMV) + m + j * blockY;
+							int x = STARTINGX(cudaMV) + n + i * blockX;
+							if (A3D_ELEM(resizedBackwardMask, z, y, x) != 0) {
+								++count;
+							}
+						}
+					}
+				}
+				const int mask_bit = count > 0 ? 1 : 0;
+				v.at(i + j * gridX + k * gridX * gridY) = mask_bit;
+			}
+		}
+	}
+	cudaMaskB = transportStdVectorToGpu(v);
+}
 
 template<typename PrecisionType>
 Program<PrecisionType>::~Program()
@@ -293,6 +320,7 @@ Program<PrecisionType>::~Program()
 	cudaFree(const_cast<int *>(cudaVL2));
 	cudaFree(const_cast<int *>(cudaVN));
 	cudaFree(const_cast<int *>(cudaVM));
+	cudaFree(const_cast<int *>(cudaMaskB));
 }
 
 template<typename PrecisionType>
@@ -368,7 +396,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	backwardKernel<PrecisionType, usesZernike>
 		<<<dim3(gridX, gridY, gridZ), dim3(blockX, blockY, blockZ), sharedMemorySize>>>(cudaMV,
 																						cudaMId,
-																						VRecMaskB,
+																						cudaMaskB,
 																						lastZ,
 																						lastY,
 																						lastX,
