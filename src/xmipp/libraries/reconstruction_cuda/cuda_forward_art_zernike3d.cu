@@ -329,8 +329,12 @@ namespace device {
 	}
 
 	template<typename PrecisionType>
-	__device__ PrecisionType interpolatedElement2DCuda(PrecisionType x,
+	__device__ PrecisionType interpolatedElement2DCuda(const int center_x,
+													   const int center_y,
+													   PrecisionType x,
 													   PrecisionType y,
+													   const int SHARED_MID_DIM,
+													   PrecisionType *sharedMId,
 													   const MultidimArrayCuda<PrecisionType> &diffImage)
 	{
 		int x0 = CUDA_FLOOR(x);
@@ -340,26 +344,67 @@ namespace device {
 		PrecisionType fy = y - y0;
 		int y1 = y0 + 1;
 
-		int i0 = STARTINGY(diffImage);
-		int j0 = STARTINGX(diffImage);
-		int iF = FINISHINGY(diffImage);
-		int jF = FINISHINGX(diffImage);
+#define ASSIGNVAL2DCUDA(d, i, j) d = sharedMId[(j) + (i)*SHARED_MID_DIM];
 
-#define ASSIGNVAL2DCUDA(d, i, j)                      \
-	if ((j) < j0 || (j) > jF || (i) < i0 || (i) > iF) \
-		d = (PrecisionType)0;                         \
-	else                                              \
-		d = A2D_ELEM(diffImage, i, j);
+		const int shared_pos_x0 = x0 - center_x + ((SHARED_MID_DIM - 1) / 2);
+		const int shared_pos_y0 = y0 - center_y + ((SHARED_MID_DIM - 1) / 2);
+		const int shared_pos_x1 = shared_pos_x0 + 1;
+		const int shared_pos_y1 = shared_pos_y0 + 1;
 
 		PrecisionType d00, d10, d11, d01;
-		ASSIGNVAL2DCUDA(d00, y0, x0);
-		ASSIGNVAL2DCUDA(d01, y0, x1);
-		ASSIGNVAL2DCUDA(d10, y1, x0);
-		ASSIGNVAL2DCUDA(d11, y1, x1);
+		ASSIGNVAL2DCUDA(d00, shared_pos_y0, shared_pos_x0);
+		ASSIGNVAL2DCUDA(d01, shared_pos_y0, shared_pos_x1);
+		ASSIGNVAL2DCUDA(d10, shared_pos_y1, shared_pos_x0);
+		ASSIGNVAL2DCUDA(d11, shared_pos_y1, shared_pos_x1);
+
+#undef ASSIGNVAL2DCUDA
 
 		PrecisionType d0 = LIN_INTERP(fx, d00, d01);
 		PrecisionType d1 = LIN_INTERP(fx, d10, d11);
 		return LIN_INTERP(fy, d0, d1);
+	}
+
+	template<typename PrecisionType>
+	__forceinline__ __device__ void initSharedMId(const int SHARED_MID_DIM,
+												  PrecisionType *sharedMId,
+												  const MultidimArrayCuda<PrecisionType> &cudaMId,
+												  int &center_x,
+												  int &center_y,
+												  const PrecisionType pos_x,
+												  const PrecisionType pos_y)
+	{
+		if (threadIdx.x == blockDim.x / 2 && threadIdx.y == blockDim.y / 2 && threadIdx.z == blockDim.z / 2) {
+			center_x = CUDA_FLOOR(pos_x);
+			center_y = CUDA_FLOOR(pos_y);
+		}
+		__syncthreads();
+
+		const int thread_index = threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y;
+		const int start_y = STARTINGY(cudaMId);
+		const int start_x = STARTINGX(cudaMId);
+		const int end_y = FINISHINGY(cudaMId);
+		const int end_x = FINISHINGX(cudaMId);
+
+		const int offset_x = center_x - ((SHARED_MID_DIM - 1) / 2);
+		const int offset_y = center_y - ((SHARED_MID_DIM - 1) / 2);
+		const int SHARED_MID_SIZE = SHARED_MID_DIM * SHARED_MID_DIM;
+
+		for (int i = 0; i < SHARED_MID_SIZE; i += blockDim.x * blockDim.y * blockDim.z) {
+
+			const int index = thread_index + i;
+
+			if (index >= SHARED_MID_SIZE) {
+				return;
+			}
+
+			const int rel_x = index % SHARED_MID_DIM;
+			const int rel_y = index / SHARED_MID_DIM;
+			const int x = offset_x + rel_x;
+			const int y = offset_y + rel_y;
+
+			sharedMId[index] =
+				(x < start_x || x > end_x || y < start_y || y > end_y) ? CST(0.0) : A2D_ELEM(cudaMId, y, x);
+		}
 	}
 
 }  // namespace device
@@ -442,7 +487,7 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 template<typename PrecisionType, bool usesZernike>
 __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const MultidimArrayCuda<PrecisionType> cudaMId,
-							   const int RmaxDef,
+							   const MultidimArrayCuda<int> VRecMaskB,
 							   const int lastZ,
 							   const int lastY,
 							   const int lastX,
@@ -460,8 +505,13 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const PrecisionType r2,
 							   const PrecisionType r3,
 							   const PrecisionType r4,
-							   const PrecisionType r5)
+							   const PrecisionType r5,
+							   const int SHARED_MID_DIM)
 {
+	extern __shared__ PrecisionType sharedMId[];
+	__shared__ int center_x;
+	__shared__ int center_y;
+	(void)VRecMaskB;
 	int cubeX = threadIdx.x + blockIdx.x * blockDim.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
 	int cubeZ = threadIdx.z + blockIdx.z * blockDim.z;
@@ -469,40 +519,40 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	int i = STARTINGY(cudaMV) + cubeY;
 	int j = STARTINGX(cudaMV) + cubeX;
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-	const int radius2 = k * k + i * i + j * j;
-	const int radiusMax2 = RmaxDef * RmaxDef;
-	if (radius2 < radiusMax2) {
-		if (usesZernike) {
-			auto k2 = k * k;
-			auto kr = k * iRmaxF;
-			auto k2i2 = k2 + i * i;
-			auto ir = i * iRmaxF;
-			auto r2 = k2i2 + j * j;
-			auto jr = j * iRmaxF;
-			auto rr = SQRT(r2) * iRmaxF;
-			for (size_t idx = 0; idx < idxY0; idx++) {
-				auto l1 = cudaVL1[idx];
-				auto n = cudaVN[idx];
-				auto l2 = cudaVL2[idx];
-				auto m = cudaVM[idx];
-				if (rr > 0 || l2 == 0) {
-					PrecisionType zsph = device::ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
-					gx += cudaClnm[idx] * (zsph);
-					gy += cudaClnm[idx + idxY0] * (zsph);
-					gz += cudaClnm[idx + idxZ0] * (zsph);
-				}
+	const PrecisionType old_voxel = A3D_ELEM(cudaMV, k, i, j);
+	if (usesZernike) {
+		auto k2 = k * k;
+		auto kr = k * iRmaxF;
+		auto k2i2 = k2 + i * i;
+		auto ir = i * iRmaxF;
+		auto r2 = k2i2 + j * j;
+		auto jr = j * iRmaxF;
+		auto rr = SQRT(r2) * iRmaxF;
+		for (size_t idx = 0; idx < idxY0; idx++) {
+			auto l1 = cudaVL1[idx];
+			auto n = cudaVN[idx];
+			auto l2 = cudaVL2[idx];
+			auto m = cudaVM[idx];
+			if (rr > 0 || l2 == 0) {
+				PrecisionType zsph = device::ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
+				gx += cudaClnm[idx] * (zsph);
+				gy += cudaClnm[idx + idxY0] * (zsph);
+				gz += cudaClnm[idx + idxZ0] * (zsph);
 			}
 		}
-
-		auto r_x = j + gx;
-		auto r_y = i + gy;
-		auto r_z = k + gz;
-
-		auto pos_x = r0 * r_x + r1 * r_y + r2 * r_z;
-		auto pos_y = r3 * r_x + r4 * r_y + r5 * r_z;
-		PrecisionType voxel = device::interpolatedElement2DCuda(pos_x, pos_y, cudaMId);
-		A3D_ELEM(cudaMV, k, i, j) += voxel;
 	}
+
+	auto r_x = j + gx;
+	auto r_y = i + gy;
+	auto r_z = k + gz;
+
+	auto pos_x = r0 * r_x + r1 * r_y + r2 * r_z;
+	auto pos_y = r3 * r_x + r4 * r_y + r5 * r_z;
+	device::initSharedMId(SHARED_MID_DIM, sharedMId, cudaMId, center_x, center_y, pos_x, pos_y);
+	__syncthreads();
+	PrecisionType voxel =
+		device::interpolatedElement2DCuda(center_x, center_y, pos_x, pos_y, SHARED_MID_DIM, sharedMId, cudaMId);
+	A3D_ELEM(cudaMV, k, i, j) = old_voxel + voxel;
 }
 }  // namespace cuda_forward_art_zernike3D
 #endif	//CUDA_FORWARD_ART_ZERNIKE3D_CU
