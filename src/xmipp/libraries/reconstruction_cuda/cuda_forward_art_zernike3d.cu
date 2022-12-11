@@ -350,8 +350,8 @@ namespace device {
 
 								  PrecisionType localMId[LOCAL_DIM * LOCAL_DIM];
 		const int shared_center = (SHARED_MID_DIM - 1) / 2;
-		const int offset = shared_center - LOCAL_RADIUS for (int i = 0; i < LOCAL_DIM * LOCAL_DIM; ++i)
-		{
+		const int offset = shared_center - LOCAL_RADIUS;
+		for (int i = 0; i < LOCAL_DIM * LOCAL_DIM; ++i) {
 			const int x = offset + (i % LOCAL_DIM);
 			const int y = offset + (i / LOCAL_DIM);
 			localMId[i] = sharedMId[x + y * SHARED_MID_DIM];
