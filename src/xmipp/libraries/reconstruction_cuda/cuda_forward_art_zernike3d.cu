@@ -344,7 +344,7 @@ namespace device {
 		PrecisionType fy = y - y0;
 		int y1 = y0 + 1;
 
-		constexpr int LOCAL_RADIUS = 1;
+		constexpr int LOCAL_RADIUS = 4;
 		constexpr int LOCAL_DIM = 2 * LOCAL_RADIUS + 1;
 
 		PrecisionType localMId[LOCAL_DIM * LOCAL_DIM];
