@@ -344,7 +344,23 @@ namespace device {
 		PrecisionType fy = y - y0;
 		int y1 = y0 + 1;
 
-#define ASSIGNVAL2DCUDA(d, i, j) d = sharedMId[(j) + (i)*SHARED_MID_DIM];
+		constexpr int LOCAL_RADIUS = 3;
+		constexpr int LOCAL_DIM = 2 * LOCAL_RADIUS + 1;
+
+		PrecisionType localMId[LOCAL_DIM * LOCAL_DIM];
+		const int shared_center = (SHARED_MID_DIM - 1) / 2;
+		const int offset = shared_center - LOCAL_RADIUS;
+		for (int i = 0; i < LOCAL_DIM * LOCAL_DIM; ++i) {
+			const int x = offset + (i % LOCAL_DIM);
+			const int y = offset + (i / LOCAL_DIM);
+			localMId[i] = sharedMId[x + y * SHARED_MID_DIM];
+		}
+
+#define ASSIGNVAL2DCUDA(d, i, j)                                                                \
+	if ((j) >= offset && (j) < offset + LOCAL_DIM && (i) >= offset && (i) < offset + LOCAL_DIM) \
+		d = localMId[((j)-offset) + ((i)-offset) * LOCAL_DIM];                                  \
+	else                                                                                        \
+		d = sharedMId[(j) + (i)*SHARED_MID_DIM];
 
 		const int shared_pos_x0 = x0 - center_x + ((SHARED_MID_DIM - 1) / 2);
 		const int shared_pos_y0 = y0 - center_y + ((SHARED_MID_DIM - 1) / 2);
@@ -487,7 +503,7 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 template<typename PrecisionType, bool usesZernike>
 __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const MultidimArrayCuda<PrecisionType> cudaMId,
-							   const int RmaxDef,
+							   const MultidimArrayCuda<int> VRecMaskB,
 							   const int lastZ,
 							   const int lastY,
 							   const int lastX,
@@ -511,23 +527,13 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	extern __shared__ PrecisionType sharedMId[];
 	__shared__ int center_x;
 	__shared__ int center_y;
-
+	(void)VRecMaskB;
 	int cubeX = threadIdx.x + blockIdx.x * blockDim.x;
 	int cubeY = threadIdx.y + blockIdx.y * blockDim.y;
 	int cubeZ = threadIdx.z + blockIdx.z * blockDim.z;
 	int k = STARTINGZ(cudaMV) + cubeZ;
 	int i = STARTINGY(cudaMV) + cubeY;
 	int j = STARTINGX(cudaMV) + cubeX;
-
-	const int Rmax2 = RmaxDef * RmaxDef;
-
-	const int corner_x = (j < 0 ? blockDim.x - threadIdx.x : -threadIdx.x) + j;
-	const int corner_y = (i < 0 ? blockDim.y - threadIdx.y : -threadIdx.y) + i;
-	const int corner_z = (k < 0 ? blockDim.z - threadIdx.z : -threadIdx.z) + k;
-
-	if (Rmax2 < corner_x * corner_x + corner_y * corner_y + corner_z * corner_z) {
-		return;
-	}
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
 	const PrecisionType old_voxel = A3D_ELEM(cudaMV, k, i, j);
 	if (usesZernike) {
