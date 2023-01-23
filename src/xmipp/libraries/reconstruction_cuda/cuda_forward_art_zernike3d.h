@@ -7,33 +7,43 @@
 #include <core/multidim_array.h>
 #include <core/xmipp_image.h>
 // Standard includes
+#include <functional>
+#include <optional>
 #include <vector>
 
 namespace cuda_forward_art_zernike3D {
-
-struct float3;
-struct double3;
 
 template<typename T>
 struct MultidimArrayCuda {
 	size_t xdim;
 	size_t ydim;
 	size_t yxdim;
+	size_t zdim;
 	int xinit;
 	int yinit;
 	int zinit;
 	T *data;
 };
 
-struct BlockSizes {
+struct Size3D {
 	size_t x, y, z;
+};
+
+struct VolumeMask {
+	std::optional<MultidimArrayCuda<int>> mask;
+	Size3D blockSize;
+	Size3D gridSize;
+};
+
+enum BackwardKernelMode {
+	trivial,
+	computeMask,
+	sharedBlockMask,
 };
 
 template<typename PrecisionType = float>
 class Program {
 	static_assert(std::is_floating_point<PrecisionType>::value, "Floating point type is required.");
-
-	using PrecisionType3 = std::conditional<std::is_same<PrecisionType, float>::value, float3, double3>;
 
    public:
 	/// Constant parameters for the computation
@@ -44,6 +54,8 @@ class Program {
 		std::vector<PrecisionType> &sigma;
 		int RmaxDef;
 		int loopStep;
+		bool computeBackwardMask;
+		bool usesZernike;
 	};
 
 	struct AngleParameters {
@@ -62,6 +74,28 @@ class Program {
 		size_t idxY0, idxZ0;
 		PrecisionType iRmaxF;
 		PrecisionType *cudaClnm, *cudaR;
+		Matrix2D<PrecisionType> R;
+	};
+
+	struct ZernikeParameters {
+		PrecisionType iRmaxF;
+		size_t idxY0;
+		size_t idxZ0;
+		const int *cudaVL1;
+		const int *cudaVN;
+		const int *cudaVL2;
+		const int *cudaVM;
+		const PrecisionType *cudaClnm;
+	};
+
+	struct CommonBackwardKernelArguments {
+		MultidimArrayCuda<PrecisionType> cudaMId;
+		PrecisionType r0;
+		PrecisionType r1;
+		PrecisionType r2;
+		PrecisionType r3;
+		PrecisionType r4;
+		PrecisionType r5;
 	};
 
    public:
@@ -79,7 +113,11 @@ class Program {
 	~Program();
 
    private:
-	const MultidimArrayCuda<int> VRecMaskF, VRecMaskB;
+	const MultidimArrayCuda<int> VRecMaskF;
+
+	const BackwardKernelMode backwardMode;
+
+	const VolumeMask backwardMask;
 
 	const MultidimArrayCuda<PrecisionType> cudaMV;
 
@@ -93,9 +131,9 @@ class Program {
 
 	const std::vector<PrecisionType> sigma;
 
-	const size_t blockX, blockY, blockZ, gridX, gridY, gridZ;
-
 	const size_t blockXStep, blockYStep, blockZStep, gridXStep, gridYStep, gridZStep;
+
+	const int *cudaBlockBackwardMask;
 };
 
 }  // namespace cuda_forward_art_zernike3D
