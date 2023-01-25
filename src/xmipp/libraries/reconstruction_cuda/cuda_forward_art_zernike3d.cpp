@@ -361,7 +361,7 @@ Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters
 {
 	std::tie(cudaCoordinatesF, sizeF, VRecMaskF) =
 		filterMaskTransportCoordinates(parameters.VRecMaskF, parameters.loopStep, true);
-	optimalizedSize = ceil(sizeF / BLOCK_SIZE) * BLOCK_SIZE;
+	const auto optimalizedSize = ceil(sizeF / BLOCK_SIZE) * BLOCK_SIZE;
 	blockXStep = std::__gcd(BLOCK_SIZE, static_cast<int>(optimalizedSize));
 	gridXStep = optimalizedSize / blockXStep;
 }
