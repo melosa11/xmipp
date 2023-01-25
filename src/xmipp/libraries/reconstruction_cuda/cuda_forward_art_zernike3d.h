@@ -1,6 +1,17 @@
 #ifndef CUDA_FORWARD_ART_ZERNIKE3D_H
 #define CUDA_FORWARD_ART_ZERNIKE3D_H
 
+#if defined(__CUDACC__)	 // NVCC
+#define MY_ALIGN(n) __align__(n)
+#elif defined(__GNUC__)	 // GCC
+#define MY_ALIGN(n) __attribute__((aligned(n)))
+#elif defined(_MSC_VER)	 // MSVC
+#define MY_ALIGN(n) __declspec(align(n))
+#else
+#error "Please provide a definition for MY_ALIGN macro for your host compiler!"
+#endif
+
+
 // Xmipp includes
 #include <core/matrix1d.h>
 #include <core/matrix2d.h>
@@ -14,11 +25,10 @@
 namespace cuda_forward_art_zernike3D {
 
 template<typename T>
-struct MultidimArrayCuda {
-	size_t xdim;
-	size_t ydim;
-	size_t yxdim;
-	size_t zdim;
+struct MY_ALIGN(16) MultidimArrayCuda {
+	unsigned xdim;
+	unsigned ydim;
+	unsigned yxdim;
 	int xinit;
 	int yinit;
 	int zinit;
@@ -73,7 +83,7 @@ class Program {
 	struct CommonKernelParameters {
 		size_t idxY0, idxZ0;
 		PrecisionType iRmaxF;
-		PrecisionType *cudaClnm, *cudaR;
+		PrecisionType *cudaClnm;
 		Matrix2D<PrecisionType> R;
 	};
 
@@ -113,8 +123,6 @@ class Program {
 	~Program();
 
    private:
-	const MultidimArrayCuda<int> VRecMaskF;
-
 	const BackwardKernelMode backwardMode;
 
 	const VolumeMask backwardMask;
@@ -131,9 +139,23 @@ class Program {
 
 	const std::vector<PrecisionType> sigma;
 
-	const size_t blockXStep, blockYStep, blockZStep, gridXStep, gridYStep, gridZStep;
-
 	const int *cudaBlockBackwardMask;
+
+	const PrecisionType *cudaSigma;
+
+	size_t blockXStep, gridXStep;
+
+	int *VRecMaskF;
+
+	unsigned *cudaCoordinatesF;
+
+	const unsigned xdimB, ydimB;
+
+	size_t sizeB;
+
+	const int xdimF, ydimF;
+
+	size_t sizeF;
 };
 
 }  // namespace cuda_forward_art_zernike3D

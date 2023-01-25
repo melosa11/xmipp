@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -91,9 +92,10 @@ namespace {
 	MultidimArrayCuda<T> initializeMultidimArrayCuda(const MultidimArray<T> &multidimArray)
 	{
 		struct MultidimArrayCuda<T> cudaArray = {
-			.xdim = multidimArray.xdim, .ydim = multidimArray.ydim, .yxdim = multidimArray.yxdim,
-			.zdim = multidimArray.zdim, .xinit = multidimArray.xinit, .yinit = multidimArray.yinit,
-			.zinit = multidimArray.zinit, .data = transportMultidimArrayToGpu(multidimArray)
+			.xdim = static_cast<unsigned>(multidimArray.xdim), .ydim = static_cast<unsigned>(multidimArray.ydim),
+			.yxdim = static_cast<unsigned>(multidimArray.yxdim), .xinit = multidimArray.xinit,
+			.yinit = multidimArray.yinit, .zinit = multidimArray.zinit,
+			.data = transportMultidimArrayToGpu(multidimArray)
 		};
 
 		return cudaArray;
@@ -131,7 +133,6 @@ namespace {
 	void freeCommonArgumentsKernel(struct Program<T>::CommonKernelParameters &commonParameters)
 	{
 		cudaFree(commonParameters.cudaClnm);
-		cudaFree(commonParameters.cudaR);
 	}
 
 	template<typename T>
@@ -171,22 +172,16 @@ namespace {
 		const Matrix2D<T> R = createRotationMatrix<T>(angles);
 
 		struct Program<T>::CommonKernelParameters output = {
-			.idxY0 = idxY0, .idxZ0 = idxZ0, .iRmaxF = iRmaxF, .cudaClnm = transportStdVectorToGpu(clnm),
-			.cudaR = transportMatrix2DToGpu(R), .R = R,
+			.idxY0 = idxY0, .idxZ0 = idxZ0, .iRmaxF = iRmaxF, .cudaClnm = transportStdVectorToGpu(clnm), .R = R,
 		};
 
 		return output;
 
 	}
 
-	struct Size3D
-	blockSizeArchitecture()
+	enum BackwardKernelMode
+	initializeBackwardMode(bool computeMask, bool usesZernike)
 
-	{
-		return {4, 4, 4};
-	}
-
-	enum BackwardKernelMode initializeBackwardMode(bool computeMask, bool usesZernike)
 	{
 		if (computeMask) {
 			return BackwardKernelMode::computeMask;
@@ -268,16 +263,85 @@ namespace {
 		return transportStdVectorToGpu(v);
 	}
 
+	template<typename T>
+	cudaTextureObject_t initTextureMultidimArray(MultidimArrayCuda<T> &array, size_t zdim)
+
+	{
+		cudaResourceDesc resDesc;
+		memset(&resDesc, 0, sizeof(resDesc));
+		resDesc.resType = cudaResourceTypeLinear;
+		resDesc.res.linear.devPtr = array.data;
+		resDesc.res.linear.desc.f = cudaChannelFormatKindFloat;
+		resDesc.res.linear.desc.x = 32;
+		resDesc.res.linear.sizeInBytes = zdim * array.yxdim * sizeof(T);
+		cudaTextureDesc texDesc;
+		memset(&texDesc, 0, sizeof(texDesc));
+		texDesc.readMode = cudaReadModeElementType;
+		cudaTextureObject_t tex = 0;
+		cudaCreateTextureObject(&tex, &resDesc, &texDesc, NULL);
+		return tex;
+	}
+
+	template<typename T>
+	bool checkStep(MultidimArray<T> &mask, int step, size_t position)
+
+	{
+		if (position % mask.xdim % step != 0) {
+			return false;
+		}
+		if (position / mask.xdim % mask.ydim % step != 0) {
+			return false;
+		}
+		if (position / mask.yxdim % step != 0) {
+			return false;
+		}
+		return mask[position] != 0;
+	}
+
+	template<typename T>
+	std::tuple<unsigned *, size_t> filterMaskTransportCoordinates(MultidimArray<T> &mask, int step)
+
+	{
+		std::vector<unsigned> coordinates;
+		for (unsigned i = 0; i < static_cast<unsigned>(mask.yxdim * mask.zdim); i++) {
+			if (checkStep(mask, step, static_cast<size_t>(i))) {
+				coordinates.push_back(i);
+			}
+		}
+		unsigned *coordinatesCuda = transportStdVectorToGpu(coordinates);
+		return std::make_tuple(coordinatesCuda, coordinates.size());
+	}
+
+	template<typename T>
+	std::tuple<unsigned *, size_t, int *> filterMaskTransportCoordinates(MultidimArray<T> &mask,
+																		 int step,
+																		 bool transportValues)
+
+	{
+		std::vector<unsigned> coordinates;
+		std::vector<T> values;
+		for (unsigned i = 0; i < static_cast<unsigned>(mask.yxdim * mask.zdim); i++) {
+			if (checkStep(mask, step, static_cast<size_t>(i))) {
+				coordinates.push_back(i);
+				if (transportValues) {
+					values.push_back(mask[i]);
+				}
+			}
+		}
+		unsigned *coordinatesCuda = transportStdVectorToGpu(coordinates);
+		int *valuesCuda = transportStdVectorToGpu(values);
+		return std::make_tuple(coordinatesCuda, coordinates.size(), valuesCuda);
+	}
+
 }  // namespace
 
 template<typename PrecisionType>
 Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters parameters)
 	: cudaMV(initializeMultidimArrayCuda(parameters.Vrefined())),
-	  VRecMaskF(
-		  initializeMultidimArrayCuda(alingMask(parameters.VRecMaskF, blockSizeArchitecture(), parameters.loopStep))),
 	  backwardMode(initializeBackwardMode(parameters.computeBackwardMask, parameters.usesZernike)),
 	  backwardMask(initializeVolumeMask(parameters.VRecMaskB, backwardMode)),
 	  sigma(parameters.sigma),
+	  cudaSigma(transportStdVectorToGpu(parameters.sigma)),
 	  RmaxDef(parameters.RmaxDef),
 	  lastX(FINISHINGX(parameters.Vrefined())),
 	  lastY(FINISHINGY(parameters.Vrefined())),
@@ -287,25 +351,31 @@ Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters
 	  cudaVL2(transportMatrix1DToGpu(parameters.vL2)),
 	  cudaVN(transportMatrix1DToGpu(parameters.vN)),
 	  cudaVM(transportMatrix1DToGpu(parameters.vM)),
-	  blockXStep(blockSizeArchitecture().x),
-	  blockYStep(blockSizeArchitecture().y),
-	  blockZStep(blockSizeArchitecture().z),
-	  gridXStep(VRecMaskF.xdim / loopStep / blockXStep),
-	  gridYStep(VRecMaskF.ydim / loopStep / blockYStep),
-	  gridZStep(VRecMaskF.zdim / loopStep / blockZStep),
 	  cudaBlockBackwardMask(initializeBlockMask(cudaMV,
 												backwardMask,
 												alingMask(parameters.VRecMaskB, blockSizeBackwardMode(backwardMode))))
-{}
+		  xdimB(static_cast<unsigned>(parameters.VRecMaskB.xdim)),
+	  ydimB(static_cast<unsigned>(parameters.VRecMaskB.ydim)),
+	  xdimF(parameters.VRecMaskF.xdim),
+	  ydimF(parameters.VRecMaskF.ydim)
+{
+	std::tie(cudaCoordinatesF, sizeF, VRecMaskF) =
+		filterMaskTransportCoordinates(parameters.VRecMaskF, parameters.loopStep, true);
+	optimalizedSize = ceil(sizeF / BLOCK_SIZE) * BLOCK_SIZE;
+	blockXStep = std::__gcd(BLOCK_SIZE, static_cast<int>(optimalizedSize));
+	gridXStep = optimalizedSize / blockXStep;
+}
 
 template<typename PrecisionType>
 Program<PrecisionType>::~Program()
 {
-	cudaFree(VRecMaskF.data);
+	cudaFree(VRecMaskF);
 	if (backwardMask.mask.has_value()) {
 		cudaFree(backwardMask.mask.value().data);
 	}
 	cudaFree(cudaMV.data);
+	cudaFree(cudaCoordinatesF);
+	cudaFree(const_cast<PrecisionType *>(cudaSigma));
 
 	cudaFree(const_cast<int *>(cudaVL1));
 	cudaFree(const_cast<int *>(cudaVL2));
@@ -323,33 +393,35 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	std::vector<MultidimArrayCuda<PrecisionType>> pVector, wVector;
 	std::tie(cudaP, pVector) = convertToMultidimArrayCuda(parameters.P);
 	std::tie(cudaW, wVector) = convertToMultidimArrayCuda(parameters.W);
-	auto sigma_size = sigma.size();
-	auto cudaSigma = transportStdVectorToGpu(sigma);
-	const int step = loopStep;
+	unsigned sigma_size = static_cast<unsigned>(sigma.size());
 
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
 
-	forwardKernel<PrecisionType, usesZernike>
-		<<<dim3(gridXStep, gridYStep, gridZStep), dim3(blockXStep, blockYStep, blockZStep)>>>(cudaMV,
-																							  VRecMaskF,
-																							  cudaP,
-																							  cudaW,
-																							  lastZ,
-																							  lastY,
-																							  lastX,
-																							  step,
-																							  sigma_size,
-																							  cudaSigma,
-																							  commonParameters.iRmaxF,
-																							  commonParameters.idxY0,
-																							  commonParameters.idxZ0,
-																							  cudaVL1,
-																							  cudaVN,
-																							  cudaVL2,
-																							  cudaVM,
-																							  commonParameters.cudaClnm,
-																							  commonParameters.cudaR);
+	forwardKernel<PrecisionType, usesZernike><<<gridXStep, blockXStep>>>(cudaMV,
+																		 VRecMaskF,
+																		 cudaCoordinatesF,
+																		 xdimF,
+																		 ydimF,
+																		 static_cast<unsigned>(sizeF),
+																		 cudaP,
+																		 cudaW,
+																		 sigma_size,
+																		 cudaSigma,
+																		 commonParameters.iRmaxF,
+																		 static_cast<unsigned>(commonParameters.idxY0),
+																		 static_cast<unsigned>(commonParameters.idxZ0),
+																		 cudaVL1,
+																		 cudaVN,
+																		 cudaVL2,
+																		 cudaVM,
+																		 commonParameters.cudaClnm,
+																		 commonParameters.R.mdata[0],
+																		 commonParameters.R.mdata[1],
+																		 commonParameters.R.mdata[2],
+																		 commonParameters.R.mdata[3],
+																		 commonParameters.R.mdata[4],
+																		 commonParameters.R.mdata[5]);
 
 	cudaDeviceSynchronize();
 
@@ -360,7 +432,6 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 	freeVectorOfMultidimArray(wVector);
 	cudaFree(cudaP);
 	cudaFree(cudaW);
-	cudaFree(cudaSigma);
 	freeCommonArgumentsKernel<PrecisionType>(commonParameters);
 }
 
