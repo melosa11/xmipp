@@ -353,8 +353,8 @@ Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters
 	  cudaVM(transportMatrix1DToGpu(parameters.vM)),
 	  cudaBlockBackwardMask(initializeBlockMask(cudaMV,
 												backwardMask,
-												alingMask(parameters.VRecMaskB, blockSizeBackwardMode(backwardMode))))
-		  xdimB(static_cast<unsigned>(parameters.VRecMaskB.xdim)),
+												alingMask(parameters.VRecMaskB, blockSizeBackwardMode(backwardMode)))),
+	  xdimB(static_cast<unsigned>(parameters.VRecMaskB.xdim)),
 	  ydimB(static_cast<unsigned>(parameters.VRecMaskB.ydim)),
 	  xdimF(parameters.VRecMaskF.xdim),
 	  ydimF(parameters.VRecMaskF.ydim)
