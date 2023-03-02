@@ -18,12 +18,11 @@
 #include <core/multidim_array.h>
 #include <core/xmipp_image.h>
 // Standard includes
+#include <functional>
+#include <optional>
 #include <vector>
 
 namespace cuda_forward_art_zernike3D {
-
-struct float3;
-struct double3;
 
 template<typename T>
 struct MY_ALIGN(16) MultidimArrayCuda {
@@ -36,15 +35,25 @@ struct MY_ALIGN(16) MultidimArrayCuda {
 	T *data;
 };
 
-struct BlockSizes {
+struct Size3D {
 	size_t x, y, z;
+};
+
+struct VolumeMask {
+	std::optional<MultidimArrayCuda<int>> mask;
+	Size3D blockSize;
+	Size3D gridSize;
+};
+
+enum BackwardKernelMode {
+	trivial,
+	computeMask,
+	sharedBlockMask,
 };
 
 template<typename PrecisionType = float>
 class Program {
 	static_assert(std::is_floating_point<PrecisionType>::value, "Floating point type is required.");
-
-	using PrecisionType3 = std::conditional<std::is_same<PrecisionType, float>::value, float3, double3>;
 
    public:
 	/// Constant parameters for the computation
@@ -55,6 +64,8 @@ class Program {
 		std::vector<PrecisionType> &sigma;
 		int RmaxDef;
 		int loopStep;
+		bool computeBackwardMask;
+		bool usesZernike;
 	};
 
 	struct AngleParameters {
@@ -76,6 +87,27 @@ class Program {
 		Matrix2D<PrecisionType> R;
 	};
 
+	struct ZernikeParameters {
+		PrecisionType iRmaxF;
+		size_t idxY0;
+		size_t idxZ0;
+		const int *cudaVL1;
+		const int *cudaVN;
+		const int *cudaVL2;
+		const int *cudaVM;
+		const PrecisionType *cudaClnm;
+	};
+
+	struct CommonBackwardKernelArguments {
+		MultidimArrayCuda<PrecisionType> cudaMId;
+		PrecisionType r0;
+		PrecisionType r1;
+		PrecisionType r2;
+		PrecisionType r3;
+		PrecisionType r4;
+		PrecisionType r5;
+	};
+
    public:
 	template<bool usesZernike>
 	void runForwardKernel(struct DynamicParameters &parameters);
@@ -91,6 +123,10 @@ class Program {
 	~Program();
 
    private:
+	const BackwardKernelMode backwardMode;
+
+	const VolumeMask backwardMask;
+
 	const MultidimArrayCuda<PrecisionType> cudaMV;
 
 	const int lastX, lastY, lastZ;
@@ -103,15 +139,15 @@ class Program {
 
 	const std::vector<PrecisionType> sigma;
 
-	const PrecisionType *cudaSigma;
+	const int *cudaBlockBackwardMask;
 
-	size_t blockX, blockY, blockZ, gridX, gridY, gridZ;
+	const PrecisionType *cudaSigma;
 
 	size_t blockXStep, gridXStep;
 
 	int *VRecMaskF;
 
-	unsigned *cudaCoordinatesB, *cudaCoordinatesF;
+	unsigned *cudaCoordinatesF;
 
 	const unsigned xdimB, ydimB;
 

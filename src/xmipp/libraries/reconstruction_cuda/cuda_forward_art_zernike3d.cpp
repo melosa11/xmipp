@@ -133,7 +133,6 @@ namespace {
 	void freeCommonArgumentsKernel(struct Program<T>::CommonKernelParameters &commonParameters)
 	{
 		cudaFree(commonParameters.cudaClnm);
-		//cudaFree(commonParameters.cudaR);
 	}
 
 	template<typename T>
@@ -180,40 +179,89 @@ namespace {
 
 	}
 
-	/*struct BlockSizes
-	blockSizeArchitecture()
+	enum BackwardKernelMode
+	initializeBackwardMode(bool computeMask, bool usesZernike)
 
 	{
-		cudaDeviceProp prop;
-		cudaGetDeviceProperties(&prop, 0);
-		struct BlockSizes output;
-		switch (prop.major * 10 + prop.minor) {
-			// 3.0 - 3.7 Kepler
-			case 30 ... 37:
-				output = {16, 4, 2};
-				break;
-
-			// 6.0 - 6.2 Pascal
-			case 60 ... 62:
-				output = {16, 8, 1};
-				break;
-
-			// 7.5 Turing
-			case 75:
-				output = {16, 8, 1};
-				break;
-
-			// 8.0 - 8.7 Ampere
-			case 80 ... 87:
-				output = {32, 1, 4};
-				break;
-
-			default:
-				output = {8, 4, 4};
-				break;
+		if (computeMask) {
+			return BackwardKernelMode::computeMask;
 		}
-		return output;
-	}*/
+		if (!usesZernike) {
+			return BackwardKernelMode::sharedBlockMask;
+		}
+		return BackwardKernelMode::trivial;
+	}
+
+	Size3D blockSizeBackwardMode(enum BackwardKernelMode mode)
+	{
+		switch (mode) {
+			case BackwardKernelMode::trivial:
+				return {4, 4, 4};
+			case BackwardKernelMode::computeMask:
+				return {8, 8, 2};
+			case BackwardKernelMode::sharedBlockMask:
+				return {8, 8, 4};
+		}
+	}
+
+	template<typename T>
+	MultidimArray<T> alingMask(const MultidimArray<T> &mask, const Size3D threadBlockDim, int step = 1)
+	{
+		auto resizedMask = MultidimArray<int>(mask);
+
+		auto newxDim = mask.xdim + mask.xdim % (threadBlockDim.x * step);
+		auto newyDim = mask.ydim + mask.ydim % (threadBlockDim.y * step);
+		auto newzDim = mask.zdim + mask.zdim % (threadBlockDim.z * step);
+
+		// the padding will fill with zeroes
+		resizedMask.resize(newzDim, newyDim, newxDim);
+		return resizedMask;
+	}
+
+	VolumeMask initializeVolumeMask(const MultidimArray<int> &mask, enum BackwardKernelMode mode)
+	{
+		const auto blockSize = blockSizeBackwardMode(mode);
+		const auto cudaMask =
+			mode == BackwardKernelMode::computeMask
+				? std::nullopt
+				: std::optional<MultidimArrayCuda<int>>{initializeMultidimArrayCuda(alingMask(mask, blockSize))};
+		return {
+			.mask = cudaMask,
+			.blockSize = blockSize,
+			.gridSize = {mask.xdim / blockSize.x, mask.ydim / blockSize.y, mask.zdim / blockSize.z},
+		};
+	}
+
+	template<typename PrecisionType>
+	int *initializeBlockMask(const MultidimArrayCuda<PrecisionType> &cudaMV,
+							 const VolumeMask &mask,
+							 const MultidimArray<int> &resizedMask)
+	{
+		std::vector<int> v(mask.gridSize.z * mask.gridSize.y * mask.gridSize.x, 0);
+		for (int k = 0; k < mask.gridSize.z; ++k) {
+			for (int j = 0; j < mask.gridSize.y; ++j) {
+				for (int i = 0; i < mask.gridSize.x; ++i) {
+
+					int count = 0;
+					for (int l = 0; l < mask.blockSize.z; ++l) {
+						for (int m = 0; m < mask.blockSize.y; ++m) {
+							for (int n = 0; n < mask.blockSize.x; ++n) {
+								int z = STARTINGZ(cudaMV) + l + k * mask.blockSize.z;
+								int y = STARTINGY(cudaMV) + m + j * mask.blockSize.y;
+								int x = STARTINGX(cudaMV) + n + i * mask.blockSize.x;
+								if (A3D_ELEM(resizedMask, z, y, x) != 0) {
+									++count;
+								}
+							}
+						}
+					}
+					const int mask_bit = count > 0 ? 1 : 0;
+					v.at(i + j * mask.gridSize.x + k * mask.gridSize.x * mask.gridSize.y) = mask_bit;
+				}
+			}
+		}
+		return transportStdVectorToGpu(v);
+	}
 
 	template<typename T>
 	cudaTextureObject_t initTextureMultidimArray(MultidimArrayCuda<T> &array, size_t zdim)
@@ -290,6 +338,8 @@ namespace {
 template<typename PrecisionType>
 Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters parameters)
 	: cudaMV(initializeMultidimArrayCuda(parameters.Vrefined())),
+	  backwardMode(initializeBackwardMode(parameters.computeBackwardMask, parameters.usesZernike)),
+	  backwardMask(initializeVolumeMask(parameters.VRecMaskB, backwardMode)),
 	  sigma(parameters.sigma),
 	  cudaSigma(transportStdVectorToGpu(parameters.sigma)),
 	  RmaxDef(parameters.RmaxDef),
@@ -301,18 +351,17 @@ Program<PrecisionType>::Program(const Program<PrecisionType>::ConstantParameters
 	  cudaVL2(transportMatrix1DToGpu(parameters.vL2)),
 	  cudaVN(transportMatrix1DToGpu(parameters.vN)),
 	  cudaVM(transportMatrix1DToGpu(parameters.vM)),
+	  cudaBlockBackwardMask(initializeBlockMask(cudaMV,
+												backwardMask,
+												alingMask(parameters.VRecMaskB, blockSizeBackwardMode(backwardMode)))),
 	  xdimB(static_cast<unsigned>(parameters.VRecMaskB.xdim)),
 	  ydimB(static_cast<unsigned>(parameters.VRecMaskB.ydim)),
 	  xdimF(parameters.VRecMaskF.xdim),
 	  ydimF(parameters.VRecMaskF.ydim)
 {
-	std::tie(cudaCoordinatesB, sizeB) = filterMaskTransportCoordinates(parameters.VRecMaskB, 1);
-	auto optimalizedSize = ceil(sizeB / BLOCK_SIZE) * BLOCK_SIZE;
-	blockX = std::__gcd(BLOCK_SIZE, static_cast<int>(optimalizedSize));
-	gridX = optimalizedSize / blockX;
 	std::tie(cudaCoordinatesF, sizeF, VRecMaskF) =
 		filterMaskTransportCoordinates(parameters.VRecMaskF, parameters.loopStep, true);
-	optimalizedSize = ceil(sizeF / BLOCK_SIZE) * BLOCK_SIZE;
+	const auto optimalizedSize = ceil(sizeF / BLOCK_SIZE) * BLOCK_SIZE;
 	blockXStep = std::__gcd(BLOCK_SIZE, static_cast<int>(optimalizedSize));
 	gridXStep = optimalizedSize / blockXStep;
 }
@@ -321,8 +370,10 @@ template<typename PrecisionType>
 Program<PrecisionType>::~Program()
 {
 	cudaFree(VRecMaskF);
+	if (backwardMask.mask.has_value()) {
+		cudaFree(backwardMask.mask.value().data);
+	}
 	cudaFree(cudaMV.data);
-	cudaFree(cudaCoordinatesB);
 	cudaFree(cudaCoordinatesF);
 	cudaFree(const_cast<PrecisionType *>(cudaSigma));
 
@@ -392,37 +443,46 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 	auto &mId = parameters.Idiff();
 	auto cudaMId = initializeMultidimArrayCuda(mId);
 
-	// Texture
-	cudaTextureObject_t mIdTexture = initTextureMultidimArray<PrecisionType>(cudaMId, mId.zdim);
-
 	// Common parameters
 	auto commonParameters = getCommonArgumentsKernel<PrecisionType>(parameters, usesZernike, RmaxDef);
+	const auto commonArguments = CommonBackwardKernelArguments{
+		.cudaMId = cudaMId,
+		.r0 = commonParameters.R.mdata[0],
+		.r1 = commonParameters.R.mdata[1],
+		.r2 = commonParameters.R.mdata[2],
+		.r3 = commonParameters.R.mdata[3],
+		.r4 = commonParameters.R.mdata[4],
+		.r5 = commonParameters.R.mdata[5],
+	};
+	const auto zernikeParameters = ZernikeParameters{
+		.iRmaxF = commonParameters.iRmaxF,
+		.idxY0 = commonParameters.idxY0,
+		.idxZ0 = commonParameters.idxY0,
+		.cudaVL1 = cudaVL1,
+		.cudaVN = cudaVN,
+		.cudaVL2 = cudaVL2,
+		.cudaVM = cudaVM,
+		.cudaClnm = commonParameters.cudaClnm,
+	};
 
-	backwardKernel<PrecisionType, usesZernike><<<gridX, blockX>>>(cudaMV,
-																  cudaCoordinatesB,
-																  xdimB,
-																  ydimB,
-																  static_cast<unsigned>(sizeB),
-																  commonParameters.iRmaxF,
-																  static_cast<unsigned>(commonParameters.idxY0),
-																  static_cast<unsigned>(commonParameters.idxZ0),
-																  cudaVL1,
-																  cudaVN,
-																  cudaVL2,
-																  cudaVM,
-																  commonParameters.cudaClnm,
-																  commonParameters.R.mdata[0],
-																  commonParameters.R.mdata[1],
-																  commonParameters.R.mdata[2],
-																  commonParameters.R.mdata[3],
-																  commonParameters.R.mdata[4],
-																  commonParameters.R.mdata[5],
-																  mIdTexture,
-																  mId.xinit,
-																  mId.yinit,
-																  static_cast<int>(mId.xdim),
-																  static_cast<int>(mId.ydim));
+	const auto gridSize = dim3(backwardMask.gridSize.x, backwardMask.gridSize.y, backwardMask.gridSize.z);
+	const auto blockSize = dim3(backwardMask.blockSize.x, backwardMask.blockSize.y, backwardMask.blockSize.z);
 
+	if (backwardMode == BackwardKernelMode::sharedBlockMask) {
+		const int diagonal = static_cast<int>(
+			std::ceil(std::sqrt(blockSize.x * blockSize.x + blockSize.y * blockSize.y + blockSize.z * blockSize.z)));
+		const int sharedMIdDim = 2 * ((diagonal / 2) + 1) + 1;
+		const int sharedMemorySize = sharedMIdDim * sharedMIdDim * sizeof(PrecisionType);
+
+		sharedBackwardKernel<PrecisionType>
+			<<<gridSize, blockSize, sharedMemorySize>>>(cudaMV, cudaBlockBackwardMask, sharedMIdDim, commonArguments);
+	} else if (backwardMode == BackwardKernelMode::computeMask) {
+		computeBackwardKernel<PrecisionType, usesZernike>
+			<<<gridSize, blockSize>>>(cudaMV, RmaxDef, commonArguments, zernikeParameters);
+	} else {
+		trivialBackwardKernel<PrecisionType, usesZernike>
+			<<<gridSize, blockSize>>>(cudaMV, backwardMask.mask.value(), commonArguments, zernikeParameters);
+	}
 	cudaDeviceSynchronize();
 
 	cudaFree(cudaMId.data);
