@@ -31,8 +31,10 @@
 #include <data/projection.h>
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <iterator>
 #include <numeric>
+#include <optional>
 #include <stdexcept>
 #include "data/cpu.h"
 
@@ -226,7 +228,8 @@ void ProgForwardArtZernike3DGPU::preProcess()
 
 
 	// Mask determining reconstruction area
-	if (fnMaskRB != "") {
+	const bool readBackwardMask = fnMaskRB != "";
+	if (readBackwardMask) {
 		Image<double> aux;
 		aux.read(fnMaskRB);
 		typeCast(aux(), VRecMaskB);
@@ -286,6 +289,8 @@ void ProgForwardArtZernike3DGPU::preProcess()
 		.sigma = sigma,
 		.RmaxDef = RmaxDef,
 		.loopStep = loop_step,
+		.computeBackwardMask = !readBackwardMask,
+		.usesZernike = useZernike,
 	};
 	try {
 		cudaProgram = std::make_unique<cuda_forward_art_zernike3D::Program<PrecisionType>>(parameters);
