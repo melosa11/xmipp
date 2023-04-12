@@ -517,6 +517,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	int i = STARTINGY(cudaMV) + cubeY;
 	int j = STARTINGX(cudaMV) + cubeX;
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
+	printf("Backward\n");
 	if (usesZernike) {
 		printf("Use Zernike backward\n");
 		auto k2 = k * k;
