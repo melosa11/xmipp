@@ -667,9 +667,9 @@ void ProgForwardArtZernike3DGPU::artModel()
 		/* Creo que Carlos no usa un RMSE si no un MSE
 		 * Translates to: I think Carlos does not use a RMSE but a MSE. */
 		error = std::sqrt(error / N);
-		if (verbose >= 2)
+		/*if (verbose >= 2)
 			std::cout << "Error for image " << num_images << " (" << current_image << ") in iteration "
-					  << current_iter + 1 << " : " << error << std::endl;
+					  << current_iter + 1 << " : " << error << std::endl;*/
 	} else if (DIRECTION == Direction::Backward) {
 		if (useZernike)
 			zernikeModel<true, Direction::Backward>();
