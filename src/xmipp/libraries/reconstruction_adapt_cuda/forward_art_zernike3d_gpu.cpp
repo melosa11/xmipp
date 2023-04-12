@@ -341,8 +341,8 @@ void ProgForwardArtZernike3DGPU::processImage(const FileName &fnImg,
 	MAT_ELEM(A, 1, 0) = 0;
 	MAT_ELEM(A, 1, 1) = 1;
 
-	if (verbose >= 2)
-		std::cout << "Processing " << fnImg << std::endl;
+	/*if (verbose >= 2)
+		std::cout << "Processing " << fnImg << std::endl;*/
 
 	I.read(fnImg);
 	I().setXmippOrigin();
