@@ -16,6 +16,19 @@ namespace cuda_forward_art_zernike3D {
 
 // Cuda memory helper function
 namespace {
+#define gpuErrchk(ans)                        \
+	{                                         \
+		gpuAssert((ans), __FILE__, __LINE__); \
+	}
+
+	inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true)
+	{
+		if (code != cudaSuccess) {
+			fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+			if (abort)
+				exit(code);
+		}
+	}
 
 	void processCudaError()
 	{
@@ -371,6 +384,7 @@ void Program<PrecisionType>::runForwardKernel(struct DynamicParameters &paramete
 																		 commonParameters.R.mdata[3],
 																		 commonParameters.R.mdata[4],
 																		 commonParameters.R.mdata[5]);
+	gpuErrchk(cudaPeekAtLastError());
 
 	cudaDeviceSynchronize();
 
@@ -418,6 +432,7 @@ void Program<PrecisionType>::runBackwardKernel(struct DynamicParameters &paramet
 																  commonParameters.R.mdata[4],
 																  commonParameters.R.mdata[5],
 																  cudaMId);
+	gpuErrchk(cudaPeekAtLastError());
 
 	cudaDeviceSynchronize();
 
