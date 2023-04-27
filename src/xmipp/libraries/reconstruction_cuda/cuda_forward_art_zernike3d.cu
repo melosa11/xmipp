@@ -137,7 +137,7 @@ namespace device {
 
 		switch (l2) {
 			case 0:
-				Y = (CST(1.0) / CST(2.0)) * SQRT((PrecisionType)CST(1.0) / cuda_pi);
+				Y = (CST(1.0) / CST(2.0)) * SQRT(CST(1.0) / cuda_pi);
 				break;
 			case 1:
 				switch (m) {
