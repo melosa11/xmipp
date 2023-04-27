@@ -411,7 +411,6 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 							  const PrecisionType r4,
 							  const PrecisionType r5)
 {
-	printf("2\n");
 	int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
 	if (sizeF <= threadIndex) {
 		return;
@@ -443,7 +442,6 @@ __global__ void forwardKernel(const MultidimArrayCuda<PrecisionType> cudaMV,
 	}
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
 	if (usesZernike) {
-		printf("Use Zernike forward\n");
 		auto k2 = k * k;
 		auto kr = k * iRmaxF;
 		auto k2i2 = k2 + i * i;
@@ -504,7 +502,6 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 							   const PrecisionType r5,
 							   const MultidimArrayCuda<PrecisionType> cudaMId)
 {
-	printf("1\n");
 	int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
 	if (sizeB <= threadIndex) {
 		return;
@@ -519,9 +516,7 @@ __global__ void backwardKernel(MultidimArrayCuda<PrecisionType> cudaMV,
 	int i = STARTINGY(cudaMV) + cubeY;
 	int j = STARTINGX(cudaMV) + cubeX;
 	PrecisionType gx = 0.0, gy = 0.0, gz = 0.0;
-	printf("Backward\n");
 	if (usesZernike) {
-		printf("Use Zernike backward\n");
 		auto k2 = k * k;
 		auto kr = k * iRmaxF;
 		auto k2i2 = k2 + i * i;
