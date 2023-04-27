@@ -668,6 +668,7 @@ void ProgForwardArtZernike3DGPU::artModel()
 		 * Translates to: I think Carlos does not use a RMSE but a MSE. */
 		std::cout << "Error: " << error << std::endl;
 		std::cout << "N: " << N << std::endl;
+		std::cout << "Sigma size: " << sigma.size() << std::endl;
 		error = std::sqrt(error / N);
 		if (verbose >= 2)
 			std::cout << "Error for image " << num_images << " (" << current_image << ") in iteration "
