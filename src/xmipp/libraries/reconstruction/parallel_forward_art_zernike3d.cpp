@@ -348,7 +348,7 @@ void ProgParallelForwardArtZernike3D::finishProcessing()
 	// XmippMetadataProgram::finishProcessing();
 	recoverVol();
 	Vout.write(fnVolO);
-	dumpVolume(Vout())
+	dumpVolume(Vout());
 }
 
 // Predict =================================================================
