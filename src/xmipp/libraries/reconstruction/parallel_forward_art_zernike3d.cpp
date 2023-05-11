@@ -105,7 +105,7 @@ void ProgParallelForwardArtZernike3D::readParams()
 	// Parallelization
 	int threads = getIntParam("--thr");
 	if (0 >= threads) {
-		threads = CPU::findCores();
+		threads = 1;
 	}
 	m_threadPool.resize(threads);
 }
