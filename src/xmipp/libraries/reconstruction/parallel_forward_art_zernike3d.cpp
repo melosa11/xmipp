@@ -27,12 +27,32 @@
 #include <core/transformations.h>
 #include <core/xmipp_image_extension.h>
 #include <core/xmipp_image_generic.h>
-#include <data/projection.h>
 #include <data/mask.h>
-#include <numeric>
-#include "data/cpu.h"
+#include <data/projection.h>
+#include <chrono>
 #include <fstream>
 #include <iterator>
+#include <numeric>
+
+namespace {
+
+void dumpTime(double elapsedTime)
+{
+	std::ofstream f("backward_elapsed_times.txt", std::ios::out | std::ios::app | std::ios::ate);
+	f << elapsedTime << '\n';
+}
+
+template<typename T>
+void dumpVolume(MultidimArray<T> &volume)
+{
+	std::ofstream f("volume.txt");
+
+	FOR_ALL_ELEMENTS_IN_ARRAY3D(volume)
+	{
+		f << volume(k, i, j) << "\n";
+	}
+}
+}  // namespace
 
 // Empty constructor =======================================================
 ProgParallelForwardArtZernike3D::ProgParallelForwardArtZernike3D()
@@ -79,15 +99,12 @@ void ProgParallelForwardArtZernike3D::readParams()
 	std::istream_iterator<std::string> end;
 	std::vector<std::string> vstrings(begin, end);
 	sigma.resize(vstrings.size());
-	std::transform(vstrings.begin(), vstrings.end(), sigma.begin(), [](const std::string& val)
-	{
-    	return std::stod(val);
-	});
+	std::transform(
+		vstrings.begin(), vstrings.end(), sigma.begin(), [](const std::string &val) { return std::stod(val); });
 
 	// Parallelization
 	int threads = getIntParam("--thr");
-	if (0 >= threads)
-	{
+	if (0 >= threads) {
 		threads = CPU::findCores();
 	}
 	m_threadPool.resize(threads);
@@ -99,21 +116,20 @@ void ProgParallelForwardArtZernike3D::show()
 	if (!verbose)
 		return;
 	XmippMetadataProgram::show();
-	std::cout
-		<< "Output directory:          " << fnOutDir << std::endl
-		<< "Reference volume:          " << fnVolR << std::endl
-		<< "Reference mask:            " << fnMaskR << std::endl
-		<< "Sampling:                  " << Ts << std::endl
-		<< "Max. Radius Deform.        " << RmaxDef << std::endl
-		<< "Zernike Degree:            " << L1 << std::endl
-		<< "SH Degree:                 " << L2 << std::endl
-		<< "Step:                      " << loop_step << std::endl
-		<< "Correct CTF:               " << useCTF << std::endl
-		<< "Correct heretogeneity:     " << useZernike << std::endl
-		<< "Phase flipped:             " << phaseFlipped << std::endl
-		<< "Regularization:            " << lambda << std::endl
-		<< "Number of iterations:      " << niter << std::endl
-		<< "Save every # iterations:   " << save_iter << std::endl;
+	std::cout << "Output directory:          " << fnOutDir << std::endl
+			  << "Reference volume:          " << fnVolR << std::endl
+			  << "Reference mask:            " << fnMaskR << std::endl
+			  << "Sampling:                  " << Ts << std::endl
+			  << "Max. Radius Deform.        " << RmaxDef << std::endl
+			  << "Zernike Degree:            " << L1 << std::endl
+			  << "SH Degree:                 " << L2 << std::endl
+			  << "Step:                      " << loop_step << std::endl
+			  << "Correct CTF:               " << useCTF << std::endl
+			  << "Correct heretogeneity:     " << useZernike << std::endl
+			  << "Phase flipped:             " << phaseFlipped << std::endl
+			  << "Regularization:            " << lambda << std::endl
+			  << "Number of iterations:      " << niter << std::endl
+			  << "Save every # iterations:   " << save_iter << std::endl;
 }
 
 // usage ===================================================================
@@ -142,14 +158,21 @@ void ProgParallelForwardArtZernike3D::defineParams()
 	addParamsLine("  [--regularization <l=0.01>]  : ART regularization weight");
 	addParamsLine("  [--niter <n=1>]              : Number of ART iterations");
 	addParamsLine("  [--save_iter <s=0>]          : Save intermidiate volume after #save_iter iterations");
-	addParamsLine("  [--sort_last <N=2>]          : The algorithm sorts projections in the most orthogonally possible way. ");
-	addParamsLine("                               : The most orthogonal way is defined as choosing the projection which maximizes the ");
-	addParamsLine("                               : dot product with the N previous inserted projections. Use -1 to sort with all  ");
+	addParamsLine(
+		"  [--sort_last <N=2>]          : The algorithm sorts projections in the most orthogonally possible way. ");
+	addParamsLine(
+		"                               : The most orthogonal way is defined as choosing the projection which "
+		"maximizes the ");
+	addParamsLine(
+		"                               : dot product with the N previous inserted projections. Use -1 to sort with "
+		"all  ");
 	addParamsLine("                               : previous projections");
 	addParamsLine("  [--resume]                   : Resume processing");
 	addParamsLine("  [--thr <N=-1>]                      : Maximal number of the processing CPU threads");
 	addExampleLine("A typical use is:", false);
-	addExampleLine("xmipp_forward_art_zernike3d -i anglesFromContinuousAssignment.xmd --ref reference.vol -o assigned_anglesAndDeformations.xmd --l1 3 --l2 2");
+	addExampleLine(
+		"xmipp_forward_art_zernike3d -i anglesFromContinuousAssignment.xmd --ref reference.vol -o "
+		"assigned_anglesAndDeformations.xmd --l1 3 --l2 2");
 }
 
 // // Produce side information ================================================
@@ -171,19 +194,14 @@ void ProgParallelForwardArtZernike3D::preProcess()
 {
 
 	// Check that metadata has all information neede
-	if (!getInputMd()->containsLabel(MDL_ANGLE_ROT) ||
-		!getInputMd()->containsLabel(MDL_ANGLE_TILT) ||
-		!getInputMd()->containsLabel(MDL_ANGLE_PSI))
-	{
+	if (!getInputMd()->containsLabel(MDL_ANGLE_ROT) || !getInputMd()->containsLabel(MDL_ANGLE_TILT)
+		|| !getInputMd()->containsLabel(MDL_ANGLE_PSI)) {
 		REPORT_ERROR(ERR_MD_MISSINGLABEL, "Input metadata projection angles are missing. Exiting...");
 	}
 
-	if (fnVolR != "")
-	{
+	if (fnVolR != "") {
 		V.read(fnVolR);
-	}
-	else
-	{
+	} else {
 		FileName fn_first_image;
 		Image<double> first_image;
 		getInputMd()->getRow(1)->getValue(MDL_IMAGE, fn_first_image);
@@ -195,28 +213,25 @@ void ProgParallelForwardArtZernike3D::preProcess()
 
 	Xdim = XSIZE(V());
 
-	p_busy_elem.resize(Xdim*Xdim);
-    for (auto& p : p_busy_elem) {
-        p = std::make_unique<std::atomic<double*>>(nullptr);
-    }
+	p_busy_elem.resize(Xdim * Xdim);
+	for (auto &p : p_busy_elem) {
+		p = std::make_unique<std::atomic<double *>>(nullptr);
+	}
 
-	w_busy_elem.resize(Xdim*Xdim);
-    for (auto& p : w_busy_elem) {
-        p = std::make_unique<std::atomic<double*>>(nullptr);
-    }
-	
+	w_busy_elem.resize(Xdim * Xdim);
+	for (auto &p : w_busy_elem) {
+		p = std::make_unique<std::atomic<double *>>(nullptr);
+	}
+
 	// std::vector<std::atomic<double*>> ProgParallelForwardArtZernike3D::p_busy_elem(Xdim*Xdim, nullptr);
-    // std::vector<std::atomic<double*>> ProgParallelForwardArtZernike3D::w_busy_elem(Xdim*Xdim, nullptr);
+	// std::vector<std::atomic<double*>> ProgParallelForwardArtZernike3D::w_busy_elem(Xdim*Xdim, nullptr);
 
 	Vout().initZeros(V());
 	Vout().setXmippOrigin();
 
-	if (resume && fnVolO.exists())
-	{
+	if (resume && fnVolO.exists()) {
 		Vrefined.read(fnVolO);
-	}
-	else
-	{
+	} else {
 		Vrefined() = V();
 	}
 	// Vrefined().initZeros(V());
@@ -240,28 +255,22 @@ void ProgParallelForwardArtZernike3D::preProcess()
 	Mask mask;
 	mask.type = BINARY_CIRCULAR_MASK;
 	mask.mode = INNER_MASK;
-	if (fnMaskR != "")
-	{
+	if (fnMaskR != "") {
 		Image<double> aux;
 		aux.read(fnMaskR);
 		typeCast(aux(), Vmask);
 		Vmask.setXmippOrigin();
 		double Rmax2 = RmaxDef * RmaxDef;
-		for (int k = STARTINGZ(Vmask); k <= FINISHINGZ(Vmask); k++)
-		{
-			for (int i = STARTINGY(Vmask); i <= FINISHINGY(Vmask); i++)
-			{
-				for (int j = STARTINGX(Vmask); j <= FINISHINGX(Vmask); j++)
-				{
+		for (int k = STARTINGZ(Vmask); k <= FINISHINGZ(Vmask); k++) {
+			for (int i = STARTINGY(Vmask); i <= FINISHINGY(Vmask); i++) {
+				for (int j = STARTINGX(Vmask); j <= FINISHINGX(Vmask); j++) {
 					double r2 = k * k + i * i + j * j;
 					if (r2 >= Rmax2)
 						A3D_ELEM(Vmask, k, i, j) = 0;
 				}
 			}
 		}
-	}
-	else
-	{
+	} else {
 		mask.R1 = RmaxDef;
 		mask.generate_mask(V());
 		Vmask = mask.get_binary_mask();
@@ -270,28 +279,22 @@ void ProgParallelForwardArtZernike3D::preProcess()
 
 
 	// Mask determining reconstruction area
-	if (fnMaskRecR != "")
-	{
+	if (fnMaskRecR != "") {
 		Image<double> aux;
 		aux.read(fnMaskRecR);
 		typeCast(aux(), VRecMask);
 		VRecMask.setXmippOrigin();
 		double Rmax2 = RmaxDef * RmaxDef;
-		for (int k = STARTINGZ(VRecMask); k <= FINISHINGZ(VRecMask); k++)
-		{
-			for (int i = STARTINGY(VRecMask); i <= FINISHINGY(VRecMask); i++)
-			{
-				for (int j = STARTINGX(VRecMask); j <= FINISHINGX(VRecMask); j++)
-				{
+		for (int k = STARTINGZ(VRecMask); k <= FINISHINGZ(VRecMask); k++) {
+			for (int i = STARTINGY(VRecMask); i <= FINISHINGY(VRecMask); i++) {
+				for (int j = STARTINGX(VRecMask); j <= FINISHINGX(VRecMask); j++) {
 					double r2 = k * k + i * i + j * j;
 					if (r2 >= Rmax2)
 						A3D_ELEM(VRecMask, k, i, j) = 0;
 				}
 			}
 		}
-	}
-	else
-	{
+	} else {
 		mask.R1 = RmaxDef;
 		mask.generate_mask(V());
 		VRecMask = mask.get_binary_mask();
@@ -332,13 +335,12 @@ void ProgParallelForwardArtZernike3D::preProcess()
 	initZ = STARTINGZ(Vrefined());
 	endZ = FINISHINGZ(Vrefined());
 
-	filter.FilterBand=LOWPASS;
-	filter.FilterShape=REALGAUSSIANZ;
-    // filter.w1=sigma;
-	filter2.FilterBand=LOWPASS;
-	filter2.FilterShape=REALGAUSSIANZ2;
-    // filter2.w1=sigma;
-
+	filter.FilterBand = LOWPASS;
+	filter.FilterShape = REALGAUSSIANZ;
+	// filter.w1=sigma;
+	filter2.FilterBand = LOWPASS;
+	filter2.FilterShape = REALGAUSSIANZ2;
+	// filter2.w1=sigma;
 }
 
 void ProgParallelForwardArtZernike3D::finishProcessing()
@@ -346,17 +348,22 @@ void ProgParallelForwardArtZernike3D::finishProcessing()
 	// XmippMetadataProgram::finishProcessing();
 	recoverVol();
 	Vout.write(fnVolO);
+	dumpVolume(Vout())
 }
 
 // Predict =================================================================
 //#define DEBUG
-void ProgParallelForwardArtZernike3D::processImage(const FileName &fnImg, const FileName &fnImgOut, const MDRow &rowIn, MDRow &rowOut)
+void ProgParallelForwardArtZernike3D::processImage(const FileName &fnImg,
+												   const FileName &fnImgOut,
+												   const MDRow &rowIn,
+												   MDRow &rowOut)
 {
 	flagEnabled = 1;
 
 	int img_enabled;
 	rowIn.getValue(MDL_ENABLED, img_enabled);
-	if (img_enabled == -1) return;
+	if (img_enabled == -1)
+		return;
 
 	// double auxRot, auxTilt, auxPsi, auxShiftX, auxShiftY;
 	rowIn.getValue(MDL_ANGLE_ROT, rot);
@@ -376,23 +383,20 @@ void ProgParallelForwardArtZernike3D::processImage(const FileName &fnImg, const 
 	// shiftY = static_cast<double>(auxShiftY);
 	// std::vector<double> vectortemp;
 	std::vector<double> vectortemp;
-	if (useZernike)
-	{
+	if (useZernike) {
 		rowIn.getValue(MDL_SPH_COEFFICIENTS, vectortemp);
 		std::vector<double> vec(vectortemp.begin(), vectortemp.end());
 		clnm = vec;
 	}
 	rowIn.getValueOrDefault(MDL_FLIP, flip, false);
 
-	if ((rowIn.containsLabel(MDL_CTF_DEFOCUSU) || rowIn.containsLabel(MDL_CTF_MODEL)) && useCTF)
-	{
+	if ((rowIn.containsLabel(MDL_CTF_DEFOCUSU) || rowIn.containsLabel(MDL_CTF_MODEL)) && useCTF) {
 		// std::cout << "Applying CTF" << std::endl;
 		hasCTF = true;
 		FilterCTF.ctf.readFromMdRow(rowIn, false);
 		FilterCTF.ctf.Tm = Ts;
 		FilterCTF.ctf.produceSideInfo();
-	}
-	else
+	} else
 		hasCTF = false;
 	MAT_ELEM(A, 0, 2) = shiftX;
 	MAT_ELEM(A, 1, 2) = shiftY;
@@ -415,6 +419,7 @@ void ProgParallelForwardArtZernike3D::processImage(const FileName &fnImg, const 
 	artModel<Direction::Backward>();
 	// updateART();
 }
+
 #undef DEBUG
 
 // void ProgParallelForwardArtZernike3D::checkPoint() {
@@ -424,38 +429,35 @@ void ProgParallelForwardArtZernike3D::processImage(const FileName &fnImg, const 
 
 void ProgParallelForwardArtZernike3D::numCoefficients(int l1, int l2, int &vecSize)
 {
-	for (int h = 0; h <= l2; h++)
-	{
+	for (int h = 0; h <= l2; h++) {
 		int numSPH = 2 * h + 1;
 		int count = l1 - h + 1;
 		int numEven = (count >> 1) + (count & 1 && !(h & 1));
-		if (h % 2 == 0)
-		{
+		if (h % 2 == 0) {
 			vecSize += numSPH * numEven;
-		}
-		else
-		{
+		} else {
 			vecSize += numSPH * (l1 - h + 1 - numEven);
 		}
 	}
 }
 
-void ProgParallelForwardArtZernike3D::fillVectorTerms(int l1, int l2, Matrix1D<int> &vL1, Matrix1D<int> &vN,
-											  Matrix1D<int> &vL2, Matrix1D<int> &vM)
+void ProgParallelForwardArtZernike3D::fillVectorTerms(int l1,
+													  int l2,
+													  Matrix1D<int> &vL1,
+													  Matrix1D<int> &vN,
+													  Matrix1D<int> &vL2,
+													  Matrix1D<int> &vM)
 {
 	int idx = 0;
 	vL1.initZeros(vecSize);
 	vN.initZeros(vecSize);
 	vL2.initZeros(vecSize);
 	vM.initZeros(vecSize);
-	for (int h = 0; h <= l2; h++)
-	{
+	for (int h = 0; h <= l2; h++) {
 		int totalSPH = 2 * h + 1;
 		int aux = std::floor(totalSPH / 2);
-		for (int l = h; l <= l1; l += 2)
-		{
-			for (int m = 0; m < totalSPH; m++)
-			{
+		for (int l = h; l <= l1; l += 2) {
+			for (int m = 0; m < totalSPH; m++) {
 				VEC_ELEM(vL1, idx) = l;
 				VEC_ELEM(vN, idx) = h;
 				VEC_ELEM(vL2, idx) = h;
@@ -472,14 +474,16 @@ void ProgParallelForwardArtZernike3D::fillVectorTerms(int l1, int l2, Matrix1D<i
 // 	ctf.produceSideInfo();
 // }
 
-void ProgParallelForwardArtZernike3D::splattingAtPos(std::array<double, 2> r, double weight,
-											 MultidimArray<double> &mP, MultidimArray<double> &mW,
-											 MultidimArray<double> &mV, double &sg)
+void ProgParallelForwardArtZernike3D::splattingAtPos(std::array<double, 2> r,
+													 double weight,
+													 MultidimArray<double> &mP,
+													 MultidimArray<double> &mW,
+													 MultidimArray<double> &mV,
+													 double &sg)
 {
 	int i = round(r[1]);
 	int j = round(r[0]);
-	if (!mP.outside(i, j))
-	{
+	if (!mP.outside(i, j)) {
 		int idy = (i)-STARTINGY(mP);
 		int idx = (j)-STARTINGX(mP);
 		int idn = (idy) * (mP).xdim + (idx);
@@ -487,7 +491,8 @@ void ProgParallelForwardArtZernike3D::splattingAtPos(std::array<double, 2> r, do
 		// double a = m * ABS(i - r[1]);
 		// double b = m * ABS(j - r[0]);
 		// double gw = 1. - a - b + a * b;
-		while ((*p_busy_elem[idn]) == &A2D_ELEM(mP, i, j));
+		while ((*p_busy_elem[idn]) == &A2D_ELEM(mP, i, j))
+			;
 		(*p_busy_elem[idn]).exchange(&A2D_ELEM(mP, i, j));
 		(*w_busy_elem[idn]).exchange(&A2D_ELEM(mW, i, j));
 		// A2D_ELEM(mP, i, j) += weight * gw;
@@ -565,7 +570,7 @@ void ProgParallelForwardArtZernike3D::recoverVol()
 void ProgParallelForwardArtZernike3D::run()
 {
 	FileName fnImg, fnImgOut, fullBaseName;
-	getOutputMd().clear(); //this allows multiple runs of the same Program object
+	getOutputMd().clear();	//this allows multiple runs of the same Program object
 
 	//Perform particular preprocessing
 	preProcess();
@@ -574,8 +579,7 @@ void ProgParallelForwardArtZernike3D::run()
 
 	sortOrthogonal();
 
-	if (!oroot.empty())
-	{
+	if (!oroot.empty()) {
 		if (oext.empty())
 			oext = oroot.getFileFormat();
 		oextBaseName = oext;
@@ -589,8 +593,7 @@ void ProgParallelForwardArtZernike3D::run()
 	current_save_iter = 1;
 	num_images = 1;
 	current_image = 1;
-	for (current_iter = 0; current_iter < niter; current_iter++)
-	{
+	for (current_iter = 0; current_iter < niter; current_iter++) {
 		std::cout << "Running iteration " << current_iter + 1 << " with lambda=" << lambda << std::endl;
 		objId = 0;
 		objIndex = 0;
@@ -600,7 +603,8 @@ void ProgParallelForwardArtZernike3D::run()
 			objId = A1D_ELEM(ordered_list, i) + 1;
 			++objIndex;
 			auto rowIn = getInputMd()->getRow(objId);
-			if (rowIn == nullptr) continue;
+			if (rowIn == nullptr)
+				continue;
 			rowIn->getValue(image_label, fnImg);
 			rowIn->getValue(MDL_ITEM_ID, num_images);
 			if (verbose > 2)
@@ -655,8 +659,7 @@ void ProgParallelForwardArtZernike3D::run()
 			showProgress();
 
 			// Save refined volume every num_images
-			if (current_save_iter == save_iter && save_iter > 0)
-			{
+			if (current_save_iter == save_iter && save_iter > 0) {
 				recoverVol();
 				// Mask mask;
 				// mask.type = BINARY_CIRCULAR_MASK;
@@ -691,16 +694,13 @@ void ProgParallelForwardArtZernike3D::run()
      * the dirBaseName in order not overwriting files when repeating same command on
      * different directories. If baseName is set it is used, otherwise, input name is used.
      * Then, the suffix _oext is added.*/
-	if (fn_out.empty())
-	{
-		if (!oroot.empty())
-		{
+	if (fn_out.empty()) {
+		if (!oroot.empty()) {
 			if (!baseName.empty())
 				fn_out = findAndReplace(pathBaseName, "/", "_") + baseName + "_" + oextBaseName + ".xmd";
 			else
 				fn_out = findAndReplace(pathBaseName, "/", "_") + fn_in.getBaseName() + "_" + oextBaseName + ".xmd";
-		}
-		else if (input_is_metadata) /// When nor -o neither --oroot is passed and want to overwrite input metadata
+		} else if (input_is_metadata)  /// When nor -o neither --oroot is passed and want to overwrite input metadata
 			fn_out = fn_in;
 	}
 
@@ -731,8 +731,7 @@ void ProgParallelForwardArtZernike3D::sortOrthogonal()
 
 	// Initialization
 	ordered_list.resize(numIMG);
-	for (i = 0; i < numIMG; i++)
-	{
+	for (i = 0; i < numIMG; i++) {
 		Matrix1D<double> z;
 		// Initially no image is chosen
 		A1D_ELEM(chosen, i) = 0;
@@ -750,27 +749,22 @@ void ProgParallelForwardArtZernike3D::sortOrthogonal()
 	A1D_ELEM(ordered_list, 0) = i;
 
 	// Choose the rest of projections
-	std::cout << "Sorting projections orthogonally...\n"
-			  << std::endl;
+	std::cout << "Sorting projections orthogonally...\n" << std::endl;
 	Matrix1D<double> rowj, rowi_1, rowi_N_1;
-	for (i = 1; i < numIMG; i++)
-	{
+	for (i = 1; i < numIMG; i++) {
 		// Compute the product of not already chosen vectors with the just
 		// chosen one, and select that which has minimum product
 		min_prod = MAXFLOAT;
 		v.getRow(A1D_ELEM(ordered_list, i - 1), rowi_1);
 		if (sort_last_N != -1 && i > sort_last_N)
 			v.getRow(A1D_ELEM(ordered_list, i - sort_last_N - 1), rowi_N_1);
-		for (j = 0; j < numIMG; j++)
-		{
-			if (!A1D_ELEM(chosen, j))
-			{
+		for (j = 0; j < numIMG; j++) {
+			if (!A1D_ELEM(chosen, j)) {
 				v.getRow(j, rowj);
 				A1D_ELEM(product, j) += ABS(dotProduct(rowi_1, rowj));
 				if (sort_last_N != -1 && i > sort_last_N)
 					A1D_ELEM(product, j) -= ABS(dotProduct(rowi_N_1, rowj));
-				if (A1D_ELEM(product, j) < min_prod)
-				{
+				if (A1D_ELEM(product, j) < min_prod) {
 					min_prod = A1D_ELEM(product, j);
 					min_prod_proj = j;
 				}
@@ -783,14 +777,12 @@ void ProgParallelForwardArtZernike3D::sortOrthogonal()
 	}
 }
 
-template <ProgParallelForwardArtZernike3D::Direction DIRECTION>
+template<ProgParallelForwardArtZernike3D::Direction DIRECTION>
 void ProgParallelForwardArtZernike3D::artModel()
 {
-	if (DIRECTION == Direction::Forward)
-	{
+	if (DIRECTION == Direction::Forward) {
 		Image<double> I_shifted;
-		for (int i=0; i<sigma.size(); i++)
-		{
+		for (int i = 0; i < sigma.size(); i++) {
 			P[i]().initZeros((int)XSIZE(I()), (int)XSIZE(I()));
 			P[i]().setXmippOrigin();
 			W[i]().initZeros((int)XSIZE(I()), (int)XSIZE(I()));
@@ -806,18 +798,16 @@ void ProgParallelForwardArtZernike3D::artModel()
 		else
 			zernikeModel<false, Direction::Forward>();
 
-		for (int i=0; i<sigma.size(); i++)
-		{
-			filter.w1=sigma[i];
-			filter2.w1=sigma[i];
+		for (int i = 0; i < sigma.size(); i++) {
+			filter.w1 = sigma[i];
+			filter2.w1 = sigma[i];
 			filter.generateMask(P[i]());
 			filter.applyMaskSpace(P[i]());
 			filter2.generateMask(W[i]());
 			filter2.applyMaskSpace(W[i]());
 		}
 
-		if (hasCTF)
-		{
+		if (hasCTF) {
 			// updateCTFImage(defocusU, defocusV, defocusAngle);
 			// FilterCTF.ctf = ctf;
 			if (phaseFlipped)
@@ -825,15 +815,19 @@ void ProgParallelForwardArtZernike3D::artModel()
 			FilterCTF.generateMask(I());
 			FilterCTF.applyMaskSpace(I());
 		}
-		if (flip)
-		{
+		if (flip) {
 			MAT_ELEM(A, 0, 0) *= -1;
 			MAT_ELEM(A, 0, 1) *= -1;
 			MAT_ELEM(A, 0, 2) *= -1;
 		}
 
-		applyGeometry(xmipp_transformation::LINEAR, I_shifted(), I(), A,
-					  xmipp_transformation::IS_NOT_INV, xmipp_transformation::DONT_WRAP, 0.);
+		applyGeometry(xmipp_transformation::LINEAR,
+					  I_shifted(),
+					  I(),
+					  A,
+					  xmipp_transformation::IS_NOT_INV,
+					  xmipp_transformation::DONT_WRAP,
+					  0.);
 
 		// P.write(fnOutDir + "/PPPtheo.xmp");
 		// I_shifted.write(fnOutDir + "/PPPexp.xmp");
@@ -850,8 +844,7 @@ void ProgParallelForwardArtZernike3D::artModel()
 		{
 			auto diffVal = A2D_ELEM(mIsh, i, j);
 			double sumMw = 0.0;
-			for (int ids = 0; ids < sigma.size(); ids++)
-			{
+			for (int ids = 0; ids < sigma.size(); ids++) {
 				const auto &mP = P[ids]();
 				const auto &mW = W[ids]();
 				const auto sg = sigma[ids];
@@ -860,18 +853,15 @@ void ProgParallelForwardArtZernike3D::artModel()
 				diffVal -= c * A2D_ELEM(mP, i, j);
 				sumMw += c * c * A2D_ELEM(mW, i, j);
 			}
-			if (sumMw > 0.0)
-			{
+			if (sumMw > 0.0) {
 				A2D_ELEM(mId, i, j) = lambda * (diffVal) / XMIPP_MAX(sumMw, 1.0);
 				error += (diffVal) * (diffVal);
 				N++;
 			}
 		}
 
-		if (verbose >= 3)
-		{
-			for (int ids = 0; ids < sigma.size(); ids++)
-			{
+		if (verbose >= 3) {
+			for (int ids = 0; ids < sigma.size(); ids++) {
 				P[ids].write(fnOutDir + "/PPPtheo_sigma" + std::to_string(sigma[ids]) + ".xmp");
 				W[ids].write(fnOutDir + "/PPPweight_sigma" + std::to_string(sigma[ids]) + ".xmp");
 			}
@@ -884,18 +874,24 @@ void ProgParallelForwardArtZernike3D::artModel()
 		// Creo que Carlos no usa un RMSE si no un MSE
 		error = std::sqrt(error / N);
 		if (verbose >= 2)
-			std::cout << "Error for image " << num_images << " (" << current_image << ") in iteration " << current_iter + 1 << " : " << error << std::endl;
-	}
-	else if (DIRECTION == Direction::Backward)
-	{
+			std::cout << "Error for image " << num_images << " (" << current_image << ") in iteration "
+					  << current_iter + 1 << " : " << error << std::endl;
+	} else if (DIRECTION == Direction::Backward) {
+
+		auto start = std::chrono::steady_clock::now();
+
 		if (useZernike)
 			zernikeModel<true, Direction::Backward>();
 		else
 			zernikeModel<false, Direction::Backward>();
+
+		auto end = std::chrono::steady_clock::now();
+		std::chrono::duration<double> elapsed_seconds = end - start;
+		dumpTime(elapsed_seconds.count());
 	}
 }
 
-template <bool USESZERNIKE, ProgParallelForwardArtZernike3D::Direction DIRECTION>
+template<bool USESZERNIKE, ProgParallelForwardArtZernike3D::Direction DIRECTION>
 void ProgParallelForwardArtZernike3D::zernikeModel()
 {
 	// auto &mId = Idiff();
@@ -935,27 +931,25 @@ void ProgParallelForwardArtZernike3D::zernikeModel()
 	futures.reserve(mV.zdim);
 	auto routine_forward = [this](int thrId, int k) {
 		forwardModel(k, USESZERNIKE);
-    };
+	};
 
 	auto routine_backward = [this](int thrId, int k) {
 		backwardModel(k, USESZERNIKE);
-    };
+	};
 
-	for (int k = STARTINGZ(mV); k <= lastZ; k += step)
-	{	
+	for (int k = STARTINGZ(mV); k <= lastZ; k += step) {
 		if (DIRECTION == Direction::Forward)
 			futures.emplace_back(m_threadPool.push(routine_forward, k));
 		else if (DIRECTION == Direction::Backward)
 			futures.emplace_back(m_threadPool.push(routine_backward, k));
 	}
 
-	for (auto &f : futures) 
-	{
-        f.get();
-    }
+	for (auto &f : futures) {
+		f.get();
+	}
 }
 
-void ProgParallelForwardArtZernike3D::forwardModel(int k, bool usesZernike) 
+void ProgParallelForwardArtZernike3D::forwardModel(int k, bool usesZernike)
 {
 	auto &mV = Vrefined();
 	const size_t idxY0 = usesZernike ? (clnm.size() / 3) : 0;
@@ -965,8 +959,7 @@ void ProgParallelForwardArtZernike3D::forwardModel(int k, bool usesZernike)
 	const double iRmaxF = usesZernike ? (1.0 / RmaxF) : 0;
 	// Rotation Matrix
 	constexpr size_t matrixSize = 3;
-	const Matrix2D<double> R = [this]()
-	{
+	const Matrix2D<double> R = [this]() {
 		auto tmp = Matrix2D<double>();
 		tmp.initIdentity(matrixSize);
 		Euler_angles2matrix(rot, tilt, psi, tmp, false);
@@ -977,16 +970,12 @@ void ProgParallelForwardArtZernike3D::forwardModel(int k, bool usesZernike)
 	const auto lastX = FINISHINGX(mV);
 	const int step = loop_step;
 	// int step = loop_step;
-	for (int i = STARTINGY(mV); i <= lastY; i += step)
-	{
-		for (int j = STARTINGX(mV); j <= lastX; j += step)
-		{
+	for (int i = STARTINGY(mV); i <= lastY; i += step) {
+		for (int j = STARTINGX(mV); j <= lastX; j += step) {
 			double gx = 0.0, gy = 0.0, gz = 0.0;
-			if (A3D_ELEM(VRecMask, k, i, j) != 0)
-			{
+			if (A3D_ELEM(VRecMask, k, i, j) != 0) {
 				int img_idx = 0;
-				if (sigma.size() > 1)
-				{
+				if (sigma.size() > 1) {
 					double sigma_mask = A3D_ELEM(VRecMask, k, i, j);
 					auto it = find(sigma.begin(), sigma.end(), sigma_mask);
 					img_idx = it - sigma.begin();
@@ -994,8 +983,7 @@ void ProgParallelForwardArtZernike3D::forwardModel(int k, bool usesZernike)
 				// step = sigma[img_idx];
 				auto &mP = P[img_idx]();
 				auto &mW = W[img_idx]();
-				if (usesZernike)
-				{
+				if (usesZernike) {
 					auto k2 = k * k;
 					auto kr = k * iRmaxF;
 					auto k2i2 = k2 + i * i;
@@ -1003,14 +991,12 @@ void ProgParallelForwardArtZernike3D::forwardModel(int k, bool usesZernike)
 					auto r2 = k2i2 + j * j;
 					auto jr = j * iRmaxF;
 					auto rr = sqrt(r2) * iRmaxF;
-					for (size_t idx = 0; idx < idxY0; idx++)
-					{
+					for (size_t idx = 0; idx < idxY0; idx++) {
 						auto l1 = VEC_ELEM(vL1, idx);
 						auto n = VEC_ELEM(vN, idx);
 						auto l2 = VEC_ELEM(vL2, idx);
 						auto m = VEC_ELEM(vM, idx);
-						if (rr > 0 || l2 == 0)
-						{
+						if (rr > 0 || l2 == 0) {
 							auto zsph = ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
 							gx += clnm[idx] * (zsph);
 							gy += clnm[idx + idxY0] * (zsph);
@@ -1044,8 +1030,7 @@ void ProgParallelForwardArtZernike3D::backwardModel(int k, bool usesZernike)
 	const double iRmaxF = usesZernike ? (1.0 / RmaxF) : 0;
 	// Rotation Matrix
 	constexpr size_t matrixSize = 3;
-	const Matrix2D<double> R = [this]()
-	{
+	const Matrix2D<double> R = [this]() {
 		auto tmp = Matrix2D<double>();
 		tmp.initIdentity(matrixSize);
 		Euler_angles2matrix(rot, tilt, psi, tmp, false);
@@ -1055,15 +1040,11 @@ void ProgParallelForwardArtZernike3D::backwardModel(int k, bool usesZernike)
 	const auto lastY = FINISHINGY(mV);
 	const auto lastX = FINISHINGX(mV);
 	const int step = 1;
-	for (int i = STARTINGY(mV); i <= lastY; i += step)
-	{
-		for (int j = STARTINGX(mV); j <= lastX; j += step)
-		{
+	for (int i = STARTINGY(mV); i <= lastY; i += step) {
+		for (int j = STARTINGX(mV); j <= lastX; j += step) {
 			double gx = 0.0, gy = 0.0, gz = 0.0;
-			if (A3D_ELEM(sphMask, k, i, j) != 0)
-			{
-				if (usesZernike)
-				{
+			if (A3D_ELEM(sphMask, k, i, j) != 0) {
+				if (usesZernike) {
 					auto k2 = k * k;
 					auto kr = k * iRmaxF;
 					auto k2i2 = k2 + i * i;
@@ -1071,14 +1052,12 @@ void ProgParallelForwardArtZernike3D::backwardModel(int k, bool usesZernike)
 					auto r2 = k2i2 + j * j;
 					auto jr = j * iRmaxF;
 					auto rr = sqrt(r2) * iRmaxF;
-					for (size_t idx = 0; idx < idxY0; idx++)
-					{
+					for (size_t idx = 0; idx < idxY0; idx++) {
 						auto l1 = VEC_ELEM(vL1, idx);
 						auto n = VEC_ELEM(vN, idx);
 						auto l2 = VEC_ELEM(vL2, idx);
 						auto m = VEC_ELEM(vM, idx);
-						if (rr > 0 || l2 == 0)
-						{
+						if (rr > 0 || l2 == 0) {
 							auto zsph = ZernikeSphericalHarmonics(l1, n, l2, m, jr, ir, kr, rr);
 							gx += clnm[idx] * (zsph);
 							gy += clnm[idx + idxY0] * (zsph);
